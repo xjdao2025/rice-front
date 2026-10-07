@@ -2,9 +2,8 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { TasksPage } from '~/features/tasks/TasksPage'
 import { getTaskPage, type TaskPage } from '~/features/tasks/api'
-import { getNodes, type CommunityNode } from '~/features/nodes/api'
 
-type TaskRouteData = { page: TaskPage; nodes: CommunityNode[]; refreshError: string }
+type TaskRouteData = { page: TaskPage; refreshError: string }
 
 export const Route = createFileRoute('/tasks/')({
   staleTime: 30_000,
@@ -14,8 +13,8 @@ export const Route = createFileRoute('/tasks/')({
   }),
   loader: { staleReloadMode: 'background', handler: async ({ context }): Promise<TaskRouteData> => {
     try {
-      const [page, nodes] = await Promise.all([getTaskPage({ data: { limit: 12, sort: 'published' } }), getNodes({ data: {} })])
-      return { page, nodes, refreshError: '' }
+      const page = await getTaskPage({ data: { limit: 12, sort: 'published' } })
+      return { page, refreshError: '' }
     } catch (error) {
       if (!context.previousData) throw error
       return { ...context.previousData, refreshError: '暂时无法更新，已保留上次显示的内容。' }
@@ -25,6 +24,6 @@ export const Route = createFileRoute('/tasks/')({
 })
 
 function TasksRoute() {
-  const { page, nodes, refreshError } = Route.useLoaderData()
-  return <TasksPage initialPage={page} initialNodes={nodes} refreshError={refreshError} />
+  const { page, refreshError } = Route.useLoaderData()
+  return <TasksPage initialPage={page} refreshError={refreshError} />
 }

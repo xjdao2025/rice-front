@@ -125,6 +125,25 @@ input:-webkit-autofill:focus {
 .notification-dot { width: 7px; height: 7px; border-radius: 50%; background: #bc3d35; }
 
 /* Plaza */
+.plaza-banner { position: relative; margin-bottom: var(--xj-card-gap); border-radius: 24px; overflow: hidden; }
+.plaza-banner-slide {
+  width: min(calc(100vw - 20px), var(--xj-content-width));
+  min-height: 280px;
+  padding: 24px 30px 70px;
+  display: flex;
+  flex-direction: column;
+  background: var(--xj-accent);
+  color: #fff;
+}
+.plaza-banner-slide > span { color: #fff; font-size: var(--xj-font-caption); font-weight: 700; }
+.plaza-banner-slide h1 { margin: 14px 0 8px; color: #fff; font-family: "Songti SC", STSong, serif; font-size: clamp(30px, 5vw, 43px); line-height: 1.15; }
+.plaza-banner-slide p { margin: 0; color: #fff; font-size: var(--xj-font-small); line-height: 1.5; }
+.plaza-banner-controls { position: absolute; inset-inline: 30px; bottom: 14px; z-index: 1; display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; pointer-events: none; }
+.plaza-banner-controls button { width: 44px; height: 44px; padding: 0; border: 0; display: grid; place-items: center; background: transparent; color: #fff; pointer-events: auto; }
+.plaza-banner-controls svg { width: 24px; height: 24px; }
+.plaza-banner-pages { display: flex; justify-content: center; }
+.plaza-banner-pages button span { width: 8px; height: 8px; border-radius: 999px; background: #ffffff80; }
+.plaza-banner-pages button[aria-current="true"] span { width: 24px; background: #fff; }
 .post-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--xj-card-gap); }
 .content-card {
   min-width: 0;
@@ -179,20 +198,6 @@ input:-webkit-autofill:focus {
 }
 
 /* Task */
-.task-hero {
-  min-height: 190px;
-  padding: 22px;
-  border-radius: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  background: var(--xj-accent);
-  color: #fff;
-}
-.task-hero > span { font-size: var(--xj-font-caption); font-weight: 700; letter-spacing: .16em; }
-.task-hero h1 { margin: 12px 0 8px; color: var(--xj-surface); font-family: "Songti SC", STSong, serif; font-size: 36px; line-height: 1.05; letter-spacing: .03em; }
-.task-hero p { max-width: 520px; margin: 0 0 14px; color: rgba(255, 255, 255, .78); font-size: var(--xj-font-body); line-height: 1.65; }
-.task-hero a { min-height: 30px; padding: 0 11px; border-radius: 999px; display: inline-flex; align-items: center; background: rgba(255,255,255,.18); color: #fff; font-size: var(--xj-font-small); }
 .filter-buttons { display: flex; align-items: center; gap: 6px; overflow-x: auto; }
 .filter-buttons button { min-height: 48px; padding: 0 16px; border: 1px solid var(--xj-line); border-radius: 999px; flex: 0 0 auto; background: var(--xj-surface); color: var(--xj-muted); font-size: var(--xj-font-body); box-shadow: none; white-space: nowrap; }
 .filter-buttons button.active { border-color: var(--xj-accent); background: var(--xj-accent); color: #fff; opacity: 1; }
@@ -586,9 +591,6 @@ button.notification-row:focus-visible { outline: 2px solid var(--xj-green, #1b60
   }
   .content-card { padding: 18px; }
   .post-copy { font-size: var(--xj-font-lead); }
-  .task-hero { min-height: 250px; padding: 34px; }
-  .task-hero h1 { font-size: 48px; }
-  .task-hero p { font-size: var(--xj-font-body-strong); }
   .profile-identity { padding: 30px 22px; border: 1px solid var(--xj-line); border-radius: 18px; background: var(--xj-surface); }
   .profile-identity h1 { font-size: 28px; }
   .grain-card { padding: 18px; }
@@ -625,7 +627,6 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px soli
 .compose-frame { padding-top: 0; }
 .business-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 18px 0; }
 :is(.task-page, .events-page) > .business-heading { margin: 0 0 var(--xj-card-gap); }
-.task-hero + .business-heading { margin-top: var(--xj-card-gap); }
 .business-heading h1, .business-heading h2 { margin: 0; }
 .business-heading > a { font-size: 18px; font-weight: 600; }
 .business-heading select, .native-field input, .native-field select, .business-search { font: inherit; min-height: 52px; max-width: 100%; padding: 10px 14px; border: 1px solid var(--xj-line-strong); border-radius: 12px; color: var(--xj-text); background: var(--xj-surface); }
@@ -640,7 +641,6 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px soli
 .task-card-actions .task-status { min-height: 34px; padding: 4px 12px; font-size: 16px; }
 .rice-amount { display: inline-flex; align-items: center; gap: 7px; color: var(--xj-accent); white-space: nowrap; font-size: 24px; }
 .rice-amount small { font-size: 17px; font-weight: 500; }
-.hero-action { min-height: 50px; padding: 10px 20px; color: white; border: 1px solid #ffffff50; border-radius: 12px; background: #ffffff20; font-weight: 650; }
 .business-dialog { width: min(760px, calc(100% - 28px)); height: auto; max-height: 90dvh; margin: auto; border-radius: 22px; background: var(--xj-surface); }
 .business-dialog .post-dialog-shell { max-height: 90dvh; }
 .business-dialog .post-dialog-scroll { flex: 1 1 auto; }
@@ -695,7 +695,6 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px soli
 .receipt-reference summary { cursor: pointer; }
 @media (max-width: 620px) {
   :root { --xj-panel-inset: 20px; }
-  .task-hero h1 { font-size: 36px; }
   .business-card h2 { font-size: 22px; }
   .topbar-actions { gap: 3px; }
   .business-dialog { width: calc(100% - 20px); border: 1px solid var(--xj-line); border-radius: 18px; height: auto; max-height: 92dvh; }

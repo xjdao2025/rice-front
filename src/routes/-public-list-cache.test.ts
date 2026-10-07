@@ -1,9 +1,8 @@
 import { createMemoryHistory, type AnyRoute } from '@tanstack/react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const api = vi.hoisted(() => ({ tasks: vi.fn(), nodes: vi.fn(), events: vi.fn() }))
+const api = vi.hoisted(() => ({ tasks: vi.fn(), events: vi.fn() }))
 vi.mock('~/features/tasks/api', () => ({ getTaskPage: api.tasks }))
-vi.mock('~/features/nodes/api', () => ({ getNodes: api.nodes }))
 vi.mock('~/features/events/api', () => ({ getEvents: api.events }))
 vi.mock('~/features/tasks/TasksPage', () => ({ TasksPage: () => null }))
 vi.mock('~/features/events/EventsPage', () => ({ EventsPage: () => null }))
@@ -59,7 +58,6 @@ async function readyRouter() {
 beforeEach(() => {
   vi.useFakeTimers()
   api.tasks.mockReset().mockResolvedValue({ data: [{ id: 'task-1' }], meta: { next_cursor: null } })
-  api.nodes.mockReset().mockResolvedValue([{ id: 'community-1' }])
   api.events.mockReset().mockResolvedValue({ data: [{ id: 'event-1' }], meta: { next_cursor: null } })
 })
 afterEach(() => {
@@ -77,7 +75,6 @@ describe('public list route cache', () => {
     await router.navigate({ to: '/events' })
 
     expect(api.tasks).toHaveBeenCalledExactlyOnceWith({ data: { limit: 12, sort: 'published' } })
-    expect(api.nodes).toHaveBeenCalledExactlyOnceWith({ data: {} })
     expect(api.events).toHaveBeenCalledExactlyOnceWith({ data: {} })
   })
 

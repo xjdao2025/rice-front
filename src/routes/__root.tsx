@@ -18,6 +18,10 @@ import '~/styles/app.css'
 
 export const Route = createRootRoute({
   head: () => ({
+    links: [
+      { rel: 'icon', type: 'image/png', href: '/site-icon.png' },
+      { rel: 'apple-touch-icon', href: '/site-icon.png' },
+    ],
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },

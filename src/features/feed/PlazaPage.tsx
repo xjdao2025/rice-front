@@ -1,4 +1,6 @@
 import { Button } from '@astryxdesign/core/Button'
+import { Carousel, type CarouselHandle } from '@astryxdesign/core/Carousel'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { RepostChange } from '~/components/PostActions'
@@ -9,6 +11,35 @@ import type { PostFeed } from '~/lib/models'
 import { useStoredSession } from '../session/session'
 import { getPosts, readCachedFeed, writeCachedFeed } from './api'
 import { postCategory } from './tags'
+
+const bannerSlides = [
+  { label: '交流互助', title: ['遇到问题，', '一起聊聊'], description: '分享你的疑问与经验，让彼此少走一点弯路。' },
+  { label: '参与协作', title: ['找到能出力的事，', '一起完成它'], description: '浏览任务、申请承接，用你的经验参与社区协作。' },
+  { label: '发起活动', title: ['把一个想法，', '变成一次相聚'], description: '发起一场活动，邀请伙伴一起参与。' },
+]
+
+function PlazaBanner() {
+  const carousel = useRef<CarouselHandle>(null)
+  const [activeSlide, setActiveSlide] = useState(0)
+  return <div className="plaza-banner">
+    <Carousel className="plaza-banner-track" aria-label="乡建 DAO 导览" gap={0} hasButtons={false} hasEdgeFade={false} hasLoop hasSnap handleRef={carousel}
+      onScrollCapture={(event) => {
+        const scroller = event.target as HTMLDivElement
+        if (scroller.clientWidth) setActiveSlide(Math.min(bannerSlides.length - 1, Math.round(Math.abs(scroller.scrollLeft) / scroller.clientWidth)))
+      }}>
+      {bannerSlides.map((slide) => <div className="plaza-banner-slide" key={slide.label}>
+        <span>{slide.label}</span>
+        <h1>{slide.title[0]}<br />{slide.title[1]}</h1>
+        <p>{slide.description}</p>
+      </div>)}
+    </Carousel>
+    <div className="plaza-banner-controls">
+      <button type="button" aria-label="上一张" onClick={() => carousel.current?.scrollPrev()}><ChevronLeft aria-hidden="true" /></button>
+      <div className="plaza-banner-pages">{bannerSlides.map((slide, index) => <button type="button" key={slide.label} aria-label={`查看第 ${index + 1} 张`} aria-current={activeSlide === index ? 'true' : undefined} onClick={() => carousel.current?.scrollTo(index)}><span /></button>)}</div>
+      <button type="button" aria-label="下一张" onClick={() => carousel.current?.scrollNext()}><ChevronRight aria-hidden="true" /></button>
+    </div>
+  </div>
+}
 
 
 export function PlazaPage({ initialFeed }: { initialFeed: PostFeed }) {
@@ -132,6 +163,7 @@ function PlazaFeed({ initialFeed }: { initialFeed: PostFeed }) {
 
   return (
     <div className="page plaza-page">
+      <PlazaBanner />
       {error ? (
         <div className="inline-error" role="alert">
           <span>{error}</span>
