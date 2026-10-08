@@ -19,7 +19,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { session, isReady, recoveryError } = useStoredSession()
   const previousSession = useRef<{ accountId?: string; token?: string } | null>(null)
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false)
-  const [notificationError, setNotificationError] = useState('')
   const pathname = useRouterState({ select: (state) => (state.resolvedLocation ?? state.location).pathname.replace(/\/+$/, '') || '/' })
   const navigating = useRouterState({ select: (state) => state.isLoading && state.location.href !== state.resolvedLocation?.href })
   const href = useRouterState({ select: (state) => state.location.href })
@@ -65,10 +64,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    if (!isReady) return
+    if (!isReady || !isMainPage) return
     if (!session) {
       setHasUnreadNotifications(false)
-      setNotificationError('')
       return
     }
 
@@ -79,11 +77,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         getTaskNotifications({ data: { token: session.token } }),
       ])
       if (!active) return
-
-      const failure = results.find((result) => result.status === 'rejected')
-      setNotificationError(failure?.status === 'rejected'
-        ? failure.reason instanceof Error ? failure.reason.message : '通知暂时无法加载，请稍后重试。'
-        : '')
 
       const hasUnread = results.some(
         (result) =>
@@ -107,7 +100,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       window.removeEventListener(NOTIFICATIONS_READ_EVENT, refresh)
       window.removeEventListener('storage', storageChanged)
     }
-  }, [isReady, session?.token, session?.pds?.access_jwt])
+  }, [isReady, isMainPage, session?.token, session?.pds?.access_jwt])
 
   return (
     <div className="app-shell">
@@ -126,7 +119,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main key={session?.user.id ?? 'guest'} className={pathname === '/compose' ? 'page-frame compose-frame' : 'page-frame'}>{recoveryError && <p className="inline-error" role="alert">{recoveryError}</p>}{session && notificationError && <p className="inline-error" role="alert">{notificationError}</p>}{isReady ? children : <LoadingState label="正在恢复登录状态" className="page initial-loading loading-line" />}</main>
+      <main key={session?.user.id ?? 'guest'} className={pathname === '/compose' ? 'page-frame compose-frame' : 'page-frame'}>{recoveryError && <p className="inline-error" role="alert">{recoveryError}</p>}{isReady ? children : <LoadingState label="正在恢复登录状态" className="page initial-loading loading-line" />}</main>
       {navigating && <LoadingProgress label="正在加载页面…" />}
 
       <nav className="bottom-nav" aria-label="主要导航">
