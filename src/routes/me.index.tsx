@@ -39,7 +39,7 @@ export const Route = createFileRoute('/me/')({
           }
         })),
       }))
-      .catch(() => ({ communities: [], communityError: '暂时无法加载管理的社区，请稍后重试。' }))
+      .catch(() => ({ communities: [], communityError: '暂时无法加载管理的节点，请稍后重试。' }))
     try {
       const userRequest = getCurrentUser({ data: token }).then((user) => {
         if (user === null && isCurrentSession()) writeStoredSession(null)

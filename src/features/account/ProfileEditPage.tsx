@@ -7,12 +7,10 @@ import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 
 import { Avatar } from '~/components/Avatar'
-import { readFileBase64 } from '~/lib/images'
+import { IMAGE_ACCEPT, MAX_IMAGE_BYTES, imageSizeLabel, prepareImage, readFileBase64 } from '~/lib/images'
 
 import { useStoredSession } from '../session/session'
 import { updateCurrentUser, uploadRiceAttachment } from './api'
-
-const MAX_AVATAR_BYTES = 5 * 1024 * 1024
 
 export function ProfileEditPage({ onSaved, avatarOnly = false }: { onSaved?: () => void | Promise<void>; avatarOnly?: boolean }) {
   const { session, saveSession } = useStoredSession()
@@ -46,13 +44,14 @@ export function ProfileEditPage({ onSaved, avatarOnly = false }: { onSaved?: () 
         await onSaved?.()
         return
       }
-      const attachment = avatar
+      const prepared = avatar ? await prepareImage(avatar) : null
+      const attachment = prepared
         ? await uploadRiceAttachment({
             data: {
               token: session.token,
-              filename: avatar.name,
-              contentType: avatar.type,
-              base64: await readFileBase64(avatar),
+              filename: prepared.name,
+              contentType: prepared.type,
+              base64: await readFileBase64(prepared),
             },
           })
         : null
@@ -86,9 +85,8 @@ export function ProfileEditPage({ onSaved, avatarOnly = false }: { onSaved?: () 
           placeholder="选择图片"
           value={avatar}
           onChange={(file) => setAvatar(file as File | null)}
-          accept="image/png,image/jpeg,image/gif,image/webp"
-          maxSize={MAX_AVATAR_BYTES}
-          description="支持 PNG、JPEG、GIF 或 WebP，最大 5MB。"
+          accept={IMAGE_ACCEPT}
+          description={`支持 PNG、JPEG、GIF 或 WebP，大图自动压缩到 ${imageSizeLabel(MAX_IMAGE_BYTES)} 以内（GIF 除外）。`}
           width="100%"
           isOptional
         />

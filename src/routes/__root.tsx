@@ -28,7 +28,7 @@ export const Route = createRootRoute({
       { title: '乡建 DAO' },
       {
         name: 'description',
-        content: '连接乡村、社区与共建行动。',
+        content: '连接乡村节点与共建行动。',
       },
     ],
   }),

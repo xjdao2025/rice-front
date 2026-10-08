@@ -24,6 +24,7 @@ import { Route as SemiCallbackRouteImport } from './routes/semi-callback'
 import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as AllianceIndexRouteImport } from './routes/alliance.index'
 import { Route as AllianceDocumentsRouteImport } from './routes/alliance.documents'
+import { Route as AllianceGrainGrantsRouteImport } from './routes/alliance.grain-grants'
 import { Route as AllianceNodesRouteImport } from './routes/alliance.nodes'
 import { Route as EventsEventIdRouteImport } from './routes/events_.$eventId'
 import { Route as MeIndexRouteImport } from './routes/me.index'
@@ -126,6 +127,11 @@ const AllianceIndexRoute = AllianceIndexRouteImport.update({
 const AllianceDocumentsRoute = AllianceDocumentsRouteImport.update({
   id: '/documents',
   path: '/documents',
+  getParentRoute: () => AllianceRoute,
+} as any)
+const AllianceGrainGrantsRoute = AllianceGrainGrantsRouteImport.update({
+  id: '/grain-grants',
+  path: '/grain-grants',
   getParentRoute: () => AllianceRoute,
 } as any)
 const AllianceNodesRoute = AllianceNodesRouteImport.update({
@@ -284,6 +290,7 @@ export interface FileRoutesByFullPath {
   '/semi-callback': typeof SemiCallbackRoute
   '/tasks': typeof TasksRouteWithChildren
   '/alliance/documents': typeof AllianceDocumentsRoute
+  '/alliance/grain-grants': typeof AllianceGrainGrantsRoute
   '/alliance/nodes': typeof AllianceNodesRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/me/events': typeof MeEventsRoute
@@ -326,6 +333,7 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/semi-callback': typeof SemiCallbackRoute
   '/alliance/documents': typeof AllianceDocumentsRoute
+  '/alliance/grain-grants': typeof AllianceGrainGrantsRoute
   '/alliance/nodes': typeof AllianceNodesRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/me/events': typeof MeEventsRoute
@@ -370,6 +378,7 @@ export interface FileRoutesById {
   '/semi-callback': typeof SemiCallbackRoute
   '/tasks': typeof TasksRouteWithChildren
   '/alliance/documents': typeof AllianceDocumentsRoute
+  '/alliance/grain-grants': typeof AllianceGrainGrantsRoute
   '/alliance/nodes': typeof AllianceNodesRoute
   '/events_/$eventId': typeof EventsEventIdRoute
   '/me/events': typeof MeEventsRoute
@@ -417,6 +426,7 @@ export interface FileRouteTypes {
     | '/semi-callback'
     | '/tasks'
     | '/alliance/documents'
+    | '/alliance/grain-grants'
     | '/alliance/nodes'
     | '/events/$eventId'
     | '/me/events'
@@ -459,6 +469,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/semi-callback'
     | '/alliance/documents'
+    | '/alliance/grain-grants'
     | '/alliance/nodes'
     | '/events/$eventId'
     | '/me/events'
@@ -502,6 +513,7 @@ export interface FileRouteTypes {
     | '/semi-callback'
     | '/tasks'
     | '/alliance/documents'
+    | '/alliance/grain-grants'
     | '/alliance/nodes'
     | '/events_/$eventId'
     | '/me/events'
@@ -660,6 +672,13 @@ declare module '@tanstack/react-router' {
       path: '/documents'
       fullPath: '/alliance/documents'
       preLoaderRoute: typeof AllianceDocumentsRouteImport
+      parentRoute: typeof AllianceRoute
+    }
+    '/alliance/grain-grants': {
+      id: '/alliance/grain-grants'
+      path: '/grain-grants'
+      fullPath: '/alliance/grain-grants'
+      preLoaderRoute: typeof AllianceGrainGrantsRouteImport
       parentRoute: typeof AllianceRoute
     }
     '/alliance/nodes': {
@@ -863,6 +882,7 @@ declare module '@tanstack/react-router' {
 
 interface AllianceRouteChildren {
   AllianceDocumentsRoute: typeof AllianceDocumentsRoute
+  AllianceGrainGrantsRoute: typeof AllianceGrainGrantsRoute
   AllianceNodesRoute: typeof AllianceNodesRoute
   AllianceIndexRoute: typeof AllianceIndexRoute
   AllianceAnnouncementsIdRoute: typeof AllianceAnnouncementsIdRoute
@@ -871,6 +891,7 @@ interface AllianceRouteChildren {
 
 const AllianceRouteChildren: AllianceRouteChildren = {
   AllianceDocumentsRoute: AllianceDocumentsRoute,
+  AllianceGrainGrantsRoute: AllianceGrainGrantsRoute,
   AllianceNodesRoute: AllianceNodesRoute,
   AllianceIndexRoute: AllianceIndexRoute,
   AllianceAnnouncementsIdRoute: AllianceAnnouncementsIdRoute,

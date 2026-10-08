@@ -25,7 +25,7 @@ export function EventCard({ event }: { event: RiceEvent }) {
     </Link>
     <ImageGroup images={attachmentImages(event.attachments)} className="post-image-grid" />
     <Link to="/events/$eventId" params={{ eventId: event.id }} className="business-card-body">
-    <footer className="content-card-actions task-card-actions"><span className={`task-status status-${event.status}`}>{eventDisplayStatus(event, now)}</span><strong className="rice-amount" aria-label={event.fee_amount ? `${event.fee_amount} 稻米每人` : '免费'}>{event.fee_amount ? <><Sprout size={21} />{event.fee_amount}<small>/ 人</small></> : '免费'}</strong></footer>
+    <footer className="content-card-actions task-card-actions"><span className={`task-status status-${event.status}`}>{eventDisplayStatus(event, now)}</span><strong className="rice-amount" aria-label={event.fee_amount ? `${event.fee_amount} 稻米每人` : '无需稻米'}>{event.fee_amount ? <><Sprout size={21} />{event.fee_amount}<small>/ 人</small></> : '无需稻米'}</strong></footer>
     </Link></article>
 }
 
@@ -47,7 +47,7 @@ function EventList({ nodeId, mine = false, initialPage, refreshError = '' }: Eve
     disabled: mine && !session,
     refreshError, loadPage,
   })
-  return <div className={`page events-page${nodeId ? ' business-panel list-panel' : ''}`}><div className="business-heading"><h1>{mine ? '我的活动' : nodeId ? '社区活动' : '活动'}</h1>{session && !mine && !nodeId && <Link to="/me/events">我的活动</Link>}</div>
+  return <div className={`page events-page${nodeId ? ' business-panel list-panel' : ''}`}><div className="business-heading"><h1>{mine ? '我的活动' : nodeId ? '节点活动' : '活动'}</h1>{session && !mine && !nodeId && <Link to="/me/events">我的活动</Link>}</div>
     {mine && <div className="filter-buttons">{(['applied', 'managed'] as const).map((value) => <Button key={value} label={value === 'applied' ? '我申请的' : '我管理的'} variant="ghost" className={tab === value ? 'active' : undefined} aria-pressed={tab === value} onClick={() => setTab(value)} />)}</div>}
     {mine && !session && isReady && <LoginLink className="primary-link">登录后查看我的活动</LoginLink>}
     {visibleError && <p className="inline-error" role="alert">{visibleError}</p>}{loading && (rows.length ? <p className="refresh-status" role="status">正在加载活动…</p> : <LoadingState label="正在加载活动…" />)}

@@ -229,7 +229,7 @@ describe('feed data', () => {
     vi.stubGlobal('fetch', fetchMock)
     await expect(loadPostThread({ uri: post.uri })).resolves.toEqual({ post, replies: [] })
     expect(String(fetchMock.mock.calls[0][0])).toContain('/bsky/xrpc/app.bsky.feed.getPostThread?')
-    expect(fetchMock.mock.calls[0][1]).toBeUndefined()
+    expect(fetchMock.mock.calls[0][1]?.headers).toBeUndefined()
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes('listRecords'))).toBe(false)
   })
 

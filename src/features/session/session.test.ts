@@ -182,22 +182,26 @@ describe('PDS session lifetime', () => {
     stop()
   })
 
-  it('rechecks the Rice login once on return even while the PDS token is valid', async () => {
+  it('does not probe a healthy session on startup, return, or unrelated storage changes', async () => {
     const { stored, page } = useLifecycleStorage()
-    const loadUser = vi.fn().mockResolvedValueOnce(stored.user).mockResolvedValueOnce(null)
-    const stop = watchPdsSessionLifetime(async () => {
-      const current = readStoredSession()
-      if (current) await refreshStoredUser(current, loadUser)
-    })
+    const sync = vi.fn(async () => {})
+    const stop = watchPdsSessionLifetime(sync)
     await vi.advanceTimersByTimeAsync(0)
-    expect(readStoredSession()).toEqual(stored)
-
     window.dispatchEvent(new Event('focus'))
     window.dispatchEvent(new Event('pageshow'))
     page.dispatchEvent(new Event('visibilitychange'))
+    window.dispatchEvent(Object.assign(new Event('storage'), { key: 'notification-state' }))
     await vi.advanceTimersByTimeAsync(0)
-    expect(loadUser).toHaveBeenCalledTimes(2)
-    expect(readStoredSession()).toBeNull()
+    expect(sync).not.toHaveBeenCalled()
+    expect(readStoredSession()).toEqual(stored)
+    page.visibilityState = 'hidden'
+    await vi.advanceTimersByTimeAsync(120_000)
+    window.dispatchEvent(Object.assign(new Event('storage'), { key: 'notification-state' }))
+    expect(sync).not.toHaveBeenCalled()
+    page.visibilityState = 'visible'
+    page.dispatchEvent(new Event('visibilitychange'))
+    await vi.advanceTimersByTimeAsync(0)
+    expect(sync).toHaveBeenCalledTimes(1)
     stop()
   })
 
@@ -228,10 +232,8 @@ describe('PDS session lifetime', () => {
     window.localStorage.setItem('xiangjian-rice-session', JSON.stringify(credentials))
     const refresh = vi.fn(async () => ({ ...stored.pds, access_jwt: jwt(Date.now() / 1000 + 3600) }))
     const loadUser = vi.fn(async () => user)
-    const stop = watchPdsSessionLifetime(async () => {
-      if (!readStoredSession()) await refreshStoredUser(credentials, loadUser)
-      else await renewCurrentSession(refresh)()
-    })
+    const stop = watchPdsSessionLifetime(renewCurrentSession(refresh))
+    await refreshStoredUser(credentials, loadUser)
     await vi.advanceTimersByTimeAsync(0)
     expect(loadUser).toHaveBeenCalledTimes(1)
     expect(readStoredSession()).toEqual(stored)

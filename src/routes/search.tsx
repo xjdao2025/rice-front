@@ -10,7 +10,7 @@ import { getPosts } from '~/features/feed/api'
 import { getEvents, type RiceEvent } from '~/features/events/api'
 import { EventCard } from '~/features/events/EventsPage'
 import { getNodes, type CommunityNode } from '~/features/nodes/api'
-import { NodeCard } from '~/features/nodes/NodesPanel'
+import { NodeListRow } from '~/features/nodes/NodesPanel'
 import { useStoredSession } from '~/features/session/session'
 import { searchUsers } from '~/features/social/api'
 import { getTaskPage } from '~/features/tasks/api'
@@ -57,7 +57,7 @@ function SearchResults({ q, session }: { q?: string; session: RiceSession | null
     if (n.status === 'fulfilled') setNodes(n.value)
     if (u.status === 'fulfilled') setUsers(u.value.data)
     setCursors({ tasks: t.status === 'fulfilled' ? t.value.meta.next_cursor ?? undefined : undefined, posts: p.status === 'fulfilled' ? p.value.cursor ?? undefined : undefined, events: e.status === 'fulfilled' ? e.value.meta?.next_cursor ?? undefined : undefined, users: u.status === 'fulfilled' ? u.value.meta.next_cursor ?? undefined : undefined })
-    setFailedGroups(['任务', '帖子', '活动', '社区', '用户'].filter((_, index) => result[index].status === 'rejected'))
+    setFailedGroups(['任务', '帖子', '活动', '节点', '用户'].filter((_, index) => result[index].status === 'rejected'))
     if (result.some((r) => r.status === 'rejected')) setError('部分搜索结果暂时无法加载，请重试。')
     setLoading(false)
   }
@@ -74,9 +74,9 @@ function SearchResults({ q, session }: { q?: string; session: RiceSession | null
   }
   const emptyMessage = (title: string) => failedGroups.includes(title) ? '暂时无法加载，请重试。' : loading ? '' : `没有相关${title}`
   const hasResults = posts.length + tasks.length + events.length + nodes.length + users.length > 0
-  return <div className="page search-page"><header className="search-header"><div className="global-search-field"><TextInput label="搜索帖子、任务、活动、社区、用户" isLabelHidden placeholder="搜索帖子、任务、活动、社区、用户" value={query} onChange={setQuery} onEnter={() => void search()} width="100%" hasClear /><Button label="搜索" variant="primary" isDisabled={!query.trim() || loading} clickAction={() => search()} /></div></header>
+  return <div className="page search-page"><header className="search-header"><div className="global-search-field"><TextInput label="搜索帖子、任务、活动、节点、用户" isLabelHidden placeholder="搜索帖子、任务、活动、节点、用户" value={query} onChange={setQuery} onEnter={() => void search()} width="100%" hasClear /><Button label="搜索" variant="primary" isDisabled={!query.trim() || loading} clickAction={() => search()} /></div></header>
     {error && <p className="inline-error" role="alert">{error}</p>}{loading && <LoadingState label={hasResults ? '正在加载更多结果…' : '正在搜索…'} />}
-    {!searched ? <p className="search-hint">输入关键词，搜索帖子、任务、活动、社区、用户。</p> : loading && !hasResults ? null : <div key={searched}>
+    {!searched ? <p className="search-hint">输入关键词，搜索帖子、任务、活动、节点、用户。</p> : loading && !hasResults ? null : <div key={searched}>
       <SearchGroup title="帖子" count={posts.length} hasMore={!!cursors.posts} emptyMessage={emptyMessage('帖子')}>
         <div className="post-list">{posts.map((post) => <PostCard post={post} key={post.uri} />)}</div>
         {cursors.posts && <Button label="更多帖子" variant="ghost" isDisabled={loading} clickAction={() => more('posts')} />}
@@ -89,8 +89,8 @@ function SearchResults({ q, session }: { q?: string; session: RiceSession | null
         <div className="task-list">{events.map((event) => <EventCard event={event} key={event.id} />)}</div>
         {cursors.events && <Button label="更多活动" variant="ghost" isDisabled={loading} clickAction={() => more('events')} />}
       </SearchGroup>
-      <SearchGroup title="社区" count={nodes.length} emptyMessage={emptyMessage('社区')}>
-        <div className="node-list">{nodes.map((node) => <NodeCard node={node} key={node.id} />)}</div>
+      <SearchGroup title="节点" count={nodes.length} emptyMessage={emptyMessage('节点')}>
+        <ul className="node-list node-directory">{nodes.map((node) => <NodeListRow node={node} key={node.id} />)}</ul>
       </SearchGroup>
       <SearchGroup title="用户" count={users.length} hasMore={!!cursors.users} emptyMessage={emptyMessage('用户')}>
         <div className="people-list">{users.map((user) => <Link to="/profile/$actor" params={{ actor: user.did }} className="person-row search-person-row" key={user.id}>

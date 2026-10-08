@@ -1,5 +1,4 @@
 import { Button } from '@astryxdesign/core/Button'
-import { EmptyState } from '@astryxdesign/core/EmptyState'
 import { TextArea } from '~/components/AutoTextArea'
 import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useId, useRef, useState } from 'react'
@@ -15,6 +14,7 @@ import type { PostThread, PostView } from '~/lib/models'
 import { MAX_POST_TEXT_LENGTH } from '~/lib/pds'
 
 import { useStoredSession } from '../session/session'
+import { PostRewardDialog } from './PostRewardDialog'
 import {
   clearCachedFeed,
   createdPostView,
@@ -58,6 +58,7 @@ function PostThreadContent({
   const [replyTo, setReplyTo] = useState<PostView | null>(null)
   const [replyNotice, setReplyNotice] = useState('')
   const [isReplying, setReplying] = useState(false)
+  const [rewardOpen, setRewardOpen] = useState(false)
   const focusRequested = useRef(false)
   const replyComposerId = useId()
   const shownPost = thread?.post ?? readRememberedPost(uri, session?.pds.did)
@@ -195,6 +196,7 @@ function PostThreadContent({
                 {replyTo && <div className="reply-composer-target"><span>回复 {authorDisplayName(replyTo.author)}</span><Button label="取消回复" variant="ghost" size="sm" onClick={() => setReplyTo(null)} /></div>}
                 <TextArea
                   label={replyTo ? `回复 ${authorDisplayName(replyTo.author)}` : '写下评论'}
+                  isLabelHidden
                   value={replyText}
                   onChange={setReplyText}
                   maxLength={MAX_POST_TEXT_LENGTH}
@@ -204,6 +206,7 @@ function PostThreadContent({
                 />
                 {replyNotice && <p className="reply-composer-notice" role="status">{replyNotice}</p>}
                 <div className="form-actions">
+                  {thread.post.author.did !== session.pds.did && <Button label="赞赏稻米" variant="ghost" onClick={() => setRewardOpen(true)} />}
                   <Button
                     label="发布评论"
                     variant="primary"
@@ -214,12 +217,9 @@ function PostThreadContent({
                 </div>
               </div>}
 
-              <h2>评论 <span>{thread.replies.length}</span></h2>
-              {!thread.replies.length ? (
-                <div className="empty-panel replies-empty">
-                  <EmptyState title="还没有评论" description="成为第一个参与讨论的人。" />
-                </div>
-              ) : (
+              <div className="business-heading"><h2>评论 <span>{thread.replies.length}</span></h2></div>
+              {session && rewardOpen && <PostRewardDialog post={thread.post} session={session} onClose={() => setRewardOpen(false)} />}
+              {thread.replies.length > 0 && (
                 <div className="reply-list">
                   {thread.replies.filter((reply) => reply.parentUri === thread.post.uri).map((reply) => (
                     <div className="reply-thread" key={reply.post.uri}>
@@ -253,7 +253,6 @@ function PostThreadContent({
                     isLoading={isReplying}
                     isDisabled={participationClosed || hasParticipated}
                   />
-                  <small>参与将作为一条评论写入该活动帖子。</small>
                   <em role="status">{replyNotice}</em>
                 </div>
               ) : null}

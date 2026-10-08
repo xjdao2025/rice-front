@@ -32,6 +32,6 @@ export function MyTasksPage({ initialData = null, initialError = '', loaderToken
   const selected = visibleOptions.some(([value]) => value === group) ? group : 'all'
   const shown = selected === 'all' ? tasks : tasks.filter((task) => groupOf(task) === selected)
   return <div className="page business-panel list-panel"><div className="business-heading"><h1>我的任务</h1><select aria-label="我的任务筛选" value={selected} onChange={(event) => setGroup(event.target.value as Group | 'all')}>{visibleOptions.map(([value, label]) => <option key={value} value={value}>{label} {value === 'all' ? tasks.length : tasks.filter((task) => groupOf(task) === value).length}</option>)}</select></div>
-    {initialError && <p className="inline-error" role="alert">{initialError}</p>}<section className="task-list">{shown.map((task) => <TaskCard task={task} compact key={task.id} />)}</section>{!initialError && shown.length === 0 && <p className="search-hint">这里还没有任务。</p>}
+    {initialError && <p className="inline-error" role="alert">{initialError}</p>}<section className="task-list">{shown.map((task) => <TaskCard task={!own(task) && task.my_application_status === 'appointed' && task.my_status ? { ...task, status: task.my_status } : task} compact key={task.id} />)}</section>{!initialError && shown.length === 0 && <p className="search-hint">这里还没有任务。</p>}
   </div>
 }

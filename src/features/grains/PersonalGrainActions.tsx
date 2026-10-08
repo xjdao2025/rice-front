@@ -44,7 +44,7 @@ export function ReceiveGrainPage() {
   }
   return <div className="page business-panel form-stack">
         <div style={{ background: 'white', padding: 16, alignSelf: 'center' }}><QRCode value={link} size={180} title="个人稻米接收码" /></div>
-        <strong>@{session.user.handle}</strong><p>请对方扫描接收码，核对收款人后发送稻米。</p>
+        <strong>@{session.user.handle}</strong><p>请对方扫描稻米接收码，核对接收人后发送稻米。</p>
         <a href={link} style={{ overflowWrap: 'anywhere' }}>{link}</a>
         {copyError && <p className="inline-error" role="alert">{copyError}</p>}
         <div className="form-actions"><Button label={copied ? '已复制' : '复制接收链接'} variant="primary" clickAction={copy} /></div>
@@ -76,7 +76,7 @@ function SendGrainForm({ session, to }: { session: RiceSession; to?: string }) {
   const mounted = useRef(true)
   useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
   const current = () => mounted.current && readStoredSession()?.token === session.token
-  const amountError = amount ? integerInputError(amount, '发送金额', 1) : null
+  const amountError = amount ? integerInputError(amount, '发送稻米数量', 1) : null
   const changeIdentifier = (value: string) => {
     lookupVersion.current++
     autoChecked.current = ''
@@ -101,7 +101,7 @@ function SendGrainForm({ session, to }: { session: RiceSession; to?: string }) {
     } catch (reason) {
       if (current() && version === lookupVersion.current) {
         setRecipient(null)
-        setError(reason instanceof Error ? reason.message : '未找到该收款人。')
+        setError(reason instanceof Error ? reason.message : '未找到该接收人。')
       }
       return null
     } finally {
@@ -148,12 +148,12 @@ function SendGrainForm({ session, to }: { session: RiceSession; to?: string }) {
       {receipt ? <><strong role="status">已向 @{receipt.to.handle} 发送 {receipt.amount} 稻米</strong><Link to="/me/grains">查看稻米明细</Link><div className="form-actions"><Button label="完成" variant="primary" onClick={() => void navigate({ to: '/me/grains' })} /></div></> : <>
         <p className="muted">个人测试稻米</p>
         <div className="grain-recipient-field">
-          <TextInput label="收款人" value={identifier} onChange={changeIdentifier} onBlur={() => autoCheck(identifier)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.nativeEvent.isComposing) autoCheck(identifier) }} description="填写手机号、完整用户名或 DID。" isDisabled={busy || confirming || uncertain} width="100%" />
-          <IconButton label="扫描收款码" icon={<ScanLine size={22} />} variant="ghost" isDisabled={busy || confirming || uncertain} onClick={() => void navigate({ to: '/me/grains/send/scan', search: {} })} />
+          <TextInput label="稻米接收人" value={identifier} onChange={changeIdentifier} onBlur={() => autoCheck(identifier)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.nativeEvent.isComposing) autoCheck(identifier) }} description="填写手机号、完整用户名或 DID。" isDisabled={busy || confirming || uncertain} width="100%" />
+          <IconButton label="扫描稻米接收码" icon={<ScanLine size={22} />} variant="ghost" isDisabled={busy || confirming || uncertain} onClick={() => void navigate({ to: '/me/grains/send/scan', search: {} })} />
         </div>
-        {recipient && !confirming && <div role="status">收款人：<strong>{recipient.nickname || recipient.handle}</strong>（@{recipient.handle}）</div>}
+        {recipient && !confirming && <div role="status">接收人：<strong>{recipient.nickname || recipient.handle}</strong>（@{recipient.handle}）</div>}
         {!confirming && error && <p className="inline-error" role="alert">{error}</p>}
-        <TextInput label="发送金额" value={amount} onChange={setAmount} status={amountError ? { type: 'error', message: amountError } : undefined} isDisabled={busy || confirming || uncertain} width="100%" />
+        <TextInput label="发送稻米数量" value={amount} onChange={setAmount} status={amountError ? { type: 'error', message: amountError } : undefined} isDisabled={busy || confirming || uncertain} width="100%" />
         <TextInput label="留言" value={memo} onChange={setMemo} isDisabled={busy || confirming || uncertain} width="100%" isOptional />
         {!confirming && <div className="form-actions"><Button label="下一步" variant="primary" isLoading={busy} isDisabled={busy || !identifier.trim() || !amount || !!amountError} clickAction={run} /></div>}
       </>}
@@ -161,7 +161,7 @@ function SendGrainForm({ session, to }: { session: RiceSession; to?: string }) {
       <div className="business-panel form-stack">
         <section><Avatar name={recipient.nickname || recipient.handle} src={recipient.avatar?.url} /><strong>{recipient.nickname || recipient.handle}</strong><p>@{recipient.handle}</p><p>确认发送 {amount} 稻米？</p></section>
         {error && <p className="inline-error" role="alert">{error}</p>}
-        {uncertain ? <p role="alert">转账结果尚未确认，请先<Link to="/me/grains">查看稻米明细</Link>，确认未扣款后再重新发送。</p> : <div className="form-actions">
+        {uncertain ? <p role="alert">发送结果尚未确认，请先<Link to="/me/grains">查看稻米明细</Link>，确认未扣除稻米后再重新发送。</p> : <div className="form-actions">
           <Button label="返回修改" variant="secondary" isDisabled={busy} onClick={cancelConfirmation} />
           <Button label="确认发送" variant="primary" isLoading={busy} isDisabled={busy} clickAction={run} />
         </div>}

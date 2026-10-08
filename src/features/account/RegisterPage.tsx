@@ -15,6 +15,7 @@ import {
 } from './api'
 import { VerificationFields } from './VerificationFields'
 import { ProfileEditPage } from './ProfileEditPage'
+import { PasswordInput } from '~/components/PasswordInput'
 
 export function RegisterPage({ returnTo }: { returnTo?: string }) {
   const [channel, setChannel] = useState<VerificationChannel>('sms')
@@ -100,9 +101,8 @@ export function RegisterPage({ returnTo }: { returnTo?: string }) {
               onError={setError}
               onSent={() => setNotice(options?.verification_mode === 'log' ? '测试验证码已写入服务器日志。' : `验证码已发送，请检查${selectedChannel === 'email' ? '邮箱' : '短信'}。`)}
             />
-            <TextInput
+            <PasswordInput
               label="密码"
-              type="password"
               value={password}
               onChange={setPassword}
               description="至少 8 位。"

@@ -11,7 +11,7 @@ it('only treats an explicit current-user 401 as an expired session', async () =>
     .mockRejectedValueOnce(new TypeError('Failed to fetch')))
   await expect(requestCurrentUser('old-token')).resolves.toBeNull()
   await expect(requestCurrentUser('valid-token')).rejects.toThrow('服务暂不可用')
-  await expect(requestCurrentUser('valid-token')).rejects.toThrow('Failed to fetch')
+  await expect(requestCurrentUser('valid-token')).rejects.toThrow('网络连接失败')
 })
 
 describe('PDS session refresh', () => {

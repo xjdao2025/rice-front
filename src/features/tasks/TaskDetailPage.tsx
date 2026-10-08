@@ -12,6 +12,7 @@ import { CheckCircle2, CircleAlert, Sprout } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { formatTimestamp } from '~/lib/format'
+import { businessCopy } from '~/lib/business-copy'
 
 import { useStoredSession } from '../session/session'
 import { LoginLink } from '../session/LoginLink'
@@ -47,15 +48,15 @@ export function TaskDetailPage({ taskId, initial }: { taskId: string; initial?: 
 function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetailInitial }) {
   const { session, isReady } = useStoredSession()
   const [task, setTask] = useState<RiceTask | null>(initial?.task ?? null)
-  const now = useTimeBoundary(task?.status === 'open' ? [task.application_deadline] : task?.status === 'in_progress' ? [task.execution_deadline] : [])
+  const now = useTimeBoundary(task && ['open', 'in_progress', 'overdue', 'under_review'].includes(task.status) ? [task.application_deadline, task.execution_deadline] : [])
   const [error, setError] = useState(initial?.error ?? '')
   const [loading, setLoading] = useState(!initial)
   const skipInitialFetch = useRef(Boolean(initial))
   const [busy, setBusy] = useState(false)
   const [applyOpen, setApplyOpen] = useState(false)
   const [cancelOpen, setCancelOpen] = useState(false)
-  const [approveOpen, setApproveOpen] = useState(false)
-  const [rejectOpen, setRejectOpen] = useState(false)
+  const [approveId, setApproveId] = useState<string | null>(null)
+  const [rejectId, setRejectId] = useState<string | null>(null)
   const [reason, setReason] = useState('')
   const [contact, setContact] = useState('')
   const [appointmentReason, setAppointmentReason] = useState('')
@@ -75,13 +76,13 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
     return () => { active = false }
   }, [isReady, session?.token, taskId])
 
-  const pendingSubmission = useMemo(
-    () => task?.submissions?.find((submission) => submission.status === 'pending') ?? null,
+  const pendingSubmissions = useMemo(
+    () => task?.submissions?.filter((submission) => submission.status === 'pending') ?? [],
     [task],
   )
   const latestRejected = useMemo(
-    () => [...(task?.submissions ?? [])].reverse().find((item) => item.status === 'changes_requested'),
-    [task],
+    () => [...(task?.submissions ?? [])].reverse().find((item) => item.status === 'changes_requested' && (item.user?.id ?? task?.assignee?.id) === session?.user.id),
+    [task, session?.user.id],
   )
 
   const run = async (action: () => Promise<RiceTask>) => {
@@ -91,8 +92,8 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
       const next = await action()
       setTask(next)
       window.dispatchEvent(new Event('rice-changed'))
-      setApproveOpen(false)
-      setRejectOpen(false)
+      setApproveId(null)
+      setRejectId(null)
       setApplyOpen(false)
       setCancelOpen(false)
       setReason('')
@@ -115,6 +116,11 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
   const overdueProgress = pastTaskExecutionDeadline(task, now)
   const actions = new Set(task.allowed_actions)
   const token = session?.token
+  const capacity = task.capacity ?? 1
+  const multiple = capacity > 1
+  const assignees = task.assignees ?? (task.assignee ? [task.assignee] : [])
+  const totalReward = task.total_reward_amount ?? task.reward_amount * capacity
+  const recruiting = !task.application_closed && (!task.application_deadline || Date.parse(task.application_deadline) > now) && (task.appointed_count ?? assignees.length) < capacity
   const visibleEvents = (task.events ?? []).filter((event) => event.to_status !== 'draft')
   const pastRecords = [
     ...(task.past_applications ?? []).map(value => ({ type: 'application' as const, value })),
@@ -123,7 +129,7 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
 
   return (
     <div className="page task-detail-page">
-      <article className="task-detail-card">
+      <article className="content-card business-panel">
         <header className="task-detail-heading">
           <div>
             <span className={`task-status status-${expiredOpen ? 'expired' : overdueProgress ? 'overdue' : task.status}`}>{taskDisplayStatus(task, now)}</span>
@@ -141,18 +147,20 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
         {task.requirement && <section className="task-description"><h2>交付要求</h2><p>{task.requirement}</p></section>}
         <section className="task-facts">
           <div><strong>{task.application_count}</strong><span>申请人数</span></div>
-          <div><strong>{task.assignee?.nickname || task.assignee?.handle || '待任命'}</strong><span>承接者</span></div>
-          <div><strong className="rice-amount" aria-label={`${task.reward_amount} 稻米`}><Sprout size={24} />{task.reward_amount}</strong><span>任务报酬</span></div>
+          <div><strong>{multiple ? `${task.appointed_count ?? assignees.length} / ${capacity}` : task.assignee?.nickname || task.assignee?.handle || '待任命'}</strong><span>{multiple ? '已接收 / 人数上限' : '承接者'}</span></div>
+          <div><strong className="rice-amount" aria-label={`${task.reward_amount} 稻米`}><Sprout size={24} />{task.reward_amount}</strong><span>{multiple ? '每人奖励' : '任务奖励'}</span></div>
         </section>
 
-        {task.applications?.filter(application => application.status === 'appointed' && application.contact).map(application => <p className="task-neutral-note" key={application.id}>承接者联系方式：{application.contact}</p>)}
+        {multiple && <p className="task-neutral-note">总奖励：{totalReward} 稻米{assignees.length > 0 && ` · 承接者：${assignees.map(user => user.nickname || user.handle).join('、')}`}</p>}
+
+        {task.applications?.filter(application => application.status === 'appointed' && application.contact).map(application => <p className="task-neutral-note" key={application.id}>{multiple ? `${application.user.nickname || application.user.handle}：` : '承接者联系方式：'}{application.contact}</p>)}
         {task.my_application?.contact && <p className="task-neutral-note">我的联系方式：{task.my_application.contact}</p>}
 
         {task.reward_status === 'settled' ? (
           <div className="task-success-note"><CheckCircle2 size={18} /> 任务奖励已发放给承接者</div>
         ) : null}
         {task.reward_status === 'refunded' ? (
-          <div className="task-neutral-note">任务奖励已退回{task.funding_node_id ? '社区' : '发布者'}可用余额。</div>
+          <div className="task-neutral-note">任务奖励对应的稻米已退还至{task.funding_node_id ? '节点' : '发布者'}账户。</div>
         ) : null}
 
         {task.application_deadline ? (
@@ -166,10 +174,10 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
         ) : null}
         {task.status === 'draft' ? <div className="task-neutral-note">草稿仅你可见，发布后才进入任务列表。</div> : null}
         {(task.status === 'expired' || expiredOpen) ? <div className="task-neutral-note">该任务已失效。</div> : null}
-        {latestRejected && ['in_progress', 'overdue'].includes(task.status) ? <ChangesRequested submission={latestRejected} /> : null}
+        {latestRejected && actions.has('submit_result') ? <ChangesRequested submission={latestRejected} /> : null}
         {error ? <div className="inline-error" role="alert">{error}</div> : null}
 
-        {!session && task.status === 'open' && !task.application_closed && (!task.application_deadline || Date.parse(task.application_deadline) > now) && <section className="task-action-section"><LoginLink className="primary-link" returnTo={`/tasks/${encodeURIComponent(taskId)}`}>登录后申请承接</LoginLink></section>}
+        {!session && ['open', 'in_progress', 'overdue', 'under_review'].includes(task.status) && recruiting && <section className="task-action-section"><LoginLink className="primary-link" returnTo={`/tasks/${encodeURIComponent(taskId)}`}>登录后申请承接</LoginLink></section>}
 
         {actions.has('publish') && token ? (
           <section className="task-action-section">
@@ -178,7 +186,7 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
         ) : null}
         {actions.has('edit') && token && task.status !== 'draft' && task.status !== 'completed' && <section className="task-action-section"><Link to="/compose" search={{ kind: 'task', editId: task.id }} className="primary-link">编辑任务</Link></section>}
 
-        {actions.has('apply') && token && !task.application_closed && !expiredOpen ? (
+        {actions.has('apply') && token && recruiting ? (
           <section className="task-action-section">
             {!applyOpen ? (
               <Button label="申请承接" variant="primary" onClick={() => setApplyOpen(true)} />
@@ -220,7 +228,7 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
           <div className="task-neutral-note">你申请过该任务；任务现已失效。</div>
         ) : null}
 
-        {(actions.has('appoint') || actions.has('reject_application')) && token && !expiredOpen ? (
+        {(actions.has('appoint') || actions.has('reject_application')) && token && recruiting ? (
           <section className="task-action-section">
             <h2>待审批申请</h2>
             {actions.has('appoint') && <TextArea
@@ -247,7 +255,7 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
                       }))}
                     />}
                     {actions.has('appoint') && <Button
-                      label="选定此人"
+                      label="接收申请"
                       variant="primary"
                       isDisabled={busy}
                       clickAction={() => run(() => appointTaskApplication({
@@ -270,7 +278,7 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
           <section className="task-action-section">
             <Button label="取消任务" variant="destructive" onClick={() => setCancelOpen(true)} />
             {cancelOpen && <DetailDialog title="确认取消任务" className="post-dialog business-dialog compose-close-dialog" onClose={() => { if (!busy) setCancelOpen(false) }}><div className="business-panel form-stack">
-              <p>取消后任务保留记录，不能再申请；{task.reward_amount} 稻米报酬将退回。</p>
+              <p>取消后任务保留记录，不能再申请；已冻结的 {totalReward} 稻米将退还。</p>
               {error && <p className="inline-error" role="alert">{error}</p>}
               <div className="form-actions"><Button label="保留任务" variant="secondary" isDisabled={busy} onClick={() => setCancelOpen(false)} /><Button label="确认取消" variant="destructive" isDisabled={busy} clickAction={() => run(() => cancelTask({ data: { token, taskId } }))} /></div>
             </div></DetailDialog>}
@@ -299,11 +307,11 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
           </section>
         ) : null}
 
-        {pendingSubmission && (actions.has('approve_result') || actions.has('request_changes')) && token ? (
-          <section className="task-action-section review-section">
-            <h2>承接者提交</h2>
+        {(actions.has('approve_result') || actions.has('request_changes')) && token && pendingSubmissions.map(pendingSubmission => (
+          <section className="task-action-section review-section" key={pendingSubmission.id}>
+            <h2>{multiple ? `${pendingSubmission.user.nickname || pendingSubmission.user.handle}的提交` : '承接者提交'}</h2>
             <p className="submission-copy">{pendingSubmission.body}</p>
-            {rejectOpen && <TextArea
+            {rejectId === pendingSubmission.id && <TextArea
               label="退回理由"
               isRequired
               value={reviewReason}
@@ -312,8 +320,8 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
               width="100%"
             />}
             <div className="form-actions">
-              {rejectOpen ? <>
-                <Button label="取消" variant="secondary" onClick={() => { setRejectOpen(false); setReviewReason('') }} />
+              {rejectId === pendingSubmission.id ? <>
+                <Button label="取消" variant="secondary" onClick={() => { setRejectId(null); setReviewReason('') }} />
                 <Button
                   label="确认退回修改"
                   variant="destructive"
@@ -323,24 +331,24 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
                   }))}
                 />
               </> : <>
-                <Button label="退回修改" variant="secondary" isDisabled={busy} onClick={() => { setRejectOpen(true); setApproveOpen(false) }} />
-                <Button label="验收并发放" variant="primary" isDisabled={busy} onClick={() => setApproveOpen(true)} />
+                <Button label="退回修改" variant="secondary" isDisabled={busy} onClick={() => { setRejectId(pendingSubmission.id); setReviewReason(''); setApproveId(null) }} />
+                <Button label="验收并发放" variant="primary" isDisabled={busy} onClick={() => { setApproveId(pendingSubmission.id); setRejectId(null) }} />
               </>}
             </div>
-            {approveOpen && <DetailDialog title="确认验收并发放" className="post-dialog business-dialog compose-close-dialog" onClose={() => { if (!busy) setApproveOpen(false) }}><div className="business-panel form-stack">
-              <p>向 {task.assignee?.nickname || task.assignee?.handle} 发放 {task.reward_amount} 稻米，任务将完成。</p>
+            {approveId === pendingSubmission.id && <DetailDialog title="确认验收并发放" className="post-dialog business-dialog compose-close-dialog" onClose={() => { if (!busy) setApproveId(null) }}><div className="business-panel form-stack">
+              <p>向 {pendingSubmission.user?.nickname || pendingSubmission.user?.handle || task.assignee?.nickname || task.assignee?.handle} 发放 {task.reward_amount} 稻米，{multiple ? '其本次交付将完成' : '任务将完成'}。</p>
               {error && <p className="inline-error" role="alert">{error}</p>}
-              <div className="form-actions"><Button label="返回" variant="secondary" isDisabled={busy} onClick={() => setApproveOpen(false)} /><Button label="确认验收并发放" variant="primary" isDisabled={busy} clickAction={() => run(() => approveTaskResult({ data: { token, taskId, submissionId: pendingSubmission.id } }))} /></div>
+              <div className="form-actions"><Button label="返回" variant="secondary" isDisabled={busy} onClick={() => setApproveId(null)} /><Button label="确认验收并发放" variant="primary" isDisabled={busy} clickAction={() => run(() => approveTaskResult({ data: { token, taskId, submissionId: pendingSubmission.id } }))} /></div>
             </div></DetailDialog>}
           </section>
-        ) : null}
+        ))}
 
         {task.submissions?.length ? (
           <section className="task-history">
             <h2>提交历史</h2>
             {[...task.submissions].reverse().map((submission) => (
               <article key={submission.id}>
-                <header><strong>{submissionStatus(submission)}</strong><time>{formatTimestamp(submission.inserted_at)}</time></header>
+                <header><strong>{multiple && `${submission.user.nickname || submission.user.handle} · `}{submissionStatus(submission)}</strong><time>{formatTimestamp(submission.inserted_at)}</time></header>
                 <p>{submission.body}</p>
                 {submission.review_reason ? <blockquote>{submission.review_reason}</blockquote> : null}
               </article>
@@ -379,11 +387,11 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
                     {' · '}
                     <time>{formatTimestamp(event.inserted_at)}</time>
                   </span>
-                  {event.detail ? <blockquote>{event.detail}</blockquote> : null}
+                  {event.detail ? <blockquote>{businessCopy(event.detail)}</blockquote> : null}
                   {event.action === 'edited' && <HistoryChanges before={event.before} after={event.after} fields={[
-                    ['node_id', '所属社区'], ['title', '任务标题'], ['organizer_contact', '组织方联系方式'],
+                    ['node_id', '所属节点'], ['title', '任务标题'], ['organizer_contact', '组织方联系方式'],
                     ['description', '任务说明'], ['requirement', '交付要求'], ['application_deadline', '申请截止'],
-                    ['execution_deadline', '交付截止'], ['reward_amount', '任务报酬'], ['attachment_ids', '图片'],
+                    ['execution_deadline', '交付截止'], ['reward_amount', '每人奖励'], ['capacity', '人数上限'], ['attachment_ids', '图片'],
                   ]} />}
                 </li>
               ))}

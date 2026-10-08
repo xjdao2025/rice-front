@@ -1,6 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
 
-import { BACKEND_BASE, isSessionAuthError, readJson, requestJson } from '~/lib/http'
+import { BACKEND_BASE, isSessionAuthError, RequestError, requestJson } from '~/lib/http'
 import type { RiceSession, RiceUser } from '~/lib/models'
 import { isPdsSession, isRiceSession, isSessionUser } from './session-data'
 
@@ -93,14 +93,17 @@ export const logoutRice = createServerFn({ method: 'POST' })
   })
 
 export async function requestCurrentUser(token: string): Promise<RiceUser | null> {
-  const response = await fetch(`${BACKEND_BASE}/api/users/me`, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-  // An explicit value survives the server-function boundary; transport/5xx still throw.
-  if (response.status === 401) return null
-  const body = await readJson(response)
-  if (!isSessionUser(body.data)) throw new Error('用户资料返回异常，请稍后重试。')
-  return body.data
+  try {
+    const body = await requestJson<{ data: RiceUser }>(`${BACKEND_BASE}/api/users/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!isSessionUser(body.data)) throw new Error('用户资料返回异常，请稍后重试。')
+    return body.data
+  } catch (error) {
+    // Only an explicit rejection clears login; network errors and timeouts preserve it.
+    if (error instanceof RequestError && error.status === 401) return null
+    throw error
+  }
 }
 
 export const getCurrentUser = createServerFn({ method: 'POST' })

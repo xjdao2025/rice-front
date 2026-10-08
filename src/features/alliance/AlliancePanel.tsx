@@ -14,7 +14,8 @@ import type { RiceAttachment } from '~/lib/models'
 import { getNodes, type CommunityNode } from '../nodes/api'
 import { LoginLink } from '../session/LoginLink'
 import { readStoredSession, useStoredSession } from '../session/session'
-import { getAnnouncement, getAnnouncements, getFoundation, getGovernanceBody, getProposal, getProposals, voteOnProposal, type Announcement, type Foundation, type GovernancePage, type Proposal, type ProposalStatus, type VoteChoice } from './api'
+import { getAnnouncement, getAnnouncements, getFoundation, getGovernanceBody, getGrainGrants, getProposal, getProposals, voteOnProposal, type Announcement, type Foundation, type GovernancePage, type Proposal, type ProposalStatus, type VoteChoice } from './api'
+import { ProposalComments } from './ProposalComments'
 
 const statusLabels = { open: '进行中', passed: '已通过', rejected: '未通过' }
 
@@ -50,12 +51,15 @@ function useGovernanceList<T extends { id: string }>(key: string, load: (before?
 
 export function AlliancePanel() {
   const [foundation, setFoundation] = useState<Foundation | null>(null)
+  const [totalGranted, setTotalGranted] = useState<number | null>(null)
   const [error, setError] = useState('')
   const [revision, setRevision] = useState(0)
   useEffect(() => {
     let active = true
     setError('')
-    void getFoundation().then((value) => { if (active) setFoundation(value) }).catch((e: Error) => { if (active) setError(e.message) })
+    void Promise.all([getFoundation(), getGrainGrants({ data: { limit: 1 } })])
+      .then(([value, grants]) => { if (active) { setFoundation(value); setTotalGranted(grants.meta.total_granted) } })
+      .catch((e: Error) => { if (active) setError(e.message) })
     return () => { active = false }
   }, [revision])
   return <div className="page business-panel list-panel alliance-panel">
@@ -65,7 +69,7 @@ export function AlliancePanel() {
       {!foundation && !error && <LoadingState label="正在加载金库信息…" />}
       {foundation && <div className="alliance-stats grain-metrics">
         <div><span>金库规模</span><b>¥ {foundation.fund_scale.toLocaleString('zh-CN')}</b></div>
-        <div><span>已发行稻米数</span><b>{foundation.issued_grain_scale.toLocaleString('zh-CN')}</b></div>
+        <Link to="/alliance/grain-grants" aria-label="查看已发行稻米明细"><span>已发行稻米数</span><b>{totalGranted?.toLocaleString('zh-CN')}</b><small>查看发放记录 →</small></Link>
       </div>}
     </section>
     <Announcements />
@@ -87,7 +91,7 @@ function NodePreview() {
   return <section aria-label="节点"><div className="business-heading"><h2>节点</h2><Link to="/alliance/nodes" aria-label="查看全部节点">更多</Link></div>
     {error && <p className="inline-error" role="alert">{error} <Button label="重试" variant="ghost" onClick={() => setRevision((v) => v + 1)} /></p>}
     {!nodes && !error && <LoadingState label="正在加载节点…" />}
-    <div className="alliance-node-preview">{nodes?.slice(0, 4).map((node) => <Link to="/nodes/$nodeId" params={{ nodeId: node.id }} key={node.id}><Avatar name={node.name} src={node.logo?.url} /><strong>{node.name}</strong></Link>)}</div>
+    <div className="alliance-node-preview">{nodes?.slice(0, 4).map((node) => <Link to="/nodes/$nodeId" params={{ nodeId: node.id }} key={node.id} aria-label={`查看${node.name}`}><Avatar name={node.name} src={node.logo?.url} /></Link>)}</div>
     {nodes && !nodes.length && <p className="muted">暂无节点。</p>}
   </section>
 }
@@ -126,7 +130,10 @@ function ProposalHeader({ proposal }: { proposal: Proposal }) {
 }
 
 function VoteResults({ proposal }: { proposal: Proposal }) {
-  return <div className="proposal-results">{([['同意', proposal.agree_count], ['反对', proposal.oppose_count]] as const).map(([label, count]) => <div key={label}><span>{label}</span><meter min={0} max={proposal.total_votes || 1} value={count} aria-label={`${label} ${count} 票`} /><span>{count}（{proposal.total_votes ? Math.round(count / proposal.total_votes * 100) : 0}%）</span></div>)}</div>
+  return <div className="proposal-results">{([['同意', proposal.agree_count], ['反对', proposal.oppose_count]] as const).map(([label, count]) => {
+    const percentage = proposal.total_votes ? Math.round(count / proposal.total_votes * 100) : 0
+    return <div key={label}><span>{label}</span><div className="proposal-vote-track" role="meter" aria-label={`${label} ${count} 票`} aria-valuemin={0} aria-valuemax={proposal.total_votes || 1} aria-valuenow={count}><span style={{ width: `${percentage}%` }} /></div><span>{count}（{percentage}%）</span></div>
+  })}</div>
 }
 
 export function GovernanceDetail({ kind, id }: { kind: 'announcement' | 'proposal'; id: string }) {
@@ -165,7 +172,7 @@ export function GovernanceDetail({ kind, id }: { kind: 'announcement' | 'proposa
   }
   const closeConfirmation = () => { if (!pending.current) setVoteChoice(null) }
   const feedback = error && <p className="inline-error" role="alert">{error} <Button label="刷新" variant="ghost" isDisabled={busy} onClick={() => { if (!pending.current) { setVoteChoice(null); setRevision((v) => v + 1) } }} /></p>
-  return <div className="page business-panel">
+  return <div className="page content-card business-panel governance-detail">
     {!voteChoice && feedback}
     {!document && !error && <LoadingState label="正在加载详情…" />}
     {document && <>{proposal && <ProposalHeader proposal={proposal} />}<h1>{document.title}</h1>{!proposal && <time className="muted">{formatTimestamp(document.inserted_at)}</time>}
@@ -173,6 +180,7 @@ export function GovernanceDetail({ kind, id }: { kind: 'announcement' | 'proposa
       {proposal && <section className="business-section"><p>总投票数：{proposal.total_votes} · {open ? `截止时间：${formatTimestamp(proposal.closes_at)}` : '已结束'}</p><VoteResults proposal={proposal} />
         {proposal.my_vote ? <p role="status">已投票：{proposal.my_vote === 'agree' ? '同意' : '反对'}</p> : open && (session ? <div className="form-actions"><Button label="同意" variant="primary" isDisabled={busy} onClick={() => { setError(''); setVoteChoice('agree') }} /><Button label="反对" variant="secondary" isDisabled={busy} onClick={() => { setError(''); setVoteChoice('oppose') }} /></div> : <LoginLink>登录后投票</LoginLink>)}
       </section>}
+      {proposal && <ProposalComments key={proposal.id} proposalId={proposal.id} />}
     </>}
     {proposal && voteChoice && <DetailDialog title="确认投票" className="post-dialog business-dialog compose-close-dialog" onClose={closeConfirmation}><div className="business-panel form-stack">
       <strong>{proposal.title}</strong><p>确认投票：{voteChoice === 'agree' ? '同意' : '反对'}？</p><p className="muted">投票后无法修改。</p>
@@ -187,6 +195,7 @@ function GovernanceBody({ attachment }: { attachment: RiceAttachment }) {
   const [html, setHtml] = useState<string | null>(null)
   const [error, setError] = useState('')
   const readable = attachment.content_type.startsWith('text/')
+  const image = attachment.content_type.startsWith('image/')
   useEffect(() => {
     if (!readable) return
     let active = true
@@ -197,11 +206,12 @@ function GovernanceBody({ attachment }: { attachment: RiceAttachment }) {
   // Legacy proposals stored HTML in text/plain .txt attachments.
   const htmlPreview = attachment.content_type === 'text/html' || /<(?:!doctype|html|body|p|div|h[1-6]|img|ul|ol|li|br|table|blockquote|a|span|strong)(?:\s|>)/i.test(html ?? '')
   const theme = html === null ? null : window.getComputedStyle(window.document.documentElement)
-  const bodyStyle = theme ? `body{margin:0;padding:12px;color:${theme.getPropertyValue('--xj-text')};font:${theme.getPropertyValue('--xj-font-body')}/1.65 system-ui,sans-serif;overflow-wrap:anywhere}img{max-width:100%;height:auto}a{color:${theme.getPropertyValue('--xj-accent')}}` : ''
+  const bodyStyle = theme ? `body{margin:0;color:${theme.getPropertyValue('--xj-text-soft')};font-size:${theme.getPropertyValue('--xj-font-body')};line-height:${theme.getPropertyValue('--xj-detail-body-line-height')};overflow-wrap:anywhere}.proposal-content{padding-top:0!important;font-size:inherit!important;line-height:inherit!important;word-break:normal!important}img{position:static!important;max-width:100%!important;width:auto!important;height:auto!important;object-fit:contain!important}*:has(>img){max-width:100%!important;max-height:none!important;aspect-ratio:auto!important;overflow:visible!important}a{color:${theme.getPropertyValue('--xj-accent')}}` : ''
   return <div className="governance-body">
     {error && <p className="inline-error" role="alert">正文暂时无法加载：{error}</p>}
     {readable && html === null && !error && <LoadingState label="正在加载正文…" />}
-    {html !== null && (htmlPreview ? <iframe title={attachment.filename || '正文'} sandbox="" referrerPolicy="no-referrer" srcDoc={`<base href="${new URL(url, window.location.origin).href.replaceAll('"', '&quot;')}"><style>${bodyStyle}</style>${html}`} /> : <p className="business-description">{html}</p>)}
-    <a href={url} target="_blank" rel="noopener noreferrer">打开原文附件</a>
+    {html !== null && (htmlPreview ? <iframe title={attachment.filename || '正文'} sandbox="allow-same-origin" referrerPolicy="no-referrer" onLoad={(event) => { event.currentTarget.style.height = `${event.currentTarget.contentDocument?.documentElement.scrollHeight ?? 0}px` }} srcDoc={`<base href="${new URL(url, window.location.origin).href.replaceAll('"', '&quot;')}"><style>${bodyStyle}</style>${html}`} /> : <p className="business-description">{html}</p>)}
+    {image && <img className="governance-attachment-image" src={url} alt={attachment.filename || '附件图片'} />}
+    <a href={readable ? `${url}?download=1` : url} target="_blank" rel="noopener noreferrer">{readable ? '下载原文附件' : '打开附件'}</a>
   </div>
 }

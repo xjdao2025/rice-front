@@ -3,7 +3,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { BACKEND_BASE, requestJson } from '~/lib/http'
 import type { RicePublicUser } from '~/lib/models'
 
-export type WalletEntry = { id: string; kind: 'reserved' | 'refunded' | 'grant' | 'gift' | 'reward' | 'task_reward' | 'event_fee' | 'community_fund'; amount: number; subject_uri: string | null; inserted_at: string; from_user: Pick<RicePublicUser, 'id' | 'nickname' | 'handle'> | null; to_user: Pick<RicePublicUser, 'id' | 'nickname' | 'handle'> | null; from_node?: { id: string; name: string } | null; to_node?: { id: string; name: string } | null }
+export type WalletEntry = { id: string; kind: 'reserved' | 'refunded' | 'grant' | 'gift' | 'reward' | 'task_reward' | 'event_fee' | 'community_fund'; amount: number; memo?: string | null; subject_uri: string | null; inserted_at: string; from_user: Pick<RicePublicUser, 'id' | 'nickname' | 'handle'> | null; to_user: Pick<RicePublicUser, 'id' | 'nickname' | 'handle'> | null; from_node?: { id: string; name: string } | null; to_node?: { id: string; name: string } | null }
 export type RiceWallet = { balance: number; frozen: number; earned: number; entries: WalletEntry[]; next_cursor?: string | null }
 export const getWallet = createServerFn({ method: 'POST' })
   .validator((data: { token: string; before?: string; nodeId?: string }) => data)
@@ -13,12 +13,12 @@ export function walletEntryIncoming(entry: WalletEntry, userId: string, nodeId?:
 type PersonalTransferInput = { token: string; to: string; amount: number; memo?: string }
 export type PersonalTransfer = { id: string; amount: number; to: Pick<RicePublicUser, 'id' | 'did' | 'handle' | 'nickname'> }
 export async function requestPersonalTransfer(data: PersonalTransferInput) {
-  if (!data.to.trim() || !Number.isSafeInteger(data.amount) || data.amount < 1) throw new Error('请输入收款人和正整数金额。')
+  if (!data.to.trim() || !Number.isSafeInteger(data.amount) || data.amount < 1) throw new Error('请输入接收人和正整数稻米数量。')
   const result = (await requestJson<{ data: PersonalTransfer }>(`${BACKEND_BASE}/api/grain_transfers`, {
     method: 'POST', headers: { Authorization: `Bearer ${data.token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ to: data.to.trim(), amount: data.amount, kind: 'gift', memo: data.memo?.trim() }),
   })).data
-  if (!result?.id || result.amount !== data.amount || !result.to?.id || !result.to.handle) throw new Error('转账返回的信息不完整，请先查看稻米明细。')
+  if (!result?.id || result.amount !== data.amount || !result.to?.id || !result.to.handle) throw new Error('稻米发送结果不完整，请先查看稻米明细。')
   return result
 }
 export const sendPersonalGrains = createServerFn({ method: 'POST' })

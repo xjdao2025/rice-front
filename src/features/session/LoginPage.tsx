@@ -6,6 +6,7 @@ import { useRef, useState } from 'react'
 
 import { loginRice } from '~/features/session/api'
 import { useStoredSession } from '~/features/session/session'
+import { PasswordInput } from '~/components/PasswordInput'
 import { loginReturnTo } from './login-redirect'
 import { useAuthOptions } from './useAuthOptions'
 
@@ -45,7 +46,7 @@ export function LoginPage({ returnTo }: { returnTo?: string }) {
       <section className="page-intro">
         <div className="eyebrow">欢迎回来</div>
         <h1>登录</h1>
-        <p>登录后即可发布内容、参与社区互动。</p>
+        <p>登录后即可发布内容、参与节点互动。</p>
       </section>
 
       <section className="login-card">
@@ -62,10 +63,9 @@ export function LoginPage({ returnTo }: { returnTo?: string }) {
           width="100%"
           hasAutoFocus
         />
-        <TextInput
+        <PasswordInput
           ref={passwordInput}
           label="密码"
-          type="password"
           value={password}
           onChange={setPassword}
           placeholder="输入密码"

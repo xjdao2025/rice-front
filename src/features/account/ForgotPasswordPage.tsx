@@ -1,11 +1,11 @@
 import { Button } from '@astryxdesign/core/Button'
-import { TextInput } from '@astryxdesign/core/TextInput'
 import { useNavigate } from '@tanstack/react-router'
 import { KeyRound } from 'lucide-react'
 import { useState } from 'react'
 
 import { resetRicePassword, type VerificationChannel } from './api'
 import { VerificationFields } from './VerificationFields'
+import { PasswordInput } from '~/components/PasswordInput'
 
 export function ForgotPasswordPage() {
   const [channel, setChannel] = useState<VerificationChannel>('sms')
@@ -58,9 +58,8 @@ export function ForgotPasswordPage() {
           onError={setError}
           onSent={() => setNotice('验证码已发送，请检查短信或邮箱。')}
         />
-        <TextInput
+        <PasswordInput
           label="新密码"
-          type="password"
           value={password}
           onChange={setPassword}
           description="至少 8 位"

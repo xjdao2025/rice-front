@@ -10,7 +10,7 @@ it('resolves phone and username recipients only through the authenticated Rice p
     expect(await requestTransferRecipient({ token: 'rice-token', identifier })).toEqual(recipient)
     const [url, init] = fetch.mock.calls.at(-1)!
     expect(url).toMatch(/\/api\/grain_transfers\/recipient$/)
-    expect(init).toEqual({ method: 'POST', headers: { Authorization: 'Bearer rice-token', 'Content-Type': 'application/json' }, body: JSON.stringify({ to }) })
+    expect(init).toMatchObject({ method: 'POST', headers: { Authorization: 'Bearer rice-token', 'Content-Type': 'application/json' }, body: JSON.stringify({ to }) })
   }
 })
 it('sends personal gifts with Rice auth, rejects invalid amounts before transport and refuses incomplete receipts', async () => {
@@ -20,7 +20,7 @@ it('sends personal gifts with Rice auth, rejects invalid amounts before transpor
   for (const amount of [0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1]) {
     await expect(requestPersonalTransfer({ token: 'rice-token', to: 'receiver', amount })).rejects.toThrow('正整数')
   }
-  await expect(requestPersonalTransfer({ token: 'rice-token', to: ' ', amount: 1 })).rejects.toThrow('收款人')
+  await expect(requestPersonalTransfer({ token: 'rice-token', to: ' ', amount: 1 })).rejects.toThrow('接收人')
   expect(fetch).not.toHaveBeenCalled()
   await expect(requestPersonalTransfer({ token: 'rice-token', to: ' receiver ', amount: 12, memo: '  谢谢  ' })).resolves.toEqual(receipt)
   const [url, init] = fetch.mock.calls[0]

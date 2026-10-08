@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import { AutoLoadMore } from '~/components/AutoLoadMore'
 import { LoadingState } from '~/components/LoadingState'
 import { authorDisplayName, formatTimestamp } from '~/lib/format'
+import { businessCopy } from '~/lib/business-copy'
 import type { NotificationView, RiceSession } from '~/lib/models'
 
 import { useStoredSession } from '../session/session'
@@ -41,7 +42,7 @@ const reasonCopy: Record<string, { label: string; action: string }> = {
 }
 
 export function notificationTitle(notification: NotificationView) {
-  if (notification.subjectType && notification.subjectType !== 'task') return notification.text || '有新的业务通知'
+  if (notification.subjectType && notification.subjectType !== 'task') return businessCopy(notification.text) || '有新的业务通知'
   return `${authorDisplayName(notification.author)} ${reasonCopy[notification.reason]?.action || '与你有新的互动'}`
 }
 
@@ -122,7 +123,7 @@ function NotificationInbox({ session, isReady }: { session: RiceSession | null; 
         })
 
         setLoadError(([
-          ['帖子互动通知', social], ['任务、活动与社区通知', tasks],
+          ['帖子互动通知', social], ['任务、活动与节点通知', tasks],
         ] as const).flatMap(([source, result]) => result.status === 'rejected'
           ? [`${source}暂时无法加载：${result.reason instanceof Error ? result.reason.message : '请稍后重试。'}`]
           : []).join(' '))
@@ -149,7 +150,7 @@ function NotificationInbox({ session, isReady }: { session: RiceSession | null; 
     sources.forEach((source, index) => {
       const result = results[index]
       if (result.status === 'rejected') {
-        failures.push(`${source === 'social' ? '帖子互动通知' : '任务、活动与社区通知'}暂时无法加载更多：${result.reason instanceof Error ? result.reason.message : '请稍后重试。'}`)
+        failures.push(`${source === 'social' ? '帖子互动通知' : '任务、活动与节点通知'}暂时无法加载更多：${result.reason instanceof Error ? result.reason.message : '请稍后重试。'}`)
       } else if (result.value.cursor && result.value.cursor === cursors[source]) {
         failures.push('通知分页游标未更新，请重试。')
       } else {
@@ -173,7 +174,7 @@ function NotificationInbox({ session, isReady }: { session: RiceSession | null; 
       results[notificationSource(notification) === 'social' ? 0 : 1].status === 'fulfilled'
         ? { ...notification, isRead: true } : notification))
     setReadError(results.flatMap((result, index) => result.status === 'rejected'
-      ? [`${index === 0 ? '帖子互动通知' : '任务、活动与社区通知'}未能标记已读：${result.reason instanceof Error ? result.reason.message : '请稍后重试。'}`] : []).join(' '))
+      ? [`${index === 0 ? '帖子互动通知' : '任务、活动与节点通知'}未能标记已读：${result.reason instanceof Error ? result.reason.message : '请稍后重试。'}`] : []).join(' '))
     window.dispatchEvent(new Event(NOTIFICATIONS_READ_EVENT))
     setMarking(false)
   }
@@ -258,12 +259,12 @@ function NotificationInbox({ session, isReady }: { session: RiceSession | null; 
         <section className="notification-empty-state">
           <Bell size={28} aria-hidden="true" />
           <strong>暂时没有通知</strong>
-          <p>任务、活动、社区申请与帖子互动会显示在这里。</p>
         </section>
       ) : (
         <section className="notification-list" aria-label="通知列表">
           {notifications.map((notification) => {
             const target = notificationTarget(notification)
+            const previewText = notification.subjectType ? businessCopy(notification.text) : notification.text
             return <button
               className={`notification-row ${notification.isRead ? '' : 'unread'}`}
               key={`${notificationSource(notification)}-${notification.uri}-${notification.reason}`}
@@ -274,11 +275,11 @@ function NotificationInbox({ session, isReady }: { session: RiceSession | null; 
               }}
             >
               <span className={`notification-reason reason-${notification.reason}`}>
-                {notification.subjectType === 'event' ? '活动' : notification.subjectType === 'node' ? '社区' : reasonCopy[notification.reason]?.label || '互动'}
+                {notification.subjectType === 'event' ? '活动' : notification.subjectType === 'node' ? '节点' : reasonCopy[notification.reason]?.label || '互动'}
               </span>
               <span className="notification-body">
                 <strong>{notificationTitle(notification)}</strong>
-                {notification.text && notification.text !== notificationTitle(notification) ? <span className="notification-preview">{notification.text}</span> : null}
+                {previewText && previewText !== notificationTitle(notification) ? <span className="notification-preview">{previewText}</span> : null}
                 <span className="notification-meta"><time dateTime={notification.indexedAt}>{formatTimestamp(notification.indexedAt)}</time>{!notification.isRead && <span className="notification-unread"><i aria-hidden="true" />未读</span>}</span>
               </span>
               {target && <ChevronRight className="notification-arrow" size={20} aria-hidden="true" />}

@@ -12,7 +12,7 @@ vi.mock('./api', async (original) => ({
   uploadRiceAttachment: mock.upload, updateCurrentUser: mock.update,
 }))
 vi.mock('../session/session', () => ({ useStoredSession: () => ({ saveSession: mock.save, session: mock.session, isReady: true }) }))
-vi.mock('~/lib/images', () => ({ readFileBase64: async () => 'image-bytes' }))
+vi.mock('~/lib/images', async (original) => ({ ...await original<typeof import('~/lib/images')>(), readFileBase64: async () => 'image-bytes' }))
 vi.mock('../session/useAuthOptions', () => ({ useAuthOptions: () => ({
   options: { registration_channels: mock.channels, handle_domain: 'configured.example', verification_mode: 'live' },
 }) }))
@@ -131,7 +131,7 @@ it('uploads onboarding avatars with Rice auth, keeps the created account on fail
   expect(finish).toHaveBeenCalledTimes(1)
   expect(mock.upload).not.toHaveBeenCalled()
   finish.mockClear()
-  ;(props('头像').onChange as (file: File) => void)({ name: 'avatar.png', type: 'image/png' } as File)
+  ;(props('头像').onChange as (file: File) => void)(new File(['avatar'], 'avatar.png', { type: 'image/png' }))
   mock.upload.mockRejectedValueOnce(new Error('上传失败')).mockResolvedValueOnce({ id: 'avatar-1' })
   await complete()
   expect(avatarView().find((node) => node.props.role === 'alert')?.props.children).toBe('上传失败')

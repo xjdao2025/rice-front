@@ -105,7 +105,7 @@ describe('private profile route cache', () => {
     await router.invalidate({ filter: (match) => match.routeId === '/me/' })
     await vi.advanceTimersByTimeAsync(0)
     expect(router.state.matches.at(-1)?.loaderData).toMatchObject({ initialData: { wallet: { balance: 100 }, communities: [] } })
-    if (reason === 'unavailable') expect(router.state.matches.at(-1)?.loaderData).toMatchObject({ initialData: { communityError: '暂时无法加载管理的社区，请稍后重试。' } })
+    if (reason === 'unavailable') expect(router.state.matches.at(-1)?.loaderData).toMatchObject({ initialData: { communityError: '暂时无法加载管理的节点，请稍后重试。' } })
   })
 
   it('discards community wallets completing after a new session starts', async () => {

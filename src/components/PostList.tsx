@@ -32,7 +32,7 @@ export function PostList({
       <div className="empty-panel">
         <EmptyState
           title="这里还没有帖子"
-          description="分享见闻、想法和近况，让社区里的人看到。"
+          description="分享见闻、想法和近况，让伙伴们看到。"
         />
       </div>
     )

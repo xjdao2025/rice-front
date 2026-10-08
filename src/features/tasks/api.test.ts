@@ -6,12 +6,12 @@ afterEach(() => vi.unstubAllGlobals())
 
 it('maps task draft fields to Rice without sending the session token', () => {
   const body = taskDraftBody({
-    token: 'rice-token', title: '修缮门楼', description: '说明', rewardAmount: 80,
+    token: 'rice-token', title: '修缮门楼', description: '说明', rewardAmount: 80, capacity: 3,
     applicationDeadline: null, attachmentIds: ['image-1'], clientRequestId: 'request-1',
   })
 
   expect(body).toMatchObject({
-    title: '修缮门楼', application_deadline: null, reward_amount: 80,
+    title: '修缮门楼', application_deadline: null, reward_amount: 80, capacity: 3,
     attachment_ids: ['image-1'], client_request_id: 'request-1',
   })
   expect(JSON.stringify(body)).not.toContain('rice-token')

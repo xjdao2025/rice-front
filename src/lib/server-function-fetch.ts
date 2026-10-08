@@ -1,4 +1,5 @@
 import type { CustomFetch } from '@tanstack/react-start'
+import { UPLOAD_REQUEST_TIMEOUT_MS } from './http'
 
 export class PageReloadRequiredError extends Error {
   constructor() {
@@ -18,10 +19,15 @@ export function needsPageReload(error: unknown) {
 // Start's ordinary JSON branch can unwrap an HTTP error as an undefined result.
 // Check its transport boundary once, leaving serialized business errors intact.
 export const serverFunctionFetch: CustomFetch = async (input, init) => {
+  // RPCs may include uploads; backend JSON calls keep their shorter timeout.
+  const timeout = AbortSignal.timeout(UPLOAD_REQUEST_TIMEOUT_MS)
+  const signal = init?.signal ? AbortSignal.any([init.signal, timeout]) : timeout
   let response: Response
   try {
-    response = await fetch(input, init)
+    response = await fetch(input, { ...init, signal })
   } catch (error) {
+    init?.signal?.throwIfAborted()
+    if (timeout.aborted) throw new Error('请求超时，请稍后重试。')
     if (error instanceof TypeError) throw new Error('网络连接失败，请检查网络后重试。')
     throw error
   }

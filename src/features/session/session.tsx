@@ -14,6 +14,7 @@ import { hasSessionCredentials, isPdsSession, isRiceSession, isSessionUser, type
 
 const STORAGE_KEY = 'xiangjian-rice-session'
 const CHANGE_EVENT = 'xiangjian-session-change'
+const PDS_REFRESH_MARGIN_MS = 60_000
 const pendingRefreshes = new Map<string, Promise<RiceSession | null>>()
 type PdsRefresh = (input: {
   data: RiceSession['pds']
@@ -73,7 +74,7 @@ export async function refreshStoredUser(
   }
   if (!isSessionUser(user) || user.did !== stored.pds.did) throw new Error('用户资料返回异常，请稍后重试。')
   const updated = { ...latest, user }
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+  writeStoredSession(updated)
   return updated
 }
 
@@ -89,7 +90,7 @@ function tokenExpiresAt(token: string) {
   }
 }
 
-export function tokenExpiresSoon(token: string, now = Date.now(), thresholdMs = 60_000) {
+export function tokenExpiresSoon(token: string, now = Date.now(), thresholdMs = PDS_REFRESH_MARGIN_MS) {
   const expiresAt = tokenExpiresAt(token)
   return expiresAt !== null && expiresAt <= now + thresholdMs
 }
@@ -103,8 +104,8 @@ export function watchPdsSessionLifetime(sync: () => Promise<void>) {
     if (!active) return
     const stored = readStoredSession()
     const expiresAt = stored && tokenExpiresAt(stored.pds.access_jwt)
-    if (expiresAt && expiresAt > Date.now() + 60_000) {
-      timer = setTimeout(check, Math.min(expiresAt - Date.now() - 60_000, 2_147_483_647))
+    if (expiresAt && expiresAt > Date.now() + PDS_REFRESH_MARGIN_MS) {
+      timer = setTimeout(check, Math.min(expiresAt - Date.now() - PDS_REFRESH_MARGIN_MS, 2_147_483_647))
     }
   }
   const runSync = () => {
@@ -114,25 +115,25 @@ export function watchPdsSessionLifetime(sync: () => Promise<void>) {
       schedule()
     })
   }
-  const check = (event?: Event) => {
+  const check = () => {
     if (!active || document.visibilityState === 'hidden') return
     const stored = readStoredSession()
-    if (stored && (event || tokenExpiresSoon(stored.pds.access_jwt))) runSync()
+    if (stored && tokenExpiresSoon(stored.pds.access_jwt)) runSync()
     else schedule()
   }
-  schedule()
-  window.addEventListener(CHANGE_EVENT, schedule)
-  window.addEventListener('storage', schedule)
-  window.addEventListener('focus', check)
+  const storageChanged = (event: StorageEvent) => {
+    if (event.key === STORAGE_KEY || event.key === null) check()
+  }
+  window.addEventListener(CHANGE_EVENT, check)
+  window.addEventListener('storage', storageChanged)
   window.addEventListener('pageshow', check)
   document.addEventListener('visibilitychange', check)
-  runSync()
+  check()
   return () => {
     active = false
     clearTimeout(timer)
-    window.removeEventListener(CHANGE_EVENT, schedule)
-    window.removeEventListener('storage', schedule)
-    window.removeEventListener('focus', check)
+    window.removeEventListener(CHANGE_EVENT, check)
+    window.removeEventListener('storage', storageChanged)
     window.removeEventListener('pageshow', check)
     document.removeEventListener('visibilitychange', check)
   }
@@ -178,78 +179,46 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true
     let revision = 0
-    let restoredAccount: string | undefined
-
     const sync = async () => {
       const currentRevision = ++revision
-      let stored = readStoredSession()
-      setRecoveryError('')
-      let repaired = false
-      if (!stored) {
-        setSession(null)
-        const credentials = readStoredCredentials()
-        if (!credentials) {
-          setIsReady(true)
-          if (readStoredValue() !== null) setRecoveryError('登录信息不完整，请重新登录。')
-          return
-        }
-        setIsReady(false)
-        try {
-          stored = await refreshStoredUser(credentials, getCurrentUser, () => active && currentRevision === revision)
-          repaired = true
-        } catch {
-          if (active && currentRevision === revision) {
-            setRecoveryError('登录状态暂时无法恢复，请刷新页面重试，或重新登录。')
-            setIsReady(true)
-          }
-          return
-        }
-        if (!active || currentRevision !== revision) return
-      }
-      const needsRefresh = stored && tokenExpiresSoon(stored.pds.access_jwt)
+      const stored = readStoredSession()
       setSession(stored)
-      setIsReady(Boolean(stored && stored.user.id === restoredAccount))
-      if (!stored) return
-
-      let current = stored
-      if (needsRefresh) {
-        try {
-          const refreshed = await refreshStoredSession(stored)
-          if (!refreshed) return
-          current = refreshed
-        } catch {
-          // PDS 暂时不可用时仍可继续使用 Rice 账号能力。
-        }
-      }
-
-      if (!active || currentRevision !== revision) return
-      if (repaired) {
-        restoredAccount = current.user.id
-        setSession(current)
-        setIsReady(true)
+      setIsReady(true)
+      setRecoveryError('')
+      if (stored) return
+      const credentials = readStoredCredentials()
+      if (!credentials) {
+        if (readStoredValue() !== null) setRecoveryError('登录信息不完整，请重新登录。')
         return
       }
+      setIsReady(false)
       try {
-        const updated = await refreshStoredUser(current, getCurrentUser, () => active && currentRevision === revision)
+        const updated = await refreshStoredUser(credentials, getCurrentUser, () => active && currentRevision === revision)
         if (!active || currentRevision !== revision) return
         setSession(updated)
-        restoredAccount = updated?.user.id
         setIsReady(true)
       } catch {
         if (!active || currentRevision !== revision) return
-        setRecoveryError('登录状态暂时无法验证，请稍后重试。')
+        setRecoveryError('登录状态暂时无法恢复，请稍后重试。')
         setIsReady(true)
       }
     }
-
+    const storageChanged = (event: StorageEvent) => {
+      if (event.key === STORAGE_KEY || event.key === null) void sync()
+    }
     window.addEventListener(CHANGE_EVENT, sync)
-    window.addEventListener('storage', sync)
-    const stopWatching = watchPdsSessionLifetime(sync)
+    window.addEventListener('storage', storageChanged)
+    void sync()
+    const stopWatching = watchPdsSessionLifetime(async () => {
+      const current = readStoredSession()
+      // A network failure leaves the existing session usable; no probing or retry loop.
+      if (current) await refreshStoredSession(current).catch(() => undefined)
+    })
     return () => {
       active = false
       stopWatching()
       window.removeEventListener(CHANGE_EVENT, sync)
-      window.removeEventListener('storage', sync)
+      window.removeEventListener('storage', storageChanged)
     }
   }, [])
 

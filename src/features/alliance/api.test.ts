@@ -1,8 +1,19 @@
 import { afterEach, expect, it, vi } from 'vitest'
 
-import { loadAnnouncement, loadAnnouncements, loadFoundation, loadGovernanceBody, loadProposal, loadProposals, sendProposalVote } from './api'
+import { loadAnnouncement, loadAnnouncements, loadFoundation, loadGovernanceBody, loadGrainGrants, loadProposal, loadProposalComments, loadProposals, sendProposalComment, sendProposalVote } from './api'
 
 afterEach(() => vi.unstubAllGlobals())
+
+it('reads public grain issuance records from the Rice ledger', async () => {
+  const page = { data: [{ id: 'grant-1', amount: 20, memo: '节点发放', to: null, to_node: { id: 'node-1', name: '测试节点' }, inserted_at: '2026-10-08T00:00:00Z' }], meta: { next_cursor: 'older', total_granted: 120 } }
+  const fetch = vi.fn().mockResolvedValue(Response.json(page))
+  vi.stubGlobal('fetch', fetch)
+  expect(await loadGrainGrants({ before: 'cursor/1' })).toEqual(page)
+  const [url, init] = fetch.mock.calls[0]
+  expect(new URL(url).pathname).toBe('/api/grain_grants')
+  expect(new URL(url).searchParams.get('before')).toBe('cursor/1')
+  expect(init?.headers).toBeUndefined()
+})
 
 it('reads public foundation and announcements from Rice, preserving the list cursor and nullable attachment', async () => {
   const foundation = { fund_scale: 1000, issued_grain_scale: 250, proposal_approval_votes: 10, documents: [] }
@@ -44,7 +55,7 @@ it.each(['agree', 'oppose'] as const)('sends one %s vote with the exact Rice pay
   expect(fetch).toHaveBeenCalledTimes(1)
   const [url, init] = fetch.mock.calls[0]
   expect(new URL(url).pathname).toBe('/api/proposals/proposal%2F1/vote')
-  expect(init).toEqual({ method: 'POST', headers: { Authorization: 'Bearer rice-token', 'Content-Type': 'application/json' }, body: JSON.stringify({ choice }) })
+  expect(init).toMatchObject({ method: 'POST', headers: { Authorization: 'Bearer rice-token', 'Content-Type': 'application/json' }, body: JSON.stringify({ choice }) })
 })
 
 it('preserves a rejected vote without retrying or reporting success', async () => {
@@ -52,6 +63,22 @@ it('preserves a rejected vote without retrying or reporting success', async () =
   vi.stubGlobal('fetch', fetch)
   await expect(sendProposalVote({ id: 'proposal-1', token: 'rice-token', choice: 'agree' })).rejects.toThrow('投票已结束')
   expect(fetch).toHaveBeenCalledTimes(1)
+})
+
+it('loads public proposal comments and publishes with the current Rice token', async () => {
+  const comment = { id: 'comment-1', body: '支持', author: null, inserted_at: '2026-10-08T00:00:00Z' }
+  const page = { data: [comment], meta: { next_cursor: 'older' } }
+  const fetch = vi.fn().mockResolvedValueOnce(Response.json(page)).mockResolvedValueOnce(Response.json({ data: comment }, { status: 201 }))
+  vi.stubGlobal('fetch', fetch)
+  expect(await loadProposalComments({ id: 'proposal/1', before: 'cursor/1' })).toEqual(page)
+  expect(await sendProposalComment({ id: 'proposal/1', token: 'rice-token', body: '支持' })).toEqual(comment)
+  const [listUrl, listOptions] = fetch.mock.calls[0]
+  expect(new URL(listUrl).pathname).toBe('/api/proposals/proposal%2F1/comments')
+  expect(new URL(listUrl).searchParams.get('before')).toBe('cursor/1')
+  expect(listOptions?.headers).toBeUndefined()
+  const [publishUrl, publishOptions] = fetch.mock.calls[1]
+  expect(new URL(publishUrl).pathname).toBe('/api/proposals/proposal%2F1/comments')
+  expect(publishOptions).toMatchObject({ method: 'POST', headers: { Authorization: 'Bearer rice-token', 'Content-Type': 'application/json' }, body: JSON.stringify({ body: '支持' }) })
 })
 
 it('reads attachment text only from the fixed Rice path and refuses URL or path input before transport', async () => {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { attachmentImages } from '~/lib/attachments'
-import { readFileBase64 } from '~/lib/images'
+import { prepareImage, readFileBase64 } from '~/lib/images'
 import type { RiceAttachment } from '~/lib/models'
 import { uploadRiceAttachment } from '../account/api'
 
@@ -15,7 +15,7 @@ export async function uploadImageSelection(
   for (const image of images) {
     let attachment = image.attachment ?? (image.file && uploaded.get(image.file))
     if (!attachment && image.file) {
-      attachment = await upload(image.file)
+      attachment = await upload(await prepareImage(image.file))
       uploaded.set(image.file, attachment)
     }
     if (!attachment) throw new Error('图片读取失败，请重新选择。')

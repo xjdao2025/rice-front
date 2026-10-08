@@ -123,3 +123,27 @@ it('keeps the return reason hidden until an administrator chooses to return a su
   expect(html).not.toContain('退回理由')
   expect(html).not.toContain('退回修改时必填')
 })
+
+it('reviews every participant separately and keeps recruitment available until capacity is filled', () => {
+  const users = ['阿青', '小林'].map((nickname, i) => ({ id: `worker-${i}`, did: `did:example:worker-${i}`, handle: `worker-${i}`, nickname }))
+  const task = {
+    id: 'task-multiple', title: '多人清理步道', description: '说明', status: 'under_review', capacity: 3,
+    creator: { id: 'publisher', did: 'did:example:publisher', handle: 'publisher' },
+    assignee: null, assignees: users, appointed_count: 2, application_count: 3,
+    reward_amount: 10, total_reward_amount: 30, reward_status: 'reserved',
+    application_deadline: '2099-09-21T09:00:00Z', execution_deadline: '2099-09-22T09:00:00Z',
+    applications: [{ id: 'pending-worker', status: 'pending', user: { id: 'worker-3', nickname: '小周' } }],
+    submissions: users.map((user, i) => ({ id: `submission-${i}`, user, status: 'pending', body: `成果-${i}`, inserted_at: '2026-09-29T09:00:00Z' })),
+    events: [], allowed_actions: ['approve_result', 'request_changes', 'appoint'],
+  } as unknown as RiceTask
+  state.session = { token: 'token', user: { id: 'publisher' } } as RiceSession
+  const render = (value: RiceTask) => renderToStaticMarkup(<TaskDetailPage taskId={value.id} initial={{ task: value, error: '', viewerToken: 'token' }} />)
+  const html = render(task)
+  expect(html).toContain('阿青的提交')
+  expect(html).toContain('小林的提交')
+  expect(html.match(/验收并发放/g)).toHaveLength(2)
+  expect(html).toContain('总奖励：30 稻米')
+  expect(html).toContain('接收申请')
+  expect(render({ ...task, appointed_count: 3 })).not.toContain('待审批申请')
+  expect(render({ ...task, application_deadline: '2026-09-21T09:00:00Z' })).not.toContain('待审批申请')
+})

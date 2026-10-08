@@ -90,7 +90,7 @@ export function ImagePicker({ images, onSelect, onRemove, disabled = false }: {
       setError(failure)
       if (!failure) onSelect(files)
     }} /></label>
-    <p id={helpId} className="content-image-help">最多 {MAX_IMAGE_COUNT} 张，每张不超过 {imageSizeLabel(MAX_IMAGE_BYTES)}。</p>
+    <p id={helpId} className="content-image-help">最多 {MAX_IMAGE_COUNT} 张，大图自动压缩到 {imageSizeLabel(MAX_IMAGE_BYTES)} 以内（GIF 除外）。</p>
     {error && <p id={errorId} className="content-image-error" role="alert">{error}</p>}
   </section>
 }

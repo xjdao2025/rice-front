@@ -5,6 +5,7 @@ import type { RiceAttachment, RicePublicUser } from '~/lib/models'
 export type NodeApplication = { id: string; status: 'pending' | 'approved' | 'rejected'; reason: string; review_reason: string | null; inserted_at: string; reviewed_at: string | null; user?: RicePublicUser }
 export type CommunityNode = {
   id: string; name: string; description: string | null; position?: number | null; logo: RiceAttachment | null;
+  grain_balance: number; grain_frozen_balance: number;
   owner: RicePublicUser | null; role: 'admin' | 'member' | null; my_application: NodeApplication | null;
   can_manage_members?: boolean;
   members?: Array<{ user: RicePublicUser; role: 'admin' | 'member' }>; applications?: NodeApplication[]

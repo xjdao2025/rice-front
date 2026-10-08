@@ -59,10 +59,15 @@ export type RiceTask = {
   status: TaskStatus
   creator: RicePublicUser
   assignee: RicePublicUser | null
+  assignees?: RicePublicUser[]
   application_deadline: string | null
   appointed_at: string | null
   appointment_reason: string | null
   reward_amount: number
+  capacity?: number
+  appointed_count?: number
+  total_reward_amount?: number
+  my_status?: TaskStatus | null
   funding_node_id?: string | null
   can_manage?: boolean
   reward_status: 'none' | 'reserved' | 'settled' | 'refunded'
@@ -101,15 +106,18 @@ export const taskStatusLabel: Record<TaskStatus, string> = {
   cancelled: '已取消',
 }
 
-export function pastTaskApplicationDeadline(task: Pick<RiceTask, 'status' | 'application_deadline'>, now: number) {
-  return task.status === 'open' && !!task.application_deadline && Date.parse(task.application_deadline) <= now
+type DeadlineTask = Pick<RiceTask, 'status' | 'application_deadline'> & Partial<Pick<RiceTask, 'appointed_count' | 'assignees' | 'assignee'>>
+
+export function pastTaskApplicationDeadline(task: DeadlineTask, now: number) {
+  const appointedCount = task.appointed_count ?? task.assignees?.length ?? (task.assignee ? 1 : 0)
+  return task.status === 'open' && appointedCount === 0 && !!task.application_deadline && Date.parse(task.application_deadline) <= now
 }
 
 export function pastTaskExecutionDeadline(task: Pick<RiceTask, 'status' | 'execution_deadline'>, now: number) {
   return task.status === 'in_progress' && !!task.execution_deadline && Date.parse(task.execution_deadline) <= now
 }
 
-export function taskDisplayStatus(task: Pick<RiceTask, 'status' | 'application_closed' | 'application_deadline' | 'execution_deadline'>, now: number) {
+export function taskDisplayStatus(task: Pick<RiceTask, 'status' | 'application_closed' | 'application_deadline' | 'execution_deadline'> & Partial<Pick<RiceTask, 'appointed_count' | 'assignees' | 'assignee'>>, now: number) {
   if (pastTaskApplicationDeadline(task, now)) return taskStatusLabel.expired
   if (pastTaskExecutionDeadline(task, now)) return taskStatusLabel.overdue
   if (task.status === 'open' && task.application_closed) return '申请已截止'
@@ -142,7 +150,9 @@ export function taskEventLabel(event: TaskEvent) {
 export type TaskGroup = TaskStatus | 'applying' | 'not_selected'
 export function myTaskGroup(task: RiceTask, isPublisher: boolean, now = Date.now()): TaskGroup {
   if (!isPublisher && task.my_application_status === 'not_selected') return 'not_selected'
+  if (!isPublisher && task.my_application_status === 'appointed' && task.my_status) task = { ...task, status: task.my_status }
   if (pastTaskApplicationDeadline(task, now)) return 'expired'
+  if (!isPublisher && task.my_application_status === 'pending' && !['completed', 'expired', 'cancelled'].includes(task.status)) return 'applying'
   if (pastTaskExecutionDeadline(task, now)) return 'overdue'
   if (!isPublisher && task.status === 'open') return 'applying'
   return task.status

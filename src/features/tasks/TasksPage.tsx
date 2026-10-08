@@ -28,7 +28,7 @@ function TaskList({ nodeId, initialPage, refreshError = '' }: TasksPageProps) {
     refreshError, loadPage,
   })
   return <div className="page task-page">
-    <div className="business-heading"><h1>{nodeId ? '社区任务' : '全部任务'}</h1>{session && !nodeId && <Link to="/me/tasks">我的任务</Link>}</div>
+    <div className="business-heading"><h1>{nodeId ? '节点任务' : '全部任务'}</h1>{session && !nodeId && <Link to="/me/tasks">我的任务</Link>}</div>
     {visibleError && <p className="inline-error" role="alert">{visibleError}</p>}{loading && (tasks.length ? <p className="refresh-status" role="status">正在加载任务…</p> : <LoadingState label="正在加载任务…" />)}<section className="task-list" aria-busy={loading}>{tasks.map((task) => <TaskCard task={task} key={task.id} />)}</section>
     {!loading && !visibleError && !tasks.length && <EmptyState isCompact title="暂时没有任务。" />}{nextCursor && <AutoLoadMore key={`${nodeId}:${session?.user.id}`} cursor={nextCursor} loading={loading || !isReady} failed={!!error} onLoadMore={more} />}
   </div>

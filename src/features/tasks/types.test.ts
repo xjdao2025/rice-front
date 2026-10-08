@@ -20,6 +20,8 @@ describe('task labels', () => {
     expect(taskDisplayStatus(task, deadline)).toBe('已失效')
     expect(taskDisplayStatus({ ...task, application_closed: true }, deadline - 1)).toBe('申请已截止')
     expect(taskDisplayStatus({ ...task, application_deadline: null }, deadline)).toBe('招募中')
+    expect(taskDisplayStatus({ ...task, appointed_count: 1 }, deadline)).toBe('招募中')
+    expect(taskDisplayStatus({ ...task, assignees: [{ did: 'worker' }] } as RiceTask, deadline)).toBe('招募中')
     expect(taskDisplayStatus({ ...task, status: 'cancelled' }, deadline)).toBe('已取消')
     expect(taskDisplayStatus({ ...task, status: 'expired' }, deadline)).toBe('已失效')
     expect(taskDisplayStatus({ ...task, status: 'overdue' }, deadline)).toBe('已超时')
@@ -53,6 +55,11 @@ it('keeps candidate decisions separate from delivery and terminal task states', 
   expect(myTaskGroup({ ...task, status: 'open', my_application_status: 'pending' }, false)).toBe('applying')
   expect(myTaskGroup({ ...task, status: 'under_review', my_application_status: 'appointed' }, false)).toBe('under_review')
   expect(myTaskGroup({ ...task, status: 'overdue', my_application_status: 'appointed' }, false)).toBe('overdue')
+  expect(myTaskGroup({ ...task, status: 'open', my_application_status: 'appointed', my_status: 'in_progress' }, false)).toBe('in_progress')
+  expect(myTaskGroup({ ...task, status: 'under_review', my_application_status: 'appointed', my_status: 'in_progress', execution_deadline: '2026-09-21T09:00:00Z' }, false)).toBe('overdue')
+  expect(myTaskGroup({ ...task, status: 'open', my_application_status: 'appointed', my_status: 'under_review' }, true)).toBe('open')
+  expect(myTaskGroup({ ...task, status: 'open', my_application_status: 'pending', my_status: 'open' }, false)).toBe('applying')
+  expect(myTaskGroup({ ...task, status: 'in_progress', my_application_status: 'pending', my_status: 'in_progress' }, false)).toBe('applying')
   for (const status of ['completed', 'expired', 'cancelled'] as const) {
     expect(myTaskGroup({ ...task, status, my_application_status: 'appointed' }, false)).toBe(status)
   }

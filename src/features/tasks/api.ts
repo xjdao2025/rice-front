@@ -73,6 +73,7 @@ type TaskFields = {
   description: string
   applicationDeadline?: string | null
   rewardAmount: number
+  capacity: number
   nodeId?: string
   requirement?: string
   executionDeadline?: string | null
@@ -86,6 +87,7 @@ export const taskDraftBody = (data: TaskFields) => ({
   description: data.description,
   application_deadline: data.applicationDeadline,
   reward_amount: data.rewardAmount,
+  capacity: data.capacity,
   node_id: data.nodeId,
   requirement: data.requirement,
   execution_deadline: data.executionDeadline,

@@ -38,13 +38,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     previousSession.current = { accountId: session?.user.id, token: session?.token }
   }, [router, isReady, session?.user.id, session?.token])
   const isMainPage = ['/', '/tasks', '/events', '/me'].includes(pathname)
+  const isGrainPage = pathname === '/me/grains' || pathname.startsWith('/me/grains/')
   const nodeChild = pathname.match(/^\/nodes\/([^/]+)\/(?:tasks|events|grains)$/)
   const profileChild = pathname.match(/^\/profile\/([^/]+)\/(?:followers|following)$/)
   const parentPage = pathname.startsWith('/tasks/') ? '/tasks'
     : pathname.startsWith('/events/') ? '/events'
     : !session && pathname.startsWith('/me/') ? '/me'
     : pathname === '/me/grains/send/scan' ? '/me/grains/send'
-    : pathname.startsWith('/me/grains/') ? '/me/grains'
     : pathname.startsWith('/me/settings/') ? '/me/settings'
     : pathname.startsWith('/me/') ? '/me'
     : pathname.startsWith('/alliance/') ? '/alliance'
@@ -56,11 +56,12 @@ export function AppShell({ children }: { children: ReactNode }) {
     : pathname === '/compose' && href.includes('kind=activity') ? '/events'
     : '/'
   const goBack = () => {
-    if (canGoBack) router.history.back()
-    else if (pathname === '/register') void router.navigate({ to: '/login', search: { returnTo: loginReturnTo(new URLSearchParams(href.split('?')[1] ?? '').get('returnTo')) } })
-    else if (nodeChild) void router.navigate({ to: '/nodes/$nodeId', params: { nodeId: decodeURIComponent(nodeChild[1]) } })
-    else if (profileChild) void router.navigate({ to: '/profile/$actor', params: { actor: decodeURIComponent(profileChild[1]) } })
-    else void router.navigate({ to: parentPage })
+    if (isGrainPage) void router.navigate({ to: parentPage, replace: true })
+    else if (canGoBack) router.history.back()
+    else if (pathname === '/register') void router.navigate({ to: '/login', search: { returnTo: loginReturnTo(new URLSearchParams(href.split('?')[1] ?? '').get('returnTo')) }, replace: true })
+    else if (nodeChild) void router.navigate({ to: '/nodes/$nodeId', params: { nodeId: decodeURIComponent(nodeChild[1]) }, replace: true })
+    else if (profileChild) void router.navigate({ to: '/profile/$actor', params: { actor: decodeURIComponent(profileChild[1]) }, replace: true })
+    else void router.navigate({ to: parentPage, replace: true })
   }
 
   useEffect(() => {
@@ -113,13 +114,13 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="topbar">
         <div className="topbar-inner">
           {isMainPage ? <Link to="/" className="brand" aria-label="返回乡建 DAO 广场">
-            <span>乡建</span><small>DAO</small>
+            <img src="/site-icon.png" alt="乡建 DAO" />
           </Link> : <button type="button" className="child-back" aria-label="返回上一页" onClick={goBack}><ArrowLeft size={24} aria-hidden="true" /></button>}
           {isMainPage && <div className="topbar-actions">
             {!isReady && <span className="session-placeholder" aria-hidden="true" />}
             {isReady && session && <Link to="/compose" search={{ kind: pathname === '/tasks' ? 'task' : pathname === '/events' ? 'activity' : 'post' }} className="header-publish">发布</Link>}
             {isReady && !session && <Link to="/login" search={{ returnTo: href }} className="header-publish">登录</Link>}
-            <Link to="/search" className="header-search" aria-label="搜索帖子、任务、活动、社区、用户"><Search size={22} aria-hidden="true" /></Link>
+            <Link to="/search" className="header-search" aria-label="搜索帖子、任务、活动、节点、用户"><Search size={22} aria-hidden="true" /></Link>
             {isReady && session && <Link to="/notifications" className="header-search notification-trigger" aria-label={hasUnreadNotifications ? '通知，有新消息' : '通知'}><Bell size={22} aria-hidden="true" />{hasUnreadNotifications && <i className="notification-dot" aria-hidden="true" />}</Link>}
           </div>}
         </div>

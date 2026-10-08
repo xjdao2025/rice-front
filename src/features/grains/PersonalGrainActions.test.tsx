@@ -73,7 +73,7 @@ const change = (label: string, value: string) => (field(label)!.onChange as (val
 const action = (label: string) => field(label)!.clickAction as () => Promise<void>
 const confirmation = () => render().find((node) => node.props.title === '确认发送稻米')
 async function confirmRecipient(identifier = '@bob.example') {
-  change('收款人', identifier); change('发送金额', '12'); change('留言', '谢谢')
+  change('稻米接收人', identifier); change('发送稻米数量', '12'); change('留言', '谢谢')
   await action('下一步')()
 }
 
@@ -89,14 +89,14 @@ afterEach(() => {
 })
 
 it.each(['@bob.example', '13800138000'])('checks %s after input and writes the resolved id once while pending', async (identifier) => {
-  change('收款人', identifier); change('发送金额', '1.5')
+  change('稻米接收人', identifier); change('发送稻米数量', '1.5')
   expect(field('下一步')?.isDisabled).toBe(true)
   await action('下一步')()
   expect(mock.recipient).not.toHaveBeenCalled()
-  ;(field('收款人')!.onBlur as () => void)()
+  ;(field('稻米接收人')!.onBlur as () => void)()
   expect(mock.recipient).toHaveBeenCalledWith({ data: { token: 'rice-alice', identifier } })
   await vi.waitFor(() => expect(render().find((node) => node.props.role === 'status')).toBeDefined())
-  change('发送金额', '12'); change('留言', '谢谢')
+  change('发送稻米数量', '12'); change('留言', '谢谢')
   await action('下一步')()
   expect(mock.recipient).toHaveBeenCalledTimes(1)
   expect(mock.send).not.toHaveBeenCalled()
@@ -120,14 +120,14 @@ it.each(['@bob.example', '13800138000'])('checks %s after input and writes the r
 
 it.each(['返回修改', '关闭或 Escape'])('returns from confirmation through %s with the form editable and values retained', async (close) => {
   await confirmRecipient()
-  expect(field('收款人')?.isDisabled).toBe(true)
+  expect(field('稻米接收人')?.isDisabled).toBe(true)
   expect(field('下一步')).toBeUndefined()
   if (close === '返回修改') (field(close)!.onClick as () => void)()
   else (confirmation()!.props.onClose as () => void)()
   expect(confirmation()).toBeUndefined()
-  expect(field('收款人')?.isDisabled).toBe(false)
-  expect(field('收款人')?.value).toBe('@bob.example')
-  expect(field('发送金额')?.value).toBe('12')
+  expect(field('稻米接收人')?.isDisabled).toBe(false)
+  expect(field('稻米接收人')?.value).toBe('@bob.example')
+  expect(field('发送稻米数量')?.value).toBe('12')
   expect(field('留言')?.value).toBe('谢谢')
   expect(field('下一步')?.isDisabled).toBe(false)
   expect(mock.send).not.toHaveBeenCalled()
@@ -135,33 +135,33 @@ it.each(['返回修改', '关闭或 Escape'])('returns from confirmation through
 
 it('reports an unknown phone after input and keeps the form editable', async () => {
   mock.recipient.mockRejectedValue(new Error('收款人不存在。'))
-  change('收款人', '13800138000')
-  ;(field('收款人')!.onKeyDown as (event: unknown) => void)({ key: 'Enter', nativeEvent: { isComposing: true } })
+  change('稻米接收人', '13800138000')
+  ;(field('稻米接收人')!.onKeyDown as (event: unknown) => void)({ key: 'Enter', nativeEvent: { isComposing: true } })
   expect(mock.recipient).not.toHaveBeenCalled()
-  ;(field('收款人')!.onBlur as () => void)()
+  ;(field('稻米接收人')!.onBlur as () => void)()
   await vi.waitFor(() => expect(render().find((node) => node.props.role === 'alert')?.props.children).toBe('收款人不存在。'))
-  ;(field('收款人')!.onKeyDown as (event: unknown) => void)({ key: 'Enter', nativeEvent: { isComposing: false } })
+  ;(field('稻米接收人')!.onKeyDown as (event: unknown) => void)({ key: 'Enter', nativeEvent: { isComposing: false } })
   expect(mock.recipient).toHaveBeenCalledTimes(1)
-  change('发送金额', '12')
+  change('发送稻米数量', '12')
   await action('下一步')()
   expect(render().find((node) => node.props.role === 'alert')?.props.children).toBe('收款人不存在。')
   expect(mock.send).not.toHaveBeenCalled()
   expect(field('确认发送')).toBeUndefined()
-  expect(field('收款人')?.isDisabled).toBe(false)
+  expect(field('稻米接收人')?.isDisabled).toBe(false)
 })
 
 it('checks a scanned recipient once before sending', async () => {
-  change('发送金额', '12')
-  ;(field('扫描收款码')!.onClick as () => void)()
+  change('发送稻米数量', '12')
+  ;(field('扫描稻米接收码')!.onClick as () => void)()
   const scanner = render().find((node) => typeof node.props.onRead === 'function')!
   ;(scanner.props.onRead as (value: string) => void)('13800138000')
   expect(mock.navigate).toHaveBeenLastCalledWith({ to: '/me/grains/send', search: {} })
-  expect(field('收款人')?.value).toBe('13800138000')
-  expect(field('发送金额')?.value).toBe('12')
+  expect(field('稻米接收人')?.value).toBe('13800138000')
+  expect(field('发送稻米数量')?.value).toBe('12')
   expect(render().some((node) => typeof node.props.onRead === 'function')).toBe(false)
   expect(mock.recipient).toHaveBeenCalledWith({ data: { token: 'rice-alice', identifier: '13800138000' } })
   await vi.waitFor(() => expect(render().find((node) => node.props.role === 'status')).toBeDefined())
-  ;(field('收款人')!.onBlur as () => void)()
+  ;(field('稻米接收人')!.onBlur as () => void)()
   expect(mock.recipient).toHaveBeenCalledTimes(1)
   expect(mock.send).not.toHaveBeenCalled()
 })
@@ -169,8 +169,8 @@ it('checks a scanned recipient once before sending', async () => {
 it('reuses a blur lookup when the user immediately presses next', async () => {
   let finish!: (value: typeof recipient) => void
   mock.recipient.mockReturnValueOnce(new Promise((resolve) => { finish = resolve }))
-  change('收款人', '13800138000'); change('发送金额', '12')
-  ;(field('收款人')!.onBlur as () => void)()
+  change('稻米接收人', '13800138000'); change('发送稻米数量', '12')
+  ;(field('稻米接收人')!.onBlur as () => void)()
   expect(field('下一步')?.isDisabled).toBe(false)
   const pending = action('下一步')()
   expect(mock.recipient).toHaveBeenCalledTimes(1)
@@ -181,19 +181,19 @@ it('reuses a blur lookup when the user immediately presses next', async () => {
 it('ignores a recipient lookup after the identifier changes', async () => {
   let finish!: (value: typeof recipient) => void
   mock.recipient.mockReturnValueOnce(new Promise((resolve) => { finish = resolve }))
-  change('收款人', '13800138000')
-  ;(field('收款人')!.onBlur as () => void)()
-  change('收款人', '13900139000')
+  change('稻米接收人', '13800138000')
+  ;(field('稻米接收人')!.onBlur as () => void)()
+  change('稻米接收人', '13900139000')
   finish(recipient); await Promise.resolve()
   expect(render().find((node) => node.props.role === 'status')).toBeUndefined()
-  expect(field('收款人')?.value).toBe('13900139000')
+  expect(field('稻米接收人')?.value).toBe('13900139000')
 })
 
 it('ignores a recipient lookup after switching accounts', async () => {
   let finish!: (value: typeof recipient) => void
   mock.recipient.mockReturnValueOnce(new Promise((resolve) => { finish = resolve }))
-  change('收款人', '13800138000')
-  ;(field('收款人')!.onBlur as () => void)()
+  change('稻米接收人', '13800138000')
+  ;(field('稻米接收人')!.onBlur as () => void)()
   mock.session = { ...session, token: 'rice-carol' }; mock.stored = mock.session
   render()
   finish(recipient); await Promise.resolve()
@@ -210,11 +210,11 @@ it('removes sending and retry controls after an uncertain network failure', asyn
   expect(confirmationAlerts).toHaveLength(alerts.length)
   expect(confirmationAlerts[0].props.children).toBe('Failed to fetch')
   expect(alerts[0].props.children).toBe('Failed to fetch')
-  expect(alerts[1].props.children).toEqual(expect.arrayContaining(['转账结果尚未确认，请先']))
+  expect(alerts[1].props.children).toEqual(expect.arrayContaining(['发送结果尚未确认，请先']))
   expect(field('确认发送')).toBeUndefined()
   expect(field('返回修改')).toBeUndefined()
   expect(render().some((node) => String(node.props.label).includes('重试'))).toBe(false)
-  expect(field('收款人')?.isDisabled).toBe(true)
+  expect(field('稻米接收人')?.isDisabled).toBe(true)
   expect(mock.send).toHaveBeenCalledTimes(1)
 })
 
@@ -242,7 +242,7 @@ it('drops completed receipts on account change and ignores an old account respon
   const changed = vi.fn(); window.addEventListener('rice-changed', changed)
   finish(receipt); await pending
   expect(render().find((node) => node.props.role === 'status')).toBeUndefined()
-  expect(field('收款人')?.value).toBe('')
+  expect(field('稻米接收人')?.value).toBe('')
   expect(changed).not.toHaveBeenCalled()
 })
 

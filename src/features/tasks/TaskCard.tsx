@@ -19,6 +19,6 @@ export function TaskCard({ task, compact = false }: { task: RiceTask; compact?: 
     </Link>
     {!compact && <ImageGroup images={attachmentImages(task.attachments)} className="post-image-grid" />}
     <Link to="/tasks/$taskId" params={{ taskId: task.id }} className="business-card-body">
-    <footer className="content-card-actions task-card-actions"><span className={`task-status status-${displayStatus}`}>{taskDisplayStatus(task, now)}</span><strong className="rice-amount" aria-label={`${task.reward_amount} 稻米`}><Sprout size={21} aria-hidden="true" />{task.reward_amount}</strong></footer>
+    <footer className="content-card-actions task-card-actions"><span className={`task-status status-${displayStatus}`}>{taskDisplayStatus(task, now)}</span><strong className="rice-amount" aria-label={`${task.reward_amount} 稻米${(task.capacity ?? 1) > 1 ? ' / 人' : ''}`}><Sprout size={21} aria-hidden="true" />{task.reward_amount}{(task.capacity ?? 1) > 1 && ' / 人'}</strong></footer>
     </Link></article>
 }

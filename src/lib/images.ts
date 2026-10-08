@@ -1,6 +1,6 @@
 export const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 export const IMAGE_ACCEPT = IMAGE_TYPES.join(',')
-export const MAX_IMAGE_BYTES = 20_000_000
+export const MAX_IMAGE_BYTES = 5_000_000
 export const MAX_IMAGE_COUNT = 9
 const MAX_IMAGE_DIMENSION = 2048
 const MAX_COMPRESSION_ATTEMPTS = 6
@@ -19,7 +19,6 @@ export function validateImageFiles(
   for (const file of files) {
     if (!IMAGE_TYPES.includes(file.type)) return `“${file.name}”格式不支持，请选择 JPEG、PNG、WebP 或 GIF 图片。`
     if (!file.size) return `“${file.name}”是空文件，请重新选择。`
-    if (file.size > MAX_IMAGE_BYTES) return `“${file.name}”超过 ${imageSizeLabel(MAX_IMAGE_BYTES)}，请选择较小的图片。`
   }
   return null
 }
@@ -55,7 +54,7 @@ export function readImageAspectRatio(file: File): Promise<{ width: number; heigh
   })
 }
 
-export async function preparePostImage(file: File, maxBytes: number): Promise<File> {
+export async function prepareImage(file: File, maxBytes = MAX_IMAGE_BYTES): Promise<File> {
   if (file.size <= maxBytes) return file
   // Canvas cannot preserve animated GIF frames.
   if (file.type === 'image/gif') throw new Error(`“${file.name}”是 GIF 动图，请缩小到 ${imageSizeLabel(maxBytes)} 以内后添加；其他格式的大图会自动压缩。`)
@@ -71,7 +70,10 @@ export async function preparePostImage(file: File, maxBytes: number): Promise<Fi
       canvas.height = Math.max(1, Math.round(image.height * scale))
       context.drawImage(image, 0, 0, canvas.width, canvas.height)
       const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, file.type === 'image/jpeg' ? 'image/jpeg' : 'image/webp', COMPRESSED_IMAGE_QUALITY))
-      if (blob && blob.size <= maxBytes) return new File([blob], file.name, { type: blob.type })
+      if (blob?.size && blob.size <= maxBytes) {
+        const extension = blob.type === 'image/jpeg' ? 'jpg' : blob.type === 'image/webp' ? 'webp' : 'png'
+        return new File([blob], `${file.name.replace(/\.[^.]+$/, '')}.${extension}`, { type: blob.type })
+      }
     }
     throw new Error(`“${file.name}”压缩后仍过大，请选择较小的图片。`)
   } finally { image.close() }

@@ -1,0 +1,2 @@
+.proposal-comments .reply-row p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.proposal-comments .reply-composer { margin-top: var(--xj-card-gap); }

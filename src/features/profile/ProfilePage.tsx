@@ -42,7 +42,7 @@ export function ProfilePage({ initialData = null, initialError = '' }: { initial
         <Button label="查看流水" variant="ghost" isDisabled={!wallet} onClick={() => community ? void navigate({ to: '/nodes/$nodeId/grains', params: { nodeId: community.id } }) : void navigate({ to: '/me/grains' })}>查看流水 →</Button>
       </header>
       {community && (communities.length > 1 ? (
-        <label className="native-field">管理的社区
+        <label className="native-field">管理的节点
           <select value={community.id} onChange={(event) => selectCommunity(event.target.value)}>
             {communities.map(({ id, name }) => <option key={id} value={id}>{name}</option>)}
           </select>
@@ -57,12 +57,12 @@ export function ProfilePage({ initialData = null, initialError = '' }: { initial
       </div>
       <div className="grain-metrics">
         <div><b>{wallet?.balance ?? '—'}</b><span>可用</span></div>
-        <div><b>{wallet?.frozen ?? '—'}</b><span>冻结</span></div>
+        <div><b>{wallet?.frozen ?? '—'}</b><span>冻结稻米</span></div>
         <div><b>{wallet?.earned ?? '—'}</b><span>累计获得</span></div>
       </div>
     </section>
     <nav className="profile-menu" aria-label="个人中心功能">{([
-      ['/me/identity', '社区身份', '我在各社区的身份'],
+      ['/me/identity', '节点身份', '我在各节点的身份'],
       ['/me/tasks', '我的任务', '申请、交付、验收与历史记录'],
       ['/me/events', '我的活动', '我申请 / 主办的活动'],
       ['/me/posts', '我的帖子', '在广场发布过的内容'],
