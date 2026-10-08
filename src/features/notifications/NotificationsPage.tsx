@@ -30,15 +30,15 @@ const reasonCopy: Record<string, { label: string; action: string }> = {
   reply: { label: '评论', action: '回复了你的帖子' },
   quote: { label: '引用', action: '引用了你的帖子' },
   'subscribed-post': { label: '帖子', action: '发布了新帖子' },
-  'task-application_created': { label: '任务', action: '申请领取你的任务' },
-  'task-assignee_appointed': { label: '任务', action: '任命你承做任务' },
+  'task-application_created': { label: '任务', action: '申请了你发起的任务' },
+  'task-assignee_appointed': { label: '任务', action: '选定你来完成任务' },
   'task-application_not_selected': { label: '任务', action: '通知你：本次任务申请未入选' },
   'task-application_rejected': { label: '任务', action: '拒绝了你的任务申请，本次申请未入选' },
   'task-task_cancelled': { label: '任务', action: '取消了你申请的任务' },
   'task-task_expired': { label: '任务', action: '你申请的任务已失效' },
-  'task-result_submitted': { label: '任务', action: '提交了任务结果' },
-  'task-result_approved': { label: '任务', action: '认可了你的任务结果' },
-  'task-changes_requested': { label: '任务', action: '请你继续完善任务结果' },
+  'task-result_submitted': { label: '任务', action: '交来了任务成果' },
+  'task-result_approved': { label: '任务', action: '通过了你的成果验收' },
+  'task-changes_requested': { label: '任务', action: '请你再完善一下成果' },
 }
 
 export function notificationTitle(notification: NotificationView) {
@@ -282,7 +282,7 @@ function NotificationInbox({ session, isReady }: { session: RiceSession | null; 
                 {previewText && previewText !== notificationTitle(notification) ? <span className="notification-preview">{previewText}</span> : null}
                 <span className="notification-meta"><time dateTime={notification.indexedAt}>{formatTimestamp(notification.indexedAt)}</time>{!notification.isRead && <span className="notification-unread"><i aria-hidden="true" />未读</span>}</span>
               </span>
-              {target && <ChevronRight className="notification-arrow" size={20} aria-hidden="true" />}
+              {target && <ChevronRight className="notification-arrow row-chevron" aria-hidden="true" />}
             </button>
           })}
         </section>

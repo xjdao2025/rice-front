@@ -105,7 +105,7 @@ export function EventCreateForm({ session, nodes, initialDraft, initialError = '
     if (busy) return false
     if (!fields.node_id || !fields.title.trim() || !fields.description.trim() || !fields.location.trim() || Number(fields.capacity) < 1) { setError('请先填写活动标题、介绍、地点和名额。'); return false }
     if ((status === 'open' && !fields.organizer_contact.trim()) || fields.organizer_contact.trim().length > 256) { setError('请填写组织方联系方式，最多 256 字。'); return false }
-    const numberError = integerInputError(fields.fee_amount, '报名稻米') || integerInputError(fields.capacity, '参与名额', 1, 100_000)
+    const numberError = integerInputError(fields.fee_amount, '每人所需稻米') || integerInputError(fields.capacity, '参与名额', 1, 100_000)
     if (numberError) { setError(numberError); return false }
     const timeError = eventTimeError(fields, Date.now(), 'ends_at', allowPastDates)
     if (timeError) { setError(timeError); return false }
@@ -124,7 +124,7 @@ export function EventCreateForm({ session, nodes, initialDraft, initialError = '
       return true
     } catch (e) { if (mounted.current) setError(e instanceof Error ? e.message : '保存失败'); return false } finally { if (mounted.current) setBusy(false) }
   }
-  const amountError = fields.fee_amount === '' ? null : integerInputError(fields.fee_amount, '报名稻米')
+  const amountError = fields.fee_amount === '' ? null : integerInputError(fields.fee_amount, '每人所需稻米')
   const feeReadOnly = editing && ['open', 'in_progress'].includes(initialDraft?.status ?? '')
   const capacityError = fields.capacity === '' ? null : integerInputError(fields.capacity, '参与名额', 1, 100_000)
   const disabled = busy || !fields.node_id || !fields.title.trim() || !fields.description.trim() || !fields.location.trim() || !fields.application_deadline || !fields.starts_at || !fields.ends_at || fields.fee_amount === '' || fields.capacity === '' || !!amountError || !!capacityError
@@ -138,7 +138,7 @@ export function EventCreateForm({ session, nodes, initialDraft, initialError = '
     if (step === 2) return eventTimeError(fields, Date.now(), 'application_deadline', allowPastDates)
     if (step === 3) return eventTimeError(fields, Date.now(), 'starts_at', allowPastDates)
     if (step === 4) return eventTimeError(fields, Date.now(), 'ends_at', allowPastDates)
-    if (step === 5) return integerInputError(fields.capacity, '参与名额', 1, 100_000) || integerInputError(fields.fee_amount, '报名稻米')
+    if (step === 5) return integerInputError(fields.capacity, '参与名额', 1, 100_000) || integerInputError(fields.fee_amount, '每人所需稻米')
     return null
   }
   return <section className="form-card event-compose-form">
@@ -169,29 +169,29 @@ export function EventCreateForm({ session, nodes, initialDraft, initialError = '
         review: <dl className="publish-review-fields"><div><dt>报名截止（北京时间）</dt><dd>{fields.application_deadline.replace('T', ' ')}</dd></div></dl>,
       },
       {
-        label: '开始时间', title: '活动什么时候开始？',
+        label: '活动开始', title: '活动什么时候开始？',
         content: <PublishSchedule disabled={busy} fields={[
-          { label: '开始时间', value: fields.starts_at, min: allowPastDates ? undefined : fields.application_deadline || nextTimeSlot(), required: true, onChange: value => setTime('starts_at', value) },
+          { label: '活动开始', value: fields.starts_at, min: allowPastDates ? undefined : fields.application_deadline || nextTimeSlot(), required: true, onChange: value => setTime('starts_at', value) },
         ]} />,
-        review: <dl className="publish-review-fields"><div><dt>开始时间（北京时间）</dt><dd>{fields.starts_at.replace('T', ' ')}</dd></div></dl>,
+        review: <dl className="publish-review-fields"><div><dt>活动开始（北京时间）</dt><dd>{fields.starts_at.replace('T', ' ')}</dd></div></dl>,
       },
       {
-        label: '结束时间', title: '活动什么时候结束？',
+        label: '活动结束', title: '活动什么时候结束？',
         content: <PublishSchedule disabled={busy} fields={[
-          { label: '结束时间', value: fields.ends_at, min: allowPastDates ? undefined : fields.starts_at ? addMinutes(fields.starts_at, SLOT_MINUTES) : nextTimeSlot(), required: true, onChange: value => setTime('ends_at', value) },
+          { label: '活动结束', value: fields.ends_at, min: allowPastDates ? undefined : fields.starts_at ? addMinutes(fields.starts_at, SLOT_MINUTES) : nextTimeSlot(), required: true, onChange: value => setTime('ends_at', value) },
         ]}>
           <label className="native-field">持续时长<select value={duration} disabled={busy} onChange={event => { const value = event.target.value; setDuration(value); if (value !== 'custom' && fields.starts_at) set('ends_at', addMinutes(fields.starts_at, Number(value))) }}>{durations.map(([minutes, label]) => <option key={minutes} value={minutes}>{label}</option>)}<option value="custom">自定义</option></select></label>
           <p className="muted">实际时长：{eventDurationLabel(fields)}</p>
         </PublishSchedule>,
-        review: <dl className="publish-review-fields"><div><dt>结束时间（北京时间）</dt><dd>{fields.ends_at.replace('T', ' ')}</dd></div><div><dt>持续时长</dt><dd>{eventDurationLabel(fields)}</dd></div></dl>,
+        review: <dl className="publish-review-fields"><div><dt>活动结束（北京时间）</dt><dd>{fields.ends_at.replace('T', ' ')}</dd></div><div><dt>持续时长</dt><dd>{eventDurationLabel(fields)}</dd></div></dl>,
       },
       {
         label: '参与与稻米', title: '一起怎么参与？',
         content: <>
           <PublishTextInput isDisabled={busy} label="参与名额" value={fields.capacity} onChange={(v) => set('capacity', v)} status={capacityError ? { type: 'error', message: capacityError } : undefined} width="100%" isRequired />
-          <PublishTextInput isDisabled={busy} isReadOnly={feeReadOnly} label="每人报名收取稻米（0 表示无需稻米）" description="活动结束确认后，稻米结算至所选节点账户。" value={fields.fee_amount} onChange={(v) => set('fee_amount', v)} status={amountError ? { type: 'error', message: amountError } : undefined} width="100%" isRequired />
+          <PublishTextInput isDisabled={busy} isReadOnly={feeReadOnly} label="每人所需稻米" description="填 0 表示免费" value={fields.fee_amount} onChange={(v) => set('fee_amount', v)} status={amountError ? { type: 'error', message: amountError } : undefined} width="100%" isRequired />
         </>,
-        review: <><dl className="publish-review-fields"><div><dt>参与名额</dt><dd>{fields.capacity}</dd></div><div><dt>每人报名收取稻米</dt><dd>{Number(fields.fee_amount) === 0 ? '无需稻米' : `${fields.fee_amount} 测试稻米`}</dd></div></dl><p className="muted">活动结束确认后，稻米结算至所选节点账户。</p></>,
+        review: <><dl className="publish-review-fields"><div><dt>参与名额</dt><dd>{fields.capacity}</dd></div><div><dt>每人所需稻米</dt><dd>{Number(fields.fee_amount) === 0 ? '免费' : `每人 ${fields.fee_amount} 稻米`}</dd></div></dl><p className="muted">组织者确认结束后，稻米会转入所选节点。</p></>,
       },
     ]} />
   </section>

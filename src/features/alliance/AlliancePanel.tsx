@@ -1,6 +1,6 @@
 import { Button } from '@astryxdesign/core/Button'
 import { Link } from '@tanstack/react-router'
-import { ArrowRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Avatar } from '~/components/Avatar'
 import { AutoLoadMore } from '~/components/AutoLoadMore'
@@ -101,7 +101,7 @@ function Announcements() {
   return <section aria-label="公告栏"><h2>公告栏</h2>
     {list.error && <p className="inline-error" role="alert">{list.error}</p>}
     {!list.page && (list.error ? <Button label="重试" variant="secondary" onClick={list.retry} /> : <LoadingState label="正在加载公告…" />)}
-    <div className="node-list">{list.page?.data.map((announcement) => <Link key={announcement.id} to="/alliance/announcements/$id" params={{ id: announcement.id }} className="profile-menu-row node-card"><span className="profile-menu-copy"><strong>{announcement.title}</strong><small>{formatTimestamp(announcement.inserted_at)}</small></span><ArrowRight size={18} /></Link>)}</div>
+    <div className="node-list">{list.page?.data.map((announcement) => <Link key={announcement.id} to="/alliance/announcements/$id" params={{ id: announcement.id }} className="profile-menu-row node-card"><span className="profile-menu-copy"><strong>{announcement.title}</strong><small>{formatTimestamp(announcement.inserted_at)}</small></span><ChevronRight className="row-chevron" aria-hidden="true" /></Link>)}</div>
     {list.page && !list.page.data.length && <p className="muted">暂无公告。</p>}
     {list.page?.meta.next_cursor && <AutoLoadMore cursor={list.page.meta.next_cursor} loading={list.loading} failed={!!list.error} onLoadMore={list.more} />}
   </section>
@@ -191,9 +191,21 @@ export function GovernanceDetail({ kind, id }: { kind: 'announcement' | 'proposa
   </div>
 }
 
+export function observeGovernanceBody(frame: HTMLIFrameElement) {
+  const body = frame.contentDocument?.body
+  if (!body) return
+  const resize = () => { frame.style.height = `${body.scrollHeight}px` }
+  resize()
+  const observer = new ResizeObserver(resize)
+  observer.observe(body)
+  return () => observer.disconnect()
+}
+
 function GovernanceBody({ attachment }: { attachment: RiceAttachment }) {
   const [html, setHtml] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const stopObserving = useRef<(() => void) | undefined>(undefined)
+  useEffect(() => () => stopObserving.current?.(), [])
   const readable = attachment.content_type.startsWith('text/')
   const image = attachment.content_type.startsWith('image/')
   useEffect(() => {
@@ -206,11 +218,11 @@ function GovernanceBody({ attachment }: { attachment: RiceAttachment }) {
   // Legacy proposals stored HTML in text/plain .txt attachments.
   const htmlPreview = attachment.content_type === 'text/html' || /<(?:!doctype|html|body|p|div|h[1-6]|img|ul|ol|li|br|table|blockquote|a|span|strong)(?:\s|>)/i.test(html ?? '')
   const theme = html === null ? null : window.getComputedStyle(window.document.documentElement)
-  const bodyStyle = theme ? `body{margin:0;color:${theme.getPropertyValue('--xj-text-soft')};font-size:${theme.getPropertyValue('--xj-font-body')};line-height:${theme.getPropertyValue('--xj-detail-body-line-height')};overflow-wrap:anywhere}.proposal-content{padding-top:0!important;font-size:inherit!important;line-height:inherit!important;word-break:normal!important}img{position:static!important;max-width:100%!important;width:auto!important;height:auto!important;object-fit:contain!important}*:has(>img){max-width:100%!important;max-height:none!important;aspect-ratio:auto!important;overflow:visible!important}a{color:${theme.getPropertyValue('--xj-accent')}}` : ''
+  const bodyStyle = theme ? `html,body{height:auto!important;min-height:0!important;max-height:none!important;overflow:hidden!important;background:transparent!important}body{display:flow-root!important;margin:0;color:${theme.getPropertyValue('--xj-text-soft')};font-size:${theme.getPropertyValue('--xj-font-body')};line-height:${theme.getPropertyValue('--xj-detail-body-line-height')};overflow-wrap:anywhere}.proposal-content{padding-top:0!important;font-size:inherit!important;line-height:inherit!important;word-break:normal!important}img{position:static!important;max-width:100%!important;width:auto!important;height:auto!important;object-fit:contain!important}*:has(>img){max-width:100%!important;max-height:none!important;aspect-ratio:auto!important;overflow:visible!important}a{color:${theme.getPropertyValue('--xj-accent')}}` : ''
   return <div className="governance-body">
     {error && <p className="inline-error" role="alert">正文暂时无法加载：{error}</p>}
     {readable && html === null && !error && <LoadingState label="正在加载正文…" />}
-    {html !== null && (htmlPreview ? <iframe title={attachment.filename || '正文'} sandbox="allow-same-origin" referrerPolicy="no-referrer" onLoad={(event) => { event.currentTarget.style.height = `${event.currentTarget.contentDocument?.documentElement.scrollHeight ?? 0}px` }} srcDoc={`<base href="${new URL(url, window.location.origin).href.replaceAll('"', '&quot;')}"><style>${bodyStyle}</style>${html}`} /> : <p className="business-description">{html}</p>)}
+    {html !== null && (htmlPreview ? <iframe title={attachment.filename || '正文'} sandbox="allow-same-origin" referrerPolicy="no-referrer" onLoad={(event) => { stopObserving.current?.(); stopObserving.current = observeGovernanceBody(event.currentTarget) }} srcDoc={`<base href="${new URL(url, window.location.origin).href.replaceAll('"', '&quot;')}"><style>${bodyStyle}</style>${html}`} /> : <p className="business-description">{html}</p>)}
     {image && <img className="governance-attachment-image" src={url} alt={attachment.filename || '附件图片'} />}
     <a href={readable ? `${url}?download=1` : url} target="_blank" rel="noopener noreferrer">{readable ? '下载原文附件' : '打开附件'}</a>
   </div>

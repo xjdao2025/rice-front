@@ -138,10 +138,10 @@ export function taskEventLabel(event: TaskEvent) {
   switch (event.to_status) {
     case 'draft': return '创建任务草稿'
     case 'open': return '发布任务'
-    case 'in_progress': return event.from_status === 'under_review' ? '退回修改' : '选定承接者'
-    case 'overdue': return '交付超时'
+    case 'in_progress': return event.from_status === 'under_review' ? '退回修改' : '选这位伙伴'
+    case 'overdue': return '已过交成果的时间'
     case 'under_review': return '提交成果'
-    case 'completed': return '验收通过，任务完成'
+    case 'completed': return '验收通过'
     case 'cancelled': return '任务取消'
     case 'expired': return '任务已失效'
   }

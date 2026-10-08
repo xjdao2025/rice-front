@@ -69,8 +69,10 @@ it('shows late delivery as overdue while leaving supplementary submission availa
   state.session = { token: 'token', user: { id: 'assignee' } } as RiceSession
   const html = renderToStaticMarkup(<TaskDetailPage taskId={task.id} initial={{ task, error: '', viewerToken: 'token' }} />)
   expect(html).toContain('status-overdue')
-  expect(html).toContain('任务已超时')
-  expect(html).toContain('提交结果')
+  expect(html).toContain('已过交成果的时间')
+  expect(html).toContain('请联系发起人，商量后续安排。')
+  expect(html).toContain('说说完成情况')
+  expect(html).toContain('提交成果')
 })
 
 it('shows authorized old-round records in chronological order with contact', () => {
@@ -119,7 +121,7 @@ it('keeps the return reason hidden until an administrator chooses to return a su
   state.session = { token: 'token', user: { id: 'publisher' } } as RiceSession
   const html = renderToStaticMarkup(<TaskDetailPage taskId={task.id} initial={{ task, error: '', viewerToken: 'token' }} />)
   expect(html).toContain('退回修改')
-  expect(html).toContain('验收并发放')
+  expect(html).toContain('通过并发放稻米')
   expect(html).not.toContain('退回理由')
   expect(html).not.toContain('退回修改时必填')
 })
@@ -141,9 +143,29 @@ it('reviews every participant separately and keeps recruitment available until c
   const html = render(task)
   expect(html).toContain('阿青的提交')
   expect(html).toContain('小林的提交')
-  expect(html.match(/验收并发放/g)).toHaveLength(2)
-  expect(html).toContain('总奖励：30 稻米')
-  expect(html).toContain('接收申请')
+  expect(html.match(/通过并发放稻米/g)).toHaveLength(2)
+  expect(html).toContain('总稻米激励：30 稻米')
+  expect(html).toContain('选这位伙伴')
   expect(render({ ...task, appointed_count: 3 })).not.toContain('待审批申请')
   expect(render({ ...task, application_deadline: '2026-09-21T09:00:00Z' })).not.toContain('待审批申请')
+})
+
+it('uses the task copy for requested changes while preserving the administrator feedback', () => {
+  const user = { id: 'worker', did: 'did:example:worker', handle: 'worker' }
+  const task = {
+    id: 'task-copy', title: '完善成果', description: '说明', status: 'in_progress',
+    creator: { id: 'publisher', did: 'did:example:publisher', handle: 'publisher' },
+    assignee: user, application_count: 1, reward_amount: 1, reward_status: 'reserved',
+    application_deadline: null, execution_deadline: null, applications: [], events: [],
+    submissions: [{ id: 'submission-copy', status: 'changes_requested', body: '已提交说明',
+      review_reason: '请补充现场照片，保留原来的任务奖励说明。', user, inserted_at: '2026-09-29T09:00:00Z' }],
+    allowed_actions: ['submit_result'],
+  } as unknown as RiceTask
+  state.session = { token: 'token', user } as RiceSession
+  const html = renderToStaticMarkup(<TaskDetailPage taskId={task.id} initial={{ task, error: '', viewerToken: 'token' }} />)
+  expect(html).toContain('再完善一下吧')
+  expect(html).toContain('请补充现场照片，保留原来的任务奖励说明。')
+  expect(html).toContain('说说完成情况')
+  expect(html).toContain('提交成果')
+  expect(html).not.toContain('结果未被认可')
 })

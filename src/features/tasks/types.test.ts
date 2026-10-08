@@ -30,11 +30,12 @@ describe('task labels', () => {
 
   it('describes user actions without exposing state-machine transitions', () => {
     expect(taskEventLabel(event({ from_status: 'draft', to_status: 'open' }))).toBe('发布任务')
-    expect(taskEventLabel(event({}))).toBe('选定承接者')
+    expect(taskEventLabel(event({}))).toBe('选这位伙伴')
     expect(taskEventLabel(event({ from_status: 'under_review' }))).toBe('退回修改')
     expect(taskEventLabel(event({ from_status: 'in_progress' }))).toBe('更新任务进展')
-    expect(taskEventLabel(event({ to_status: 'overdue' }))).toBe('交付超时')
+    expect(taskEventLabel(event({ to_status: 'overdue' }))).toBe('已过交成果的时间')
     expect(taskEventLabel(event({ to_status: 'expired' }))).toBe('任务已失效')
+    expect(taskEventLabel(event({ to_status: 'completed' }))).toBe('验收通过')
   })
 
   it('shows an unsubmitted delivery as overdue at its deadline while review stays pending', () => {

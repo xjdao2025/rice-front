@@ -25,17 +25,17 @@ function renderTask(applicationDeadline: string | null, executionDeadline: strin
 
 it('gives each required task deadline its own step and validates them separately', () => {
   const empty = renderTask(null, null)
-  expect(empty.steps.map(step => step.label)).toEqual(['基本信息', '内容', '申请截止', '交付截止', '参与与稻米'])
+  expect(empty.steps.map(step => step.label)).toEqual(['基本信息', '内容', '申请截止', '最晚交成果', '参与与稻米'])
   expect((empty.steps[2].content as ReactElement<{ fields: unknown }>).props.fields).toEqual([expect.objectContaining({ label: '申请截止', required: true })])
-  expect((empty.steps[3].content as ReactElement<{ fields: unknown }>).props.fields).toEqual([expect.objectContaining({ label: '交付截止', required: true })])
+  expect((empty.steps[3].content as ReactElement<{ fields: unknown }>).props.fields).toEqual([expect.objectContaining({ label: '最晚交成果', required: true })])
   expect(empty.validate(2)).toContain('请选择申请截止')
-  expect(empty.validate(3)).toContain('请选择交付截止')
+  expect(empty.validate(3)).toBe('选一下最晚哪天交成果。')
   expect(renderTask(null, null, '').validate(0)).toContain('组织方联系方式')
 
   const ordered = renderTask('2099-01-01T10:00:00+08:00', '2099-01-02T10:00:00+08:00')
   expect(ordered.validate(2)).toBeNull()
   expect(ordered.validate(3)).toBeNull()
-  expect(renderTask('2099-01-02T10:00:00+08:00', '2099-01-01T10:00:00+08:00').validate(3)).toContain('晚于')
+  expect(renderTask('2099-01-02T10:00:00+08:00', '2099-01-01T10:00:00+08:00').validate(3)).toBe('交成果时间要晚于申请截止。')
 })
 
 it('allows unchanged past deadlines when editing an active task', () => {
@@ -63,8 +63,10 @@ it('restores capacity and explains the single or multiple reward before publishi
   expect(singleCapacity).toContain('单人任务')
   expect(singleCapacity).not.toContain('承接人数上限（必填）')
   expect(single.steps[4].title).toBe('给多少稻米？')
-  expect(singleReward).toContain('任务奖励（测试稻米）')
+  expect(singleReward).toContain('稻米激励（测试稻米）')
   expect(singleReview).toContain('1 测试稻米')
+  expect(singleReview).toContain('稻米从哪出')
+  expect(singleReward).toContain('使用节点稻米，不扣个人稻米。')
   expect(singleReview).not.toContain('× 1')
 
   const multiple = renderTask(null, null, 'contact', false, 'draft', 3)
@@ -75,7 +77,7 @@ it('restores capacity and explains the single or multiple reward before publishi
   expect(field).toContain('验收')
   expect(renderToStaticMarkup(multiple.steps[1].review)).toContain('最多 3 人')
   expect(multiple.steps[4].title).toBe('给每位承接者多少稻米？')
-  expect(renderToStaticMarkup(multiple.steps[4].content)).toContain('每人任务奖励（测试稻米）')
+  expect(renderToStaticMarkup(multiple.steps[4].content)).toContain('每人稻米激励（测试稻米）')
   expect(renderToStaticMarkup(multiple.steps[4].review)).toContain('1 × 3 = 3 测试稻米')
   expect(renderTask(null, null, 'contact', false, 'draft', 1001).validate(1)).toContain('2～1000')
 })

@@ -44,7 +44,7 @@ it('renders the prefetched profile and balance together on first render', () => 
   expect(html).toContain('<strong>130</strong>')
   expect(html).toContain('<b>123</b>')
   expect(html).toContain('href="/me/posts"')
-  expect(html).toContain('href="/alliance"')
+  expect(html).not.toContain('href="/alliance"')
   expect(html).not.toContain('>—<')
   expect(html).not.toContain('节点稻米')
 })
@@ -113,6 +113,6 @@ it('shows separate task states and counts in the native filter', () => {
 it('loads wallet history for the current route instead of reusing the profile balance', () => {
   const html = renderToStaticMarkup(<GrainHistoryPage nodeId="community" />)
   expect(html).toContain('节点稻米')
-  expect(html).toContain('正在加载明细')
+  expect(html).toContain('正在加载记录')
   expect(html).not.toContain('<strong>130</strong>')
 })

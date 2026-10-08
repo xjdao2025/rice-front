@@ -23,7 +23,7 @@ export function GrainScannerPage({ onRead }: { onRead: (recipient: string) => vo
   const accept = (value: string) => {
     if (!active.current) return
     try { const recipient = grainCodeRecipient(value, window.location.origin); active.current = false; onRead(recipient) }
-    catch { setError('无法识别稻米接收码，请扫描“接收稻米”页面生成的二维码。') }
+    catch { setError('没认出这个码，请扫描“接收稻米”里的二维码。') }
   }
   useEffect(() => {
     active.current = true
@@ -46,12 +46,12 @@ export function GrainScannerPage({ onRead }: { onRead: (recipient: string) => vo
       const result = await Scanner.scanImage(file, { returnDetailedScanResult: true })
       accept(result.data)
     } catch {
-      if (active.current) setError('图片中未识别到二维码，请选择清晰的稻米接收码图片。')
+      if (active.current) setError('没认出这个码，请扫描“接收稻米”里的二维码。')
     } finally { if (active.current) setBusy(false) }
   }
   return <div className="page business-panel form-stack">
-      <p>将稻米接收码放入镜头内，识别后请核对接收人。</p>
-      <video ref={video} className="grain-scanner-video" muted playsInline aria-label="稻米接收码扫描画面" />
+      <p>对准收稻米码，核对一下对方。</p>
+      <video ref={video} className="grain-scanner-video" muted playsInline aria-label="收稻米码扫描画面" />
       {cameraError && <p className="muted" role="status">{cameraError}</p>}
       {error && <p className="inline-error" role="alert">{error}</p>}
       <input ref={fileInput} type="file" accept="image/*" hidden aria-label="二维码图片" onChange={(event) => { void readImage(event.target.files?.[0]); event.target.value = '' }} />

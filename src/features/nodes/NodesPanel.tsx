@@ -85,8 +85,8 @@ export function NodeDetail({ nodeId }: { nodeId: string }) {
   return <div className="page business-panel">{error && <p className="inline-error" role="alert">{error}</p>}{!node && !error && <LoadingState label="正在加载节点…" />}{node && <>
     <div className="node-detail-heading"><Avatar name={node.name} src={node.logo?.url} size="large" /><h1>{node.name}</h1></div>
     {node.description && <p className="business-description">{node.description}</p>}
-    <section className="business-section"><h2>节点稻米</h2><div className="grain-metrics"><div><b>{(node.grain_balance + node.grain_frozen_balance).toLocaleString('zh-CN')}</b><span>稻米余额</span></div><div><b>{node.grain_balance.toLocaleString('zh-CN')}</b><span>可用稻米</span></div><div><b>{node.grain_frozen_balance.toLocaleString('zh-CN')}</b><span>冻结稻米</span></div></div>
-      {node.role === 'admin' && <Button label="查看节点稻米明细" variant="secondary" onClick={() => void navigate({ to: '/nodes/$nodeId/grains', params: { nodeId } })} />}
+    <section className="business-section"><h2>节点稻米</h2><div className="grain-metrics"><div><b>{(node.grain_balance + node.grain_frozen_balance).toLocaleString('zh-CN')}</b><span>稻米总量</span></div><div><b>{node.grain_balance.toLocaleString('zh-CN')}</b><span>可用稻米</span></div><div><b>{node.grain_frozen_balance.toLocaleString('zh-CN')}</b><span>冻结稻米</span></div></div>
+      {node.role === 'admin' && <Button label="稻米记录" variant="secondary" onClick={() => void navigate({ to: '/nodes/$nodeId/grains', params: { nodeId } })} />}
     </section>
     {node.role ? <p className="task-neutral-note">我的身份：{node.role === 'admin' ? '管理员' : '正式成员'}</p> : node.my_application?.status === 'pending' ? <p className="task-neutral-note">加入申请已提交，等待管理员审批。</p> : node.my_application?.status === 'rejected' ? <p className="task-neutral-note">加入申请未通过。{node.my_application.review_reason}</p> : null}
     <section className="business-section"><h2>节点成员</h2>{node.members?.map(({ user, role }) => <div className="candidate" key={user.id}>

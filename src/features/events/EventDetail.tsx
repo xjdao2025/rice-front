@@ -13,7 +13,7 @@ import { useEffect, useRef, useState } from 'react'
 import { formatTimestamp } from '~/lib/format'
 import { useStoredSession } from '../session/session'
 import { LoginLink } from '../session/LoginLink'
-import { applicationStatusLabel, eventAcceptsApplications, eventAction, eventDisplayStatus, eventStatusLabel, getEvent, type EventActionInput, type RiceEvent } from './api'
+import { applicationStatusLabel, eventAcceptsApplications, eventAction, eventDisplayStatus, eventSettlementAmount, eventStatusLabel, getEvent, type EventActionInput, type RiceEvent } from './api'
 
 const historyLabels: Record<string, string> = { applied: '提交申请', completed: '活动结束', application_completed: '完成参与记录', application_cancelled: '报名已取消', application_withdrawn: '撤销申请', created: '创建活动', published: '发布活动', edited: '编辑活动', application_created: '提交申请', application_approved: '通过申请', application_rejected: '拒绝申请', application_removed: '移除报名', started: '活动开始', finished: '活动结束', cancelled: '活动取消', application_not_selected: '申请未入选' }
 type EventDetailInitial = { event: RiceEvent | null; error: string; viewerToken: string | null }
@@ -57,23 +57,26 @@ function EventDetails({ eventId, initial }: { eventId: string; initial?: EventDe
   const canWithdraw = Boolean(event?.my_application?.allowed_actions.includes('withdraw') && Date.parse(event.starts_at) > now)
   const canEdit = event?.status !== 'completed' && event?.allowed_actions.includes('edit')
   const hasEventActions = canApply || canWithdraw || event?.allowed_actions.some(action => ['finish', 'cancel'].includes(action)) || canEdit
+  const settlementAmount = event ? eventSettlementAmount(event) : null
   return <div className="page content-card business-panel event-detail-page">{error && <p className="inline-error" role="alert">{error}</p>}{!event && !error && <LoadingState label="正在加载活动…" />}{event && <>
     <span className={`task-status status-${event.status}`}>{eventDisplayStatus(event, now)}</span><h1>{event.title}</h1><p className="muted">{event.node.name} · {event.creator.nickname || event.creator.handle}发起</p>
-    <div className="business-money"><strong className="rice-amount">{event.fee_amount ? <><Sprout size={25} />{event.fee_amount}<small> / 人</small></> : '无需稻米'}</strong></div>
-    <p>{formatTimestamp(event.starts_at)} — {formatTimestamp(event.ends_at)}</p><p>{event.location}</p><p className="muted">报名截止：{formatTimestamp(event.application_deadline)}</p>
+    <div className={`business-money${event.fee_amount ? '' : ' event-fee-free'}`}><strong className="rice-amount">{event.fee_amount ? <><Sprout size={25} />每人 {event.fee_amount} 稻米</> : '免费'}</strong></div>
+    <section className="business-section"><h2>活动时间</h2><p className="business-description">活动开始：<time dateTime={event.starts_at}>{formatTimestamp(event.starts_at)}</time><br />活动结束：<time dateTime={event.ends_at}>{formatTimestamp(event.ends_at)}</time></p></section>
+    <p>{event.location}</p>
+    <section className="business-section"><h2>报名截止</h2><p className="business-description"><time dateTime={event.application_deadline}>{formatTimestamp(event.application_deadline)}</time></p></section>
     {event.organizer_contact && <p>组织方联系方式：{event.organizer_contact}</p>}
-    <div className="business-counts"><div><strong>{event.application_count}</strong><span>已提交申请</span></div><div><strong>{event.approved_count} / {event.capacity}</strong><span>已通过 / 名额</span></div></div>
-    {event.my_application && <p className="task-neutral-note">我的申请：{applicationStatusLabel[event.my_application.status]}{event.my_application.payment_status === 'refunded' ? '，稻米已退还' : event.my_application.payment_status === 'settled' ? '，报名稻米已结算' : ''}</p>}
+    <div className="business-counts"><div><strong>{event.application_count}</strong><span>报名人数</span></div><div><strong>{event.approved_count} / {event.capacity}</strong><span>已通过 / 名额</span></div></div>
+    {event.my_application && <p className="task-neutral-note">我的报名：{applicationStatusLabel[event.my_application.status]}{event.my_application.payment_status === 'refunded' ? '，稻米已退回' : event.my_application.payment_status === 'settled' ? (event.my_application.settlement_node_id ? '，稻米已转入节点' : '，稻米已结算') : ''}</p>}
     {event.my_application?.contact && <p className="task-neutral-note">我的联系方式：{event.my_application.contact}</p>}
-    {!session && acceptsApplications && <div className="business-section"><LoginLink className="primary-link" returnTo={`/events/${encodeURIComponent(eventId)}`}>登录后申请参加</LoginLink></div>}
-    {session && (confirm === 'apply' ? <section className="business-section"><h2>申请参加</h2>
-      <p>{event.fee_amount ? `报名需 ${event.fee_amount} 稻米；未入选将全额退还稻米。` : '本次活动无需稻米。'}</p>
+    {!session && acceptsApplications && <div className="business-section"><LoginLink className="primary-link" returnTo={`/events/${encodeURIComponent(eventId)}`}>登录后报名参加</LoginLink></div>}
+    {session && (confirm === 'apply' ? <section className="business-section"><h2>报名参加</h2>
+      <p>{event.fee_amount ? `报名需 ${event.fee_amount} 稻米，未通过会全部退回。` : '本次活动免费。'}</p>
       <div className="form-stack"><TextArea label="参与说明" value={reason} onChange={setReason} maxLength={512} width="100%" /><ContactField value={contact} onChange={setContact} disabled={busy} />
-        <div className="form-actions"><Button label="返回" variant="secondary" isDisabled={busy} onClick={() => setConfirm(null)} /><Button label="确认申请" variant="primary" isDisabled={busy || !canApply || !contact.trim() || contact.trim().length > 256} clickAction={() => run('apply')} /></div>
+        <div className="form-actions"><Button label="返回" variant="secondary" isDisabled={busy} onClick={() => setConfirm(null)} /><Button label="确认报名" variant="primary" isDisabled={busy || !canApply || !contact.trim() || contact.trim().length > 256} clickAction={() => run('apply')} /></div>
       </div>
-    </section> : hasEventActions && <div className="button-row business-section">{canApply && <Button label="申请参加" variant="primary" onClick={() => setConfirm('apply')} />}{canWithdraw && <Button label="撤销申请" variant="secondary" onClick={() => setConfirm('withdraw')} />}{event.allowed_actions.includes('finish') && <Button label="确认活动结束" variant="primary" onClick={() => setConfirm('finish')} />}{event.allowed_actions.includes('cancel') && <Button label="取消活动" variant="destructive" onClick={() => setConfirm('cancel')} />}{canEdit && <Link to="/compose" search={event.status === 'draft' ? { kind: 'activity' } : { kind: 'activity', editId: event.id }}>{event.status === 'draft' ? '继续编辑' : '编辑活动'}</Link>}</div>)}
-    {confirm && confirm !== 'apply' && <DetailDialog title={confirm === 'withdraw' ? '确认撤销申请' : confirm === 'finish' ? '确认活动结束' : '确认取消活动'} className="post-dialog business-dialog compose-close-dialog" onClose={() => { if (!busy) setConfirm(null) }}><div className="business-panel form-stack">
-      <p>{confirm === 'withdraw' ? `撤销后将保留申请记录，本期不能再次申请。${event.fee_amount ? `已冻结的 ${event.fee_amount} 稻米将全额退还。` : ''}` : confirm === 'finish' ? `确认后，将完成 ${event.approved_count} 位有效参与者的活动记录${event.fee_amount ? `，并结算 ${event.approved_count * event.fee_amount} 稻米` : ''}。` : '取消后不能继续报名，尚未结算的报名稻米将退还申请人。'}</p>
+    </section> : hasEventActions && <div className="button-row business-section">{canApply && <Button label="报名参加" variant="primary" onClick={() => setConfirm('apply')} />}{canWithdraw && <Button label="撤销报名" variant="secondary" onClick={() => setConfirm('withdraw')} />}{event.allowed_actions.includes('finish') && <Button label="确认结束" variant="primary" onClick={() => setConfirm('finish')} />}{event.allowed_actions.includes('cancel') && <Button label="取消活动" variant="destructive" onClick={() => setConfirm('cancel')} />}{canEdit && <Link to="/compose" search={event.status === 'draft' ? { kind: 'activity' } : { kind: 'activity', editId: event.id }}>{event.status === 'draft' ? '继续编辑' : '编辑活动'}</Link>}</div>)}
+    {confirm && confirm !== 'apply' && <DetailDialog title={confirm === 'withdraw' ? '确认撤销报名' : confirm === 'finish' ? '确认结束' : '确认取消活动'} className="post-dialog business-dialog compose-close-dialog" onClose={() => { if (!busy) setConfirm(null) }}><div className="business-panel form-stack">
+      <p>{confirm === 'withdraw' ? '撤销后，这一期不能再报名。' : confirm === 'finish' ? event.fee_amount ? settlementAmount !== null && event.settlement_node_id === event.node.id ? `确认后，${settlementAmount} 稻米将转入 ${event.node.name}。` : '确认后，稻米将按已通过报名者的实际记录结算。' : `确认后，将完成 ${event.approved_count} 位有效参与者的活动记录。` : '取消后不能再报名，尚未结算的稻米会退回报名者。'}</p>
       {error && <p className="inline-error" role="alert">{error}</p>}
       <div className="form-actions"><Button label="返回" variant="secondary" isDisabled={busy} onClick={() => setConfirm(null)} /><Button label={confirm === 'withdraw' ? '确认撤销' : confirm === 'finish' ? '确认结束' : '确认取消'} variant={confirm === 'finish' ? 'primary' : 'destructive'} isDisabled={busy || (confirm === 'withdraw' && !canWithdraw)} clickAction={() => run(confirm, confirm === 'withdraw' ? event.my_application?.id : undefined)} /></div>
     </div></DetailDialog>}
@@ -82,19 +85,19 @@ function EventDetails({ eventId, initial }: { eventId: string; initial?: EventDe
       const actions = (['approve', 'reject', 'remove'] as const).filter(action => a.allowed_actions.includes(action) && (action === 'remove' || Date.parse(event.starts_at) > now))
       return <article className="candidate form-stack" key={a.id}>
       <div><strong>{a.user.nickname || a.user.handle}</strong><span className="task-status">{applicationStatusLabel[a.status]}</span><p>{a.reason}</p>{a.contact && <p>联系方式：{a.contact}</p>}</div>
-      {actions.length > 0 && <div className="form-actions">{actions.map(action => <Button key={action} label={action === 'approve' ? '通过' : action === 'reject' ? '拒绝' : event.fee_amount ? '移除并退还稻米' : '移除报名'} variant={action === 'approve' ? 'primary' : 'secondary'} isDisabled={busy} onClick={() => { if (action === 'approve') void run(action, a.id); else setApplicationAction({ id: a.id, action }) }} />)}</div>}
+      {actions.length > 0 && <div className="form-actions">{actions.map(action => <Button key={action} label={action === 'approve' ? '通过' : action === 'reject' ? '拒绝' : event.fee_amount ? '移除并退回稻米' : '移除报名'} variant={action === 'approve' ? 'primary' : 'secondary'} isDisabled={busy} onClick={() => { if (action === 'approve') void run(action, a.id); else setApplicationAction({ id: a.id, action }) }} />)}</div>}
       {applicationAction?.id === a.id && <DetailDialog title={applicationAction.action === 'reject' ? '确认拒绝申请' : '确认移除报名'} className="post-dialog business-dialog compose-close-dialog" onClose={() => { if (!busy) setApplicationAction(null) }}><div className="business-panel form-stack">
-        <p>确认{applicationAction.action === 'reject' ? '拒绝' : '移除'} {a.user.nickname || a.user.handle} 的{applicationAction.action === 'reject' ? '申请' : '报名'}？{event.fee_amount ? `报名所需的 ${event.fee_amount} 稻米将全额退还。` : applicationAction.action === 'remove' ? '移除后将释放参与名额。' : ''}</p>
+        <p>确认{applicationAction.action === 'reject' ? '拒绝' : '移除'} {a.user.nickname || a.user.handle} 的{applicationAction.action === 'reject' ? '申请' : '报名'}？{event.fee_amount ? `报名所需的 ${event.fee_amount} 稻米会全部退回。` : applicationAction.action === 'remove' ? '移除后将释放参与名额。' : ''}</p>
         {error && <p className="inline-error" role="alert">{error}</p>}
-        <div className="form-actions"><Button label="返回" variant="secondary" isDisabled={busy} onClick={() => setApplicationAction(null)} /><Button label={applicationAction.action === 'reject' ? '确认拒绝' : event.fee_amount ? '确认移除并退还稻米' : '确认移除'} variant="destructive" isDisabled={busy} clickAction={() => run(applicationAction.action, a.id)} /></div>
+        <div className="form-actions"><Button label="返回" variant="secondary" isDisabled={busy} onClick={() => setApplicationAction(null)} /><Button label={applicationAction.action === 'reject' ? '确认拒绝' : event.fee_amount ? '移除并退回稻米' : '确认移除'} variant="destructive" isDisabled={busy} clickAction={() => run(applicationAction.action, a.id)} /></div>
       </div></DetailDialog>}
     </article>}) : <p>还没有申请。</p>}</section>}
-    {!!event.past_applications?.length && <details className="business-section"><summary>往期报名</summary><ul className="business-history">{event.past_applications.map(a => <li key={a.id}><strong>第 {a.round} 期 · {a.user.nickname || a.user.handle}</strong><p>{applicationStatusLabel[a.status]} · {a.fee_amount ? `${a.fee_amount} 稻米 · ${a.payment_status === 'settled' ? '稻米已结算' : a.payment_status === 'refunded' ? '稻米已退还' : a.payment_status === 'reserved' ? '稻米已冻结' : '未扣稻米'}` : '无需稻米'}</p><time>{formatTimestamp(a.inserted_at)}</time>{a.reason && <p>{a.reason}</p>}{a.contact && <p>联系方式：{a.contact}</p>}</li>)}</ul></details>}
+    {!!event.past_applications?.length && <details className="business-section"><summary>往期报名</summary><ul className="business-history">{event.past_applications.map(a => <li key={a.id}><strong>第 {a.round} 期 · {a.user.nickname || a.user.handle}</strong><p>{applicationStatusLabel[a.status]} · {a.fee_amount ? `${a.fee_amount} 稻米 · ${a.payment_status === 'settled' ? (a.settlement_node_id ? '稻米已转入节点' : '稻米已结算') : a.payment_status === 'refunded' ? '稻米已退回' : a.payment_status === 'reserved' ? '稻米已冻结' : '未扣稻米'}` : '免费'}</p><time>{formatTimestamp(a.inserted_at)}</time>{a.reason && <p>{a.reason}</p>}{a.contact && <p>联系方式：{a.contact}</p>}</li>)}</ul></details>}
     {!!event.history.length && <details className="business-section"><summary>查看进展</summary><ol className="business-history">{event.history.map((h) => <li key={h.id}><time>{formatTimestamp(h.inserted_at)}</time><p>{h.actor?.nickname || h.actor?.handle || '系统'} · {historyLabels[h.action] || (h.to_status in eventStatusLabel ? eventStatusLabel[h.to_status as keyof typeof eventStatusLabel] : '更新了活动进展')}</p>{h.action === 'edited' && <HistoryChanges before={h.before} after={h.after} fields={[
       ['node_id', '所属节点'], ['title', '活动标题'], ['organizer_contact', '组织方联系方式'],
       ['description', '活动介绍'], ['location', '活动地点'], ['application_deadline', '报名截止'],
-      ['starts_at', '开始时间'], ['ends_at', '结束时间'], ['capacity', '参与名额'],
-      ['fee_amount', '报名收取稻米'], ['attachment_ids', '图片'],
+      ['starts_at', '活动开始'], ['ends_at', '活动结束'], ['capacity', '参与名额'],
+      ['fee_amount', '每人所需稻米'], ['attachment_ids', '图片'],
     ]} />}</li>)}</ol></details>}
   </>}</div>
 }

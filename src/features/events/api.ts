@@ -4,7 +4,7 @@ import type { RicePublicUser, RiceAttachment, HistorySnapshot } from '~/lib/mode
 import type { CommunityNode } from '../nodes/api'
 
 export type EventStatus = 'draft' | 'open' | 'in_progress' | 'completed' | 'cancelled'
-export type EventApplication = { id: string; round?: number; reason: string; contact?: string | null; status: 'pending' | 'approved' | 'rejected' | 'removed' | 'not_selected' | 'cancelled' | 'withdrawn'; payment_status: 'none' | 'reserved' | 'refunded' | 'settled'; fee_amount?: number; user: RicePublicUser; inserted_at: string; allowed_actions: string[] }
+export type EventApplication = { id: string; round?: number; reason: string; contact?: string | null; status: 'pending' | 'approved' | 'rejected' | 'removed' | 'not_selected' | 'cancelled' | 'withdrawn'; payment_status: 'none' | 'reserved' | 'refunded' | 'settled'; fee_amount?: number; settlement_node_id?: string | null; user: RicePublicUser; inserted_at: string; allowed_actions: string[] }
 export type RiceEvent = { can_manage?: boolean; settlement_node_id?: string | null; attachments?: RiceAttachment[]; id: string; round?: number; title: string; description: string; organizer_contact?: string | null; location: string; status: EventStatus; node: Pick<CommunityNode, 'id' | 'name' | 'logo'>; creator: RicePublicUser; fee_amount: number; capacity: number; application_deadline: string; starts_at: string; ends_at: string; published_at: string | null; inserted_at: string; application_count: number; approved_count: number; my_application: EventApplication | null; allowed_actions: string[]; applications: EventApplication[]; past_applications?: EventApplication[]; history: Array<{ id: string; action: string; from_status: string | null; to_status: string; actor: RicePublicUser | null; inserted_at: string; before?: HistorySnapshot | null; after?: HistorySnapshot | null }> }
 export const eventStatusLabel: Record<EventStatus, string> = { draft: '草稿', open: '报名中', in_progress: '已开始', completed: '已结束', cancelled: '已取消' }
 export function eventAcceptsApplications(event: Pick<RiceEvent, 'status' | 'application_deadline' | 'starts_at' | 'capacity' | 'approved_count'>, now: number) {
@@ -12,14 +12,25 @@ export function eventAcceptsApplications(event: Pick<RiceEvent, 'status' | 'appl
 }
 export function eventDisplayStatus(event: Pick<RiceEvent, 'status' | 'application_deadline' | 'starts_at' | 'ends_at' | 'capacity' | 'approved_count'>, now: number) {
   if (event.status === 'open' || event.status === 'in_progress') {
-    if (Date.parse(event.ends_at) <= now) return '待确认结束'
+    if (Date.parse(event.ends_at) <= now) return '等组织者确认结束'
     if (event.status === 'in_progress' || Date.parse(event.starts_at) <= now) return '已开始'
     if (Date.parse(event.application_deadline) <= now) return '报名已截止'
     if (event.approved_count >= event.capacity) return '已满'
   }
   return eventStatusLabel[event.status]
 }
-export const applicationStatusLabel: Record<EventApplication['status'], string> = { pending: '申请中', approved: '已通过', rejected: '未通过', removed: '已移除', not_selected: '未入选', cancelled: '已取消', withdrawn: '已撤销' }
+export const applicationStatusLabel: Record<EventApplication['status'], string> = { pending: '已报名，等组织者确认', approved: '已通过', rejected: '未通过', removed: '已移除', not_selected: '未入选', cancelled: '已取消', withdrawn: '已撤销' }
+export function eventSettlementAmount(event: Pick<RiceEvent, 'applications' | 'approved_count'>) {
+  const approved = event.applications.filter(application => application.status === 'approved')
+  if (approved.length !== event.approved_count) return null
+  let total = 0
+  for (const application of approved) {
+    const amount = application.fee_amount
+    if (amount === undefined || !Number.isSafeInteger(amount) || amount < 0 || (amount > 0 && application.payment_status !== 'reserved')) return null
+    total += amount
+  }
+  return Number.isSafeInteger(total) ? total : null
+}
 export type EventListInput = { token?: string; q?: string; nodeId?: string; mine?: 'created' | 'applied' | 'managed'; creatorDid?: string; participantDid?: string; status?: EventStatus; before?: string }
 export type EventPage = { data: RiceEvent[]; meta?: { next_cursor?: string | null } }
 export async function fetchEventPage(data: EventListInput) {

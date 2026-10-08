@@ -23,8 +23,8 @@ export function PersonalGrainActions({ to }: { to?: string }) {
   if (!session) return null
   const own = !to || to === session.pds.did
   return <div className="personal-grain-actions">
-      <Button label="发送稻米" variant="ghost" href={`/me/grains/send${own ? '' : `?to=${encodeURIComponent(to)}`}`}>
-        <span className="grain-action-content"><span className="grain-action-icon"><ScanLine size={22} aria-hidden="true" /></span><span>发送稻米</span></span>
+      <Button label="送稻米" variant="ghost" href={`/me/grains/send${own ? '' : `?to=${encodeURIComponent(to)}`}`}>
+        <span className="grain-action-content"><span className="grain-action-icon"><ScanLine size={22} aria-hidden="true" /></span><span>送稻米</span></span>
       </Button>
       {own && <Button label="接收稻米" variant="ghost" href="/me/grains/receive">
         <span className="grain-action-content"><span className="grain-action-icon"><QrCode size={22} aria-hidden="true" /></span><span>接收稻米</span></span>
@@ -43,8 +43,8 @@ export function ReceiveGrainPage() {
     catch { setCopyError('未能复制，请手动复制下方链接。') }
   }
   return <div className="page business-panel form-stack">
-        <div style={{ background: 'white', padding: 16, alignSelf: 'center' }}><QRCode value={link} size={180} title="个人稻米接收码" /></div>
-        <strong>@{session.user.handle}</strong><p>请对方扫描稻米接收码，核对接收人后发送稻米。</p>
+        <div style={{ background: 'white', padding: 16, alignSelf: 'center' }}><QRCode value={link} size={180} title="收稻米码" /></div>
+        <strong>@{session.user.handle}</strong><p>请对方扫描收稻米码，核对一下账号后送稻米。</p>
         <a href={link} style={{ overflowWrap: 'anywhere' }}>{link}</a>
         {copyError && <p className="inline-error" role="alert">{copyError}</p>}
         <div className="form-actions"><Button label={copied ? '已复制' : '复制接收链接'} variant="primary" clickAction={copy} /></div>
@@ -53,7 +53,7 @@ export function ReceiveGrainPage() {
 
 export function SendGrainPage({ to }: { to?: string }) {
   const { session } = useStoredSession()
-  if (!session) return <LoginLink className="primary-link">登录后发送稻米</LoginLink>
+  if (!session) return <LoginLink className="primary-link">登录后送稻米</LoginLink>
   return <SendGrainForm key={session.token} session={session} to={to} />
 }
 
@@ -76,7 +76,7 @@ function SendGrainForm({ session, to }: { session: RiceSession; to?: string }) {
   const mounted = useRef(true)
   useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
   const current = () => mounted.current && readStoredSession()?.token === session.token
-  const amountError = amount ? integerInputError(amount, '发送稻米数量', 1) : null
+  const amountError = amount ? integerInputError(amount, '稻米数量', 1) : null
   const changeIdentifier = (value: string) => {
     lookupVersion.current++
     autoChecked.current = ''
@@ -95,13 +95,13 @@ function SendGrainForm({ session, to }: { session: RiceSession; to?: string }) {
     try {
       const user = await request
       if (!current() || version !== lookupVersion.current) return null
-      if (user.did === session.pds.did) throw new Error('不能转给自己。')
+      if (user.did === session.pds.did) throw new Error('不能送给自己。')
       setRecipient(user)
       return user
     } catch (reason) {
       if (current() && version === lookupVersion.current) {
         setRecipient(null)
-        setError(reason instanceof Error ? reason.message : '未找到该接收人。')
+        setError(reason instanceof Error ? reason.message : '没找到这位伙伴，再核对一下账号。')
       }
       return null
     } finally {
@@ -137,7 +137,7 @@ function SendGrainForm({ session, to }: { session: RiceSession; to?: string }) {
       }
     } catch (reason) {
       if (current()) {
-        setError(reason instanceof Error ? reason.message : '发送失败。')
+        setError(reason instanceof Error ? reason.message : '送稻米失败。')
         // No automatic retry: this existing transfer API has no idempotency key.
         if (confirming) setUncertain(true)
       }
@@ -145,25 +145,25 @@ function SendGrainForm({ session, to }: { session: RiceSession; to?: string }) {
   }
   if (scanning) return <GrainScannerPage onRead={receiveCode} />
   return <div className="page business-panel form-stack">
-      {receipt ? <><strong role="status">已向 @{receipt.to.handle} 发送 {receipt.amount} 稻米</strong><Link to="/me/grains">查看稻米明细</Link><div className="form-actions"><Button label="完成" variant="primary" onClick={() => void navigate({ to: '/me/grains' })} /></div></> : <>
+      {receipt ? <><strong role="status">已送给 @{receipt.to.handle} {receipt.amount} 稻米</strong><Link to="/me/grains">查看稻米记录</Link><div className="form-actions"><Button label="完成" variant="primary" onClick={() => void navigate({ to: '/me/grains' })} /></div></> : <>
         <p className="muted">个人测试稻米</p>
         <div className="grain-recipient-field">
-          <TextInput label="稻米接收人" value={identifier} onChange={changeIdentifier} onBlur={() => autoCheck(identifier)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.nativeEvent.isComposing) autoCheck(identifier) }} description="填写手机号、完整用户名或 DID。" isDisabled={busy || confirming || uncertain} width="100%" />
-          <IconButton label="扫描稻米接收码" icon={<ScanLine size={22} />} variant="ghost" isDisabled={busy || confirming || uncertain} onClick={() => void navigate({ to: '/me/grains/send/scan', search: {} })} />
+          <TextInput label="送给谁" value={identifier} onChange={changeIdentifier} onBlur={() => autoCheck(identifier)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.nativeEvent.isComposing) autoCheck(identifier) }} description="填写手机号、完整用户名或 DID。" isDisabled={busy || confirming || uncertain} width="100%" />
+          <IconButton label="扫一扫" icon={<ScanLine size={22} />} variant="ghost" isDisabled={busy || confirming || uncertain} onClick={() => void navigate({ to: '/me/grains/send/scan', search: {} })} />
         </div>
-        {recipient && !confirming && <div role="status">接收人：<strong>{recipient.nickname || recipient.handle}</strong>（@{recipient.handle}）</div>}
+        {recipient && !confirming && <div role="status">送给：<strong>{recipient.nickname || recipient.handle}</strong>（@{recipient.handle}）</div>}
         {!confirming && error && <p className="inline-error" role="alert">{error}</p>}
-        <TextInput label="发送稻米数量" value={amount} onChange={setAmount} status={amountError ? { type: 'error', message: amountError } : undefined} isDisabled={busy || confirming || uncertain} width="100%" />
+        <TextInput label="送多少稻米" value={amount} onChange={setAmount} status={amountError ? { type: 'error', message: amountError } : undefined} isDisabled={busy || confirming || uncertain} width="100%" />
         <TextInput label="留言" value={memo} onChange={setMemo} isDisabled={busy || confirming || uncertain} width="100%" isOptional />
         {!confirming && <div className="form-actions"><Button label="下一步" variant="primary" isLoading={busy} isDisabled={busy || !identifier.trim() || !amount || !!amountError} clickAction={run} /></div>}
       </>}
-    {confirming && recipient && !receipt && <DetailDialog title="确认发送稻米" className="post-dialog business-dialog compose-close-dialog" onClose={cancelConfirmation}>
+    {confirming && recipient && !receipt && <DetailDialog title="确认送稻米" className="post-dialog business-dialog compose-close-dialog" onClose={cancelConfirmation}>
       <div className="business-panel form-stack">
-        <section><Avatar name={recipient.nickname || recipient.handle} src={recipient.avatar?.url} /><strong>{recipient.nickname || recipient.handle}</strong><p>@{recipient.handle}</p><p>确认发送 {amount} 稻米？</p></section>
+        <section><Avatar name={recipient.nickname || recipient.handle} src={recipient.avatar?.url} /><strong>{recipient.nickname || recipient.handle}</strong><p>@{recipient.handle}</p><p>确认送出 {amount} 稻米？</p></section>
         {error && <p className="inline-error" role="alert">{error}</p>}
-        {uncertain ? <p role="alert">发送结果尚未确认，请先<Link to="/me/grains">查看稻米明细</Link>，确认未扣除稻米后再重新发送。</p> : <div className="form-actions">
+        {uncertain ? <p role="alert">送出的结果尚未确认，请先<Link to="/me/grains">查看稻米记录</Link>，确认未扣除稻米后再重新送出。</p> : <div className="form-actions">
           <Button label="返回修改" variant="secondary" isDisabled={busy} onClick={cancelConfirmation} />
-          <Button label="确认发送" variant="primary" isLoading={busy} isDisabled={busy} clickAction={run} />
+          <Button label="确认送出" variant="primary" isLoading={busy} isDisabled={busy} clickAction={run} />
         </div>}
       </div>
     </DetailDialog>}

@@ -147,30 +147,30 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
         {task.requirement && <section className="task-description"><h2>交付要求</h2><p>{task.requirement}</p></section>}
         <section className="task-facts">
           <div><strong>{task.application_count}</strong><span>申请人数</span></div>
-          <div><strong>{multiple ? `${task.appointed_count ?? assignees.length} / ${capacity}` : task.assignee?.nickname || task.assignee?.handle || '待任命'}</strong><span>{multiple ? '已接收 / 人数上限' : '承接者'}</span></div>
-          <div><strong className="rice-amount" aria-label={`${task.reward_amount} 稻米`}><Sprout size={24} />{task.reward_amount}</strong><span>{multiple ? '每人奖励' : '任务奖励'}</span></div>
+          <div><strong>{multiple ? `${task.appointed_count ?? assignees.length} / ${capacity}` : task.assignee?.nickname || task.assignee?.handle || '还没选定伙伴'}</strong><span>{multiple ? '已接收 / 人数上限' : '承接者'}</span></div>
+          <div><strong className="rice-amount" aria-label={`${task.reward_amount} 稻米`}><Sprout size={24} />{task.reward_amount}</strong><span>{multiple ? '每人稻米激励' : '稻米激励'}</span></div>
         </section>
 
-        {multiple && <p className="task-neutral-note">总奖励：{totalReward} 稻米{assignees.length > 0 && ` · 承接者：${assignees.map(user => user.nickname || user.handle).join('、')}`}</p>}
+        {multiple && <p className="task-neutral-note">总稻米激励：{totalReward} 稻米{assignees.length > 0 && ` · 承接者：${assignees.map(user => user.nickname || user.handle).join('、')}`}</p>}
 
         {task.applications?.filter(application => application.status === 'appointed' && application.contact).map(application => <p className="task-neutral-note" key={application.id}>{multiple ? `${application.user.nickname || application.user.handle}：` : '承接者联系方式：'}{application.contact}</p>)}
         {task.my_application?.contact && <p className="task-neutral-note">我的联系方式：{task.my_application.contact}</p>}
 
         {task.reward_status === 'settled' ? (
-          <div className="task-success-note"><CheckCircle2 size={18} /> 任务奖励已发放给承接者</div>
+          <div className="task-success-note"><CheckCircle2 size={18} /> 稻米激励已发放</div>
         ) : null}
         {task.reward_status === 'refunded' ? (
-          <div className="task-neutral-note">任务奖励对应的稻米已退还至{task.funding_node_id ? '节点' : '发布者'}账户。</div>
+          <div className="task-neutral-note">稻米激励已退还至{task.funding_node_id ? '节点' : '发布者'}账户。</div>
         ) : null}
 
         {task.application_deadline ? (
           <div className="task-neutral-note">申请截止：{formatTimestamp(task.application_deadline)}</div>
         ) : null}
-        {task.execution_deadline && <div className="task-neutral-note">交付截止：{formatTimestamp(task.execution_deadline)}</div>}
-        {(task.status === 'overdue' || overdueProgress) && <div className="task-warning-note"><CircleAlert size={18} /><div><strong>任务已超时</strong><p>请与负责人 {task.creator.nickname || task.creator.handle} 联系，确认交付安排。</p><Link to="/profile/$actor" params={{ actor: task.creator.did }}>查看负责人主页</Link></div></div>}
+        {task.execution_deadline && <div className="task-neutral-note">最晚交成果：{formatTimestamp(task.execution_deadline)}</div>}
+        {(task.status === 'overdue' || overdueProgress) && <div className="task-warning-note"><CircleAlert size={18} /><div><strong>已过交成果的时间</strong><p>请联系发起人，商量后续安排。</p><Link to="/profile/$actor" params={{ actor: task.creator.did }}>查看发起人主页</Link></div></div>}
 
         {task.status === 'completed' ? (
-          <div className="task-success-note"><CheckCircle2 size={18} /> 结果已认可，任务完成</div>
+          <div className="task-success-note"><CheckCircle2 size={18} /> 验收通过</div>
         ) : null}
         {task.status === 'draft' ? <div className="task-neutral-note">草稿仅你可见，发布后才进入任务列表。</div> : null}
         {(task.status === 'expired' || expiredOpen) ? <div className="task-neutral-note">该任务已失效。</div> : null}
@@ -216,7 +216,7 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
         ) : null}
 
         {task.my_application_status === 'pending' ? (
-          <div className="task-neutral-note">申请已提交，等待发布者审批。</div>
+          <div className="task-neutral-note">申请已提交，等发起人确认</div>
         ) : null}
         {task.my_application_status === 'not_selected' ? (
           <div className="task-neutral-note">本次申请未入选。</div>
@@ -255,7 +255,7 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
                       }))}
                     />}
                     {actions.has('appoint') && <Button
-                      label="接收申请"
+                      label="选这位伙伴"
                       variant="primary"
                       isDisabled={busy}
                       clickAction={() => run(() => appointTaskApplication({
@@ -287,9 +287,9 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
 
         {actions.has('submit_result') && token ? (
           <section className="task-action-section">
-            <h2>{latestRejected ? '修改并重新提交' : '提交完成'}</h2>
+            <h2>{latestRejected ? '修改并重新提交' : '交成果'}</h2>
             <TextArea
-              label="完成说明"
+              label="说说完成情况"
               value={result}
               onChange={setResult}
               maxLength={4000}
@@ -298,7 +298,7 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
             />
             <div className="form-actions">
               <Button
-                label="提交结果"
+                label="提交成果"
                 variant="primary"
                 isDisabled={!result.trim() || busy}
                 clickAction={() => run(() => submitTaskResult({ data: { token, taskId, body: result } }))}
@@ -332,13 +332,13 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
                 />
               </> : <>
                 <Button label="退回修改" variant="secondary" isDisabled={busy} onClick={() => { setRejectId(pendingSubmission.id); setReviewReason(''); setApproveId(null) }} />
-                <Button label="验收并发放" variant="primary" isDisabled={busy} onClick={() => { setApproveId(pendingSubmission.id); setRejectId(null) }} />
+                <Button label="通过并发放稻米" variant="primary" isDisabled={busy} onClick={() => { setApproveId(pendingSubmission.id); setRejectId(null) }} />
               </>}
             </div>
-            {approveId === pendingSubmission.id && <DetailDialog title="确认验收并发放" className="post-dialog business-dialog compose-close-dialog" onClose={() => { if (!busy) setApproveId(null) }}><div className="business-panel form-stack">
+            {approveId === pendingSubmission.id && <DetailDialog title="通过并发放稻米" className="post-dialog business-dialog compose-close-dialog" onClose={() => { if (!busy) setApproveId(null) }}><div className="business-panel form-stack">
               <p>向 {pendingSubmission.user?.nickname || pendingSubmission.user?.handle || task.assignee?.nickname || task.assignee?.handle} 发放 {task.reward_amount} 稻米，{multiple ? '其本次交付将完成' : '任务将完成'}。</p>
               {error && <p className="inline-error" role="alert">{error}</p>}
-              <div className="form-actions"><Button label="返回" variant="secondary" isDisabled={busy} onClick={() => setApproveId(null)} /><Button label="确认验收并发放" variant="primary" isDisabled={busy} clickAction={() => run(() => approveTaskResult({ data: { token, taskId, submissionId: pendingSubmission.id } }))} /></div>
+              <div className="form-actions"><Button label="返回" variant="secondary" isDisabled={busy} onClick={() => setApproveId(null)} /><Button label="通过并发放稻米" variant="primary" isDisabled={busy} clickAction={() => run(() => approveTaskResult({ data: { token, taskId, submissionId: pendingSubmission.id } }))} /></div>
             </div></DetailDialog>}
           </section>
         ))}
@@ -391,7 +391,7 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
                   {event.action === 'edited' && <HistoryChanges before={event.before} after={event.after} fields={[
                     ['node_id', '所属节点'], ['title', '任务标题'], ['organizer_contact', '组织方联系方式'],
                     ['description', '任务说明'], ['requirement', '交付要求'], ['application_deadline', '申请截止'],
-                    ['execution_deadline', '交付截止'], ['reward_amount', '每人奖励'], ['capacity', '人数上限'], ['attachment_ids', '图片'],
+                    ['execution_deadline', '最晚交成果'], ['reward_amount', '每人稻米激励'], ['capacity', '人数上限'], ['attachment_ids', '图片'],
                   ]} />}
                 </li>
               ))}
@@ -407,13 +407,13 @@ function ChangesRequested({ submission }: { submission: TaskSubmission }) {
   return (
     <div className="task-warning-note">
       <CircleAlert size={18} />
-      <div><strong>结果未被认可，可修改后重新提交</strong><p>{submission.review_reason}</p></div>
+      <div><strong>再完善一下吧</strong><p>{submission.review_reason}</p></div>
     </div>
   )
 }
 
 function submissionStatus(submission: TaskSubmission) {
-  if (submission.status === 'approved') return '结果已认可'
-  if (submission.status === 'changes_requested') return '结果未被认可'
+  if (submission.status === 'approved') return '验收通过'
+  if (submission.status === 'changes_requested') return '再完善一下吧'
   return '等待验收'
 }

@@ -20,7 +20,7 @@ it('sends personal gifts with Rice auth, rejects invalid amounts before transpor
   for (const amount of [0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1]) {
     await expect(requestPersonalTransfer({ token: 'rice-token', to: 'receiver', amount })).rejects.toThrow('正整数')
   }
-  await expect(requestPersonalTransfer({ token: 'rice-token', to: ' ', amount: 1 })).rejects.toThrow('接收人')
+  await expect(requestPersonalTransfer({ token: 'rice-token', to: ' ', amount: 1 })).rejects.toThrow('送给谁')
   expect(fetch).not.toHaveBeenCalled()
   await expect(requestPersonalTransfer({ token: 'rice-token', to: ' receiver ', amount: 12, memo: '  谢谢  ' })).resolves.toEqual(receipt)
   const [url, init] = fetch.mock.calls[0]
@@ -29,7 +29,7 @@ it('sends personal gifts with Rice auth, rejects invalid amounts before transpor
   expect(JSON.parse(init.body)).toEqual({ to: 'receiver', amount: 12, kind: 'gift', memo: '谢谢' })
   for (const data of [{}, { ...receipt, amount: 1 }, { ...receipt, to: null }]) {
     fetch.mockResolvedValueOnce(Response.json({ data }))
-    await expect(requestPersonalTransfer({ token: 'rice-token', to: 'receiver', amount: 12 })).rejects.toThrow('查看稻米明细')
+    await expect(requestPersonalTransfer({ token: 'rice-token', to: 'receiver', amount: 12 })).rejects.toThrow('查看稻米记录')
   }
 })
 it('distinguishes returned frozen funds from settlement direction for both parties', () => {

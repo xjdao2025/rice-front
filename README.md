@@ -7,7 +7,7 @@
 | 入口 | 职责 |
 | --- | --- |
 | [src/routes](src/routes) | 文件路由、URL 参数和进入页面前的数据加载 |
-| [src/components/AppShell.tsx](src/components/AppShell.tsx) | 四个常驻主导航、子页面返回、全局入口 |
+| [src/components/AppShell.tsx](src/components/AppShell.tsx) | 常驻主导航、子页面返回、全局入口 |
 | [src/features/feed](src/features/feed) | 帖子读取、PDS 写入、回复与发布 |
 | [src/features/tasks](src/features/tasks)、[src/features/events](src/features/events) | Rice 业务页面和接口调用 |
 | [src/features/session](src/features/session) | Rice/PDS 会话恢复与失效处理 |
@@ -16,7 +16,7 @@
 
 ## 设计取舍
 
-- **可分享的页面有 URL。** 广场、任务、活动、我的为四个主页面；帖子、详情、个人主页、发布和编辑为子页面。底部导航始终可返回主页面。只有确认操作和图片放大使用临时浮层。路由在需要的数据准备好后切换，避免先画出半个页面。
+- **可分享的页面有 URL。** 广场、任务、活动、乡建、我的为五个主页面；乡建直接进入联盟与治理。帖子、详情、个人主页、发布和编辑为子页面。底部导航始终可返回主页面。只有确认操作和图片放大使用临时浮层。路由在需要的数据准备好后切换，避免先画出半个页面。
 - **共用行为放在共用组件。** `ContentCardHeader` 限定作者链接只在头像和昵称上；`ImageGroup` 为帖子、任务和活动提供同一图库与预览；`PublishSteps`、`PublishTextInput`、`PublishTextArea` 统一分步发布、输入提示和错误显示。可复用的间距在 CSS 变量里，不在每个页面各写一套。
 - **后端是业务状态的准绳。** 任务、活动的可执行操作和管理权限以 Rice 返回值为准；前端的状态文字和日期判断只是展示。稻米冻结、退款、发放由 Rice 完成，前端不模拟成功。编辑沿用发布表单，历史版本与编辑人由服务端记录。
 - **PDS 与 Rice 数据分开。** 帖子写入 PDS，读取 Post Cache；任务和活动读写 Rice。帖子使用 `app.bsky.embed.gallery` 保存 1–9 张图片，不为旧客户端增加另一套发布格式。任务、活动图片作为 Rice 附件，不伪装成帖子。帖子草稿按 DID 留在本机 IndexedDB，任务/活动草稿保存在 Rice，避免两套业务数据混用。

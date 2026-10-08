@@ -101,11 +101,22 @@ describe('guest access', () => {
     expect(html).not.toContain('href="/login"')
   })
 
-  it('keeps the four main destinations available on a child page', () => {
+  it('keeps the five main destinations available on a child page', () => {
     state.pathname = '/posts'
     const html = renderToStaticMarkup(<AppShell><p>post detail</p></AppShell>)
     expect(html).toContain('aria-label="返回上一页"')
     expect(html).toContain('aria-label="主要导航"')
-    for (const path of ['/', '/tasks', '/events', '/me']) expect(html).toContain(`href="${path}"`)
+    const navigation = html.slice(html.indexOf('<nav'))
+    expect([...navigation.matchAll(/href="([^"]+)"/g)].map(match => match[1])).toEqual(['/', '/tasks', '/events', '/alliance', '/me'])
+  })
+
+  it.each(['/alliance', '/alliance/proposals/proposal-id', '/nodes/node-id'])('selects Xiangjian for %s and treats alliance as a main page', pathname => {
+    state.pathname = pathname
+    const html = renderToStaticMarkup(<AppShell>{null}</AppShell>)
+    expect(html).toContain('href="/alliance" class="bottom-link active">乡建')
+    if (pathname === '/alliance') {
+      expect(html).toContain('aria-label="返回乡建 DAO 广场"')
+      expect(html).not.toContain('aria-label="返回上一页"')
+    }
   })
 })

@@ -55,7 +55,7 @@ export function TaskCreatePage({ session, nodes, initialDraft, initialError = ''
   if (draftLoading) return <LoadingState label="正在恢复草稿…" />
   const reopening = editing && (initialDraft?.status === 'cancelled' || initialDraft?.status === 'expired')
   const multiple = participationMode === 'multiple'
-  const rewardLabel = multiple ? '每人任务奖励' : '任务奖励'
+  const rewardLabel = multiple ? '每人稻米激励' : '稻米激励'
   const capacity = multiple ? Number(multipleCapacity) : 1
   const capacityError = participationMode === 'multiple' ? integerInputError(multipleCapacity, '承接人数上限', 2, MAX_TASK_CAPACITY) : null
   const rewardReadOnly = editing && ['open', 'in_progress', 'overdue', 'under_review'].includes(initialDraft?.status ?? '')
@@ -78,18 +78,18 @@ export function TaskCreatePage({ session, nodes, initialDraft, initialError = ''
       if ((!editing || reopening) && deadline <= Date.now()) return '申请截止应晚于当前时间。'
     }
     if (step === 3) {
-      if (!executionDeadline) return '请选择交付截止日期和时间。'
+      if (!executionDeadline) return '选一下最晚哪天交成果。'
       const deadline = beijingTime(executionDeadline)
-      if (!Number.isFinite(deadline)) return '请选择有效的交付截止日期和时间。'
-      if ((!editing || reopening) && deadline <= Date.now()) return '交付截止应晚于当前时间。'
-      if (applicationDeadline && deadline <= beijingTime(applicationDeadline)) return '交付截止应晚于申请截止。'
+      if (!Number.isFinite(deadline)) return '选一下最晚哪天交成果。'
+      if ((!editing || reopening) && deadline <= Date.now()) return '交成果时间要晚于当前时间。'
+      if (applicationDeadline && deadline <= beijingTime(applicationDeadline)) return '交成果时间要晚于申请截止。'
     }
     if (step === 4) return integerInputError(rewardAmount, rewardLabel)
     return null
   }
   async function submit(status: 'draft' | 'open'): Promise<boolean> {
     if (submitting) return false
-    if (!nodeId || !title.trim() || !description.trim() || !requirement.trim() || rewardAmount === '') { setError('请先填写任务标题、说明、交付要求和任务奖励。'); return false }
+    if (!nodeId || !title.trim() || !description.trim() || !requirement.trim() || rewardAmount === '') { setError('请补齐标题、说明、交付要求和稻米数量。'); return false }
     if ((status === 'open' && !organizerContact.trim()) || organizerContact.trim().length > 256) { setError('请填写组织方联系方式，最多 256 字。'); return false }
     const inputError = capacityError ?? integerInputError(rewardAmount, rewardLabel)
     if (inputError) { setError(inputError); return false }
@@ -157,7 +157,7 @@ export function TaskCreatePage({ session, nodes, initialDraft, initialError = ''
               <option value="single">单人任务</option><option value="multiple">多人任务</option>
             </select>
           </label>
-          <p id="task-participation-help" className="publish-guidance">复杂任务或只需一人承接，选择单人任务；简单且需多人分别完成，选择多人任务。多人任务需填写人数上限，每人独立交付和验收，奖励按第五步填写的每人数额发放。</p>
+          <p id="task-participation-help" className="publish-guidance">复杂任务或只需一人承接，选择单人任务；简单且需多人分别完成，选择多人任务。多人任务需填写人数上限，每人独立交付和验收，稻米激励按第五步填写的每人数额发放。</p>
           {multiple && <PublishTextInput isDisabled={rewardReadOnly || !!submitting} label="承接人数上限" value={multipleCapacity} onChange={value => { setMultipleCapacity(value); setError(''); setNotice('') }} status={multipleCapacity.trim() && capacityError ? { type: 'error', message: capacityError } : undefined} width="100%" isRequired />}
           <ImagePicker images={imageSelection.images} onSelect={imageSelection.select} onRemove={imageSelection.remove} disabled={!!submitting} />
         </>,
@@ -168,19 +168,19 @@ export function TaskCreatePage({ session, nodes, initialDraft, initialError = ''
         content: <PublishSchedule disabled={!!submitting} fields={[
           { label: '申请截止', value: applicationDeadline, min: editing && !reopening ? undefined : nextTimeSlot(), required: true, onChange: value => { setApplicationDeadline(value); if (value && executionDeadline && executionDeadline <= value) setExecutionDeadline(addMinutes(value, 15)); setError('') } },
         ]} />,
-        review: <dl className="publish-review-fields"><div><dt>申请截止时间</dt><dd>{applicationDeadline ? `${applicationDeadline.replace('T', ' ')}（北京时间）` : '未设置'}</dd></div></dl>,
+        review: <dl className="publish-review-fields"><div><dt>申请截止</dt><dd>{applicationDeadline ? `${applicationDeadline.replace('T', ' ')}（北京时间）` : '未设置'}</dd></div></dl>,
       },
       {
-        label: '交付截止', title: '什么时候交付？',
+        label: '最晚交成果', title: '最晚哪天交成果？',
         content: <PublishSchedule disabled={!!submitting} fields={[
-          { label: '交付截止', value: executionDeadline, min: editing && !reopening ? undefined : applicationDeadline ? addMinutes(applicationDeadline, 15) : nextTimeSlot(), required: true, onChange: value => { setExecutionDeadline(value); setError('') } },
+          { label: '最晚交成果', value: executionDeadline, min: editing && !reopening ? undefined : applicationDeadline ? addMinutes(applicationDeadline, 15) : nextTimeSlot(), required: true, onChange: value => { setExecutionDeadline(value); setError('') } },
         ]} />,
-        review: <dl className="publish-review-fields"><div><dt>交付截止时间</dt><dd>{executionDeadline ? `${executionDeadline.replace('T', ' ')}（北京时间）` : '未设置'}</dd></div></dl>,
+        review: <dl className="publish-review-fields"><div><dt>最晚交成果</dt><dd>{executionDeadline ? `${executionDeadline.replace('T', ' ')}（北京时间）` : '未设置'}</dd></div></dl>,
       },
       {
         label: '参与与稻米', title: multiple ? '给每位承接者多少稻米？' : '给多少稻米？',
-        content: <><PublishTextInput isDisabled={!!submitting} isReadOnly={rewardReadOnly} label={`${rewardLabel}（测试稻米）`} value={rewardAmount} onChange={v => { setRewardAmount(v); setError(''); setNotice('') }} status={amountError ? { type: 'error', message: amountError } : undefined} width="100%" isRequired />{totalRewardAmount !== null && <p className={multiple ? 'publish-total' : 'muted'}>总冻结：{totalRewardCopy}</p>}<p className="muted">稻米来自所选节点账户，个人账户不扣稻米。</p></>,
-        review: <dl className="publish-review-fields">{multiple && <div><dt>承接人数上限</dt><dd>{capacity} 人</dd></div>}<div><dt>{rewardLabel}</dt><dd>{rewardAmount} 测试稻米</dd></div><div><dt>总冻结</dt><dd>{totalRewardCopy}</dd></div><div><dt>稻米来源</dt><dd>节点账户：{nodeName}；个人账户不扣稻米。</dd></div></dl>,
+        content: <><PublishTextInput isDisabled={!!submitting} isReadOnly={rewardReadOnly} label={`${rewardLabel}（测试稻米）`} value={rewardAmount} onChange={v => { setRewardAmount(v); setError(''); setNotice('') }} status={amountError ? { type: 'error', message: amountError } : undefined} width="100%" isRequired />{totalRewardAmount !== null && <p className={multiple ? 'publish-total' : 'muted'}>总冻结：{totalRewardCopy}</p>}<p className="muted">使用节点稻米，不扣个人稻米。</p></>,
+        review: <dl className="publish-review-fields">{multiple && <div><dt>承接人数上限</dt><dd>{capacity} 人</dd></div>}<div><dt>{rewardLabel}</dt><dd>{rewardAmount} 测试稻米</dd></div><div><dt>总冻结</dt><dd>{totalRewardCopy}</dd></div><div><dt>稻米从哪出</dt><dd>{nodeName}：使用节点稻米，不扣个人稻米。</dd></div></dl>,
       },
     ]} />
   </section>

@@ -36,7 +36,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
     previousSession.current = { accountId: session?.user.id, token: session?.token }
   }, [router, isReady, session?.user.id, session?.token])
-  const isMainPage = ['/', '/tasks', '/events', '/me'].includes(pathname)
+  const isMainPage = ['/', '/tasks', '/events', '/alliance', '/me'].includes(pathname)
   const isGrainPage = pathname === '/me/grains' || pathname.startsWith('/me/grains/')
   const nodeChild = pathname.match(/^\/nodes\/([^/]+)\/(?:tasks|events|grains)$/)
   const profileChild = pathname.match(/^\/profile\/([^/]+)\/(?:followers|following)$/)
@@ -47,7 +47,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     : pathname.startsWith('/me/settings/') ? '/me/settings'
     : pathname.startsWith('/me/') ? '/me'
     : pathname.startsWith('/alliance/') ? '/alliance'
-    : pathname === '/alliance' ? '/me'
     : pathname.startsWith('/nodes/') ? '/alliance/nodes'
     : pathname === '/register' || pathname === '/forgot-password' ? '/login'
     : pathname.startsWith('/profile/') ? '/'
@@ -134,6 +133,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           任务
         </Link>
         <Link to="/events" activeProps={{}} className={`bottom-link${pathname.startsWith('/events') ? ' active' : ''}`}>活动</Link>
+        <Link to="/alliance" activeProps={{}} className={`bottom-link${pathname.startsWith('/alliance') || pathname.startsWith('/nodes/') ? ' active' : ''}`}>乡建</Link>
         <Link
           to="/me"
           activeProps={{}}

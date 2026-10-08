@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest'
-import { applicationStatusLabel, eventAcceptsApplications, eventActionRequest, eventDisplayStatus, fetchEventPage, saveEventRequest, type EventDraftInput } from './api'
+import { applicationStatusLabel, eventAcceptsApplications, eventActionRequest, eventDisplayStatus, eventSettlementAmount, fetchEventPage, saveEventRequest, type EventApplication, type EventDraftInput } from './api'
 afterEach(() => vi.unstubAllGlobals())
 it('uses Rice auth and preserves event ownership, participation and paging filters', async () => {
   const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: [], meta: { next_cursor: null } }), { status: 200 }))
@@ -20,10 +20,21 @@ it('shows the actual activity phase even when cached open status has not advance
   expect(eventDisplayStatus(times, Date.parse(fields.application_deadline) - 1)).toBe('报名中')
   expect(eventDisplayStatus(times, Date.parse(fields.application_deadline))).toBe('报名已截止')
   expect(eventDisplayStatus(times, Date.parse(fields.starts_at))).toBe('已开始')
-  expect(eventDisplayStatus(times, Date.parse(fields.ends_at))).toBe('待确认结束')
+  expect(eventDisplayStatus(times, Date.parse(fields.ends_at))).toBe('等组织者确认结束')
   expect(eventDisplayStatus({ ...times, status: 'cancelled' }, Date.parse(fields.ends_at))).toBe('已取消')
   expect(eventAcceptsApplications(times, Date.parse(fields.application_deadline))).toBe(false)
   expect(eventDisplayStatus({ ...times, approved_count: fields.capacity }, Date.parse(fields.starts_at))).toBe('已开始')
+})
+
+it('previews only approved participants with actual reserved rice amounts', () => {
+  const application = (status: EventApplication['status'], payment_status: EventApplication['payment_status'], fee_amount?: number): EventApplication => ({ id: 'application', status, payment_status, fee_amount, reason: '', user: { id: 'participant', did: 'did:plc:participant', handle: 'participant', nickname: '参与者', bio: null, avatar: null, node_member: false }, inserted_at: '', allowed_actions: [] })
+  const applications = [application('approved', 'reserved', 12), application('approved', 'reserved', 8), application('pending', 'reserved', 50), application('removed', 'refunded', 100)]
+  expect(eventSettlementAmount({ approved_count: 2, applications })).toBe(20)
+  expect(eventSettlementAmount({ approved_count: 0, applications: [] })).toBe(0)
+  expect(eventSettlementAmount({ approved_count: 3, applications })).toBeNull()
+  expect(eventSettlementAmount({ approved_count: 1, applications: [application('approved', 'reserved')] })).toBeNull()
+  expect(eventSettlementAmount({ approved_count: 1, applications: [application('approved', 'settled', 12)] })).toBeNull()
+  expect(applicationStatusLabel.pending).toBe('已报名，等组织者确认')
 })
 
 it('accepts new applications only while approved participants leave room, and reopens when a place is released', () => {

@@ -13,12 +13,12 @@ export function walletEntryIncoming(entry: WalletEntry, userId: string, nodeId?:
 type PersonalTransferInput = { token: string; to: string; amount: number; memo?: string }
 export type PersonalTransfer = { id: string; amount: number; to: Pick<RicePublicUser, 'id' | 'did' | 'handle' | 'nickname'> }
 export async function requestPersonalTransfer(data: PersonalTransferInput) {
-  if (!data.to.trim() || !Number.isSafeInteger(data.amount) || data.amount < 1) throw new Error('请输入接收人和正整数稻米数量。')
+  if (!data.to.trim() || !Number.isSafeInteger(data.amount) || data.amount < 1) throw new Error('请选择送给谁，并输入正整数稻米数量。')
   const result = (await requestJson<{ data: PersonalTransfer }>(`${BACKEND_BASE}/api/grain_transfers`, {
     method: 'POST', headers: { Authorization: `Bearer ${data.token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ to: data.to.trim(), amount: data.amount, kind: 'gift', memo: data.memo?.trim() }),
   })).data
-  if (!result?.id || result.amount !== data.amount || !result.to?.id || !result.to.handle) throw new Error('稻米发送结果不完整，请先查看稻米明细。')
+  if (!result?.id || result.amount !== data.amount || !result.to?.id || !result.to.handle) throw new Error('稻米送出结果不完整，请先查看稻米记录。')
   return result
 }
 export const sendPersonalGrains = createServerFn({ method: 'POST' })

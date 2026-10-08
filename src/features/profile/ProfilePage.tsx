@@ -1,6 +1,6 @@
 import { Button } from '@astryxdesign/core/Button'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ArrowRight, LogOut, Settings } from 'lucide-react'
+import { ChevronRight, LogOut, Settings } from 'lucide-react'
 import { useState } from 'react'
 import { Avatar } from '~/components/Avatar'
 import type { RiceUser } from '~/lib/models'
@@ -39,7 +39,7 @@ export function ProfilePage({ initialData = null, initialError = '' }: { initial
             <Button label="节点稻米" variant="ghost" className={community ? 'active' : undefined} aria-pressed={!!community} onClick={() => selectCommunity(community?.id ?? communities[0].id)} />
           </div>
         ) : <span>我的测试稻米</span>}
-        <Button label="查看流水" variant="ghost" isDisabled={!wallet} onClick={() => community ? void navigate({ to: '/nodes/$nodeId/grains', params: { nodeId: community.id } }) : void navigate({ to: '/me/grains' })}>查看流水 →</Button>
+        <Button label="稻米记录" variant="ghost" isDisabled={!wallet} onClick={() => community ? void navigate({ to: '/nodes/$nodeId/grains', params: { nodeId: community.id } }) : void navigate({ to: '/me/grains' })}>稻米记录 →</Button>
       </header>
       {community && (communities.length > 1 ? (
         <label className="native-field">管理的节点
@@ -66,8 +66,7 @@ export function ProfilePage({ initialData = null, initialError = '' }: { initial
       ['/me/tasks', '我的任务', '申请、交付、验收与历史记录'],
       ['/me/events', '我的活动', '我申请 / 主办的活动'],
       ['/me/posts', '我的帖子', '在广场发布过的内容'],
-      ['/alliance', '联盟与治理', '金库 · 公告 · 节点 · 提案'],
-    ] as const).map(([to, title, copy]) => <Link to={to} className="profile-menu-row" key={to}><span className="profile-menu-copy"><strong>{title}</strong><small>{copy}</small></span><ArrowRight size={18} /></Link>)}
+    ] as const).map(([to, title, copy]) => <Link to={to} className="profile-menu-row" key={to}><span className="profile-menu-copy"><strong>{title}</strong><small>{copy}</small></span><ChevronRight className="row-chevron" aria-hidden="true" /></Link>)}
     </nav><div className="logout-button"><Button label="退出登录" icon={<LogOut size={16} />} variant="ghost" clickAction={logout} /></div>
   </div>
 }
