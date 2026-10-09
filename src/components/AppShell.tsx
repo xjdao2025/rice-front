@@ -12,6 +12,7 @@ import { loginReturnTo } from '~/features/session/login-redirect'
 import { LoadingProgress } from './LoadingProgress'
 import { LoadingState } from './LoadingState'
 import { useStoredSession } from '~/features/session/session'
+import { SiteFooter } from './SiteFooter'
 
 export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter()
@@ -118,7 +119,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main key={session?.user.id ?? 'guest'} className={pathname === '/compose' ? 'page-frame compose-frame' : 'page-frame'}>{recoveryError && <p className="inline-error" role="alert">{recoveryError}</p>}{isReady ? children : <LoadingState label="正在恢复登录状态" className="page initial-loading loading-line" />}</main>
+      <main key={session?.user.id ?? 'guest'} className={pathname === '/compose' ? 'page-frame compose-frame' : 'page-frame'}>{recoveryError && <p className="inline-error" role="alert">{recoveryError}</p>}{isReady ? children : <LoadingState label="正在恢复登录状态" className="page initial-loading loading-line" />}<SiteFooter /></main>
       {navigating && <LoadingProgress label="正在加载页面…" />}
 
       <nav className="bottom-nav" aria-label="主要导航">
