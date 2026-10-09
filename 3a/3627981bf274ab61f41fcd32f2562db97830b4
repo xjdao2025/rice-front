@@ -1,0 +1,21 @@
+src/features/feed/api.test.ts
+  s_8c80ad8d2af680::t_daa12700b2c137 220,229
+src/features/feed/api.ts
+  s_8c80ad8d2af680::t_daa12700b2c137 307
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3a3627981bf274ab61f41fcd32f2562db97830b4",
+  "prompts": {},
+  "sessions": {
+    "s_8c80ad8d2af680": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e1cacbb5-9264-4c9e-8d1e-0245a530ded4",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "jiangplus <jiang.plus.times@gmail.com>"
+    }
+  }
+}
