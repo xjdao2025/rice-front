@@ -1,5 +1,6 @@
 import { Button } from '@astryxdesign/core/Button'
 import { Carousel, type CarouselHandle } from '@astryxdesign/core/Carousel'
+import { Link } from '@tanstack/react-router'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
@@ -11,7 +12,7 @@ import type { PostFeed } from '~/lib/models'
 import { useStoredSession } from '../session/session'
 import { getPosts, readCachedFeed, writeCachedFeed } from './api'
 import { bannerHref, type Banner } from './banners'
-import { postCategory } from './tags'
+import { PLAZA_TAGS, postCategory, type PlazaTag } from './tags'
 
 const BANNER_ROTATION_MS = 6_000
 
@@ -51,17 +52,25 @@ function PlazaBanner({ banners }: { banners: Banner[] }) {
 }
 
 
-export function PlazaPage({ initialFeed, banners }: { initialFeed: PostFeed; banners: Banner[] }) {
-  const { session } = useStoredSession()
-  const did = session?.pds.did
-  const scopedFeed = useMemo(() => readCachedFeed(did) ?? {
-    ...initialFeed,
-    posts: initialFeed.posts.map(({ viewer: _viewer, ...post }) => post),
-  }, [did, initialFeed])
-  return <PlazaFeed key={did ?? 'guest'} initialFeed={scopedFeed} banners={banners} />
+function PlazaTags({ active }: { active?: PlazaTag }) {
+  return <nav className="plaza-tags" aria-label="常用标签">
+    {PLAZA_TAGS.map((tag) => <Link key={tag} to="/" search={tag === active ? {} : { tag }} className="plaza-tag" aria-current={tag === active ? 'true' : undefined}>#{tag}</Link>)}
+  </nav>
 }
 
-function PlazaFeed({ initialFeed, banners }: { initialFeed: PostFeed; banners: Banner[] }) {
+export function PlazaPage({ initialFeed, banners, tag }: { initialFeed: PostFeed; banners: Banner[]; tag?: PlazaTag }) {
+  const { session } = useStoredSession()
+  const did = session?.pds.did
+  const scopedFeed = useMemo(() => (tag ? null : readCachedFeed(did)) ?? {
+    ...initialFeed,
+    posts: initialFeed.posts.map(({ viewer: _viewer, ...post }) => post),
+  }, [did, initialFeed, tag])
+  return <PlazaFeed key={`${did ?? 'guest'}:${tag ?? ''}`} initialFeed={scopedFeed} banners={banners} tag={tag} />
+}
+
+function PlazaFeed({ initialFeed, banners, tag }: { initialFeed: PostFeed; banners: Banner[]; tag?: PlazaTag }) {
+  // 标签页展示对应标签的旧帖，并绕过完整首页的缓存。
+  const filter = tag ? { tag } : { category: 'post' as const }
   const [feed, setFeed] = useState(initialFeed)
   const [isLoading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -86,7 +95,7 @@ function PlazaFeed({ initialFeed, banners }: { initialFeed: PostFeed; banners: B
     request.current++
     if (!isReady) return
     if (reloadKey === 0) {
-      const cachedFeed = readCachedFeed(did)
+      const cachedFeed = tag ? null : readCachedFeed(did)
       if (cachedFeed) {
         setLoading(false)
         setError('')
@@ -96,7 +105,7 @@ function PlazaFeed({ initialFeed, banners }: { initialFeed: PostFeed; banners: B
       if (!did) {
         setLoading(false)
         setError('')
-        writeCachedFeed(initialFeed)
+        if (!tag) writeCachedFeed(initialFeed)
         setFeed(initialFeed)
         return () => { request.current++ }
       }
@@ -110,12 +119,12 @@ function PlazaFeed({ initialFeed, banners }: { initialFeed: PostFeed; banners: B
       data: {
         accessJwt,
         did,
-        category: 'post',
+        ...filter,
       },
     })
       .then((nextFeed) => {
         if (!active || current !== request.current) return
-        writeCachedFeed(nextFeed, did)
+        if (!tag) writeCachedFeed(nextFeed, did)
         setFeed(nextFeed)
       })
       .catch((reason) => {
@@ -125,7 +134,7 @@ function PlazaFeed({ initialFeed, banners }: { initialFeed: PostFeed; banners: B
         if (active && current === request.current) setLoading(false)
       })
     return () => { active = false; request.current++ }
-  }, [accessJwt, did, initialFeed, isReady, reloadKey])
+  }, [accessJwt, did, initialFeed, isReady, reloadKey, tag])
 
   const more = async () => {
     if (!feed.cursor || isLoading) return
@@ -133,11 +142,11 @@ function PlazaFeed({ initialFeed, banners }: { initialFeed: PostFeed; banners: B
     setLoading(true)
     setError('')
     try {
-      const page = await getPosts({ data: { accessJwt, did, category: 'post', cursor: feed.cursor } })
+      const page = await getPosts({ data: { accessJwt, did, ...filter, cursor: feed.cursor } })
       if (current !== request.current) return
       const next = { ...page, posts: [...new Map([...feed.posts, ...page.posts].map((post) => [post.reason?.uri ?? post.uri, post])).values()] }
       setFeed(next)
-      writeCachedFeed(next, did)
+      if (!tag) writeCachedFeed(next, did)
     } catch (reason) {
       if (current === request.current) setError(reason instanceof Error ? reason.message : '帖子暂时无法加载')
     } finally { if (current === request.current) setLoading(false) }
@@ -173,6 +182,7 @@ function PlazaFeed({ initialFeed, banners }: { initialFeed: PostFeed; banners: B
   return (
     <div className="page plaza-page">
       <PlazaBanner banners={banners} />
+      <PlazaTags active={tag} />
       {error ? (
         <div className="inline-error" role="alert">
           <span>{error}</span>
@@ -182,7 +192,7 @@ function PlazaFeed({ initialFeed, banners }: { initialFeed: PostFeed; banners: B
 
       <section className="feed-section">
         <PostList
-          posts={feed.posts.filter((post) => postCategory(post.record) === 'post')}
+          posts={tag ? feed.posts : feed.posts.filter((post) => postCategory(post.record) === 'post')}
           onRepostChange={handleRepostChange}
           onPostDeleted={handlePostDeleted}
         />

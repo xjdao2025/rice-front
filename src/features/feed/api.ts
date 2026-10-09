@@ -384,7 +384,7 @@ export async function loadPostPage(data: GetPostsInput) {
         page,
         per_page: data.limit ?? FEED_PAGE_SIZE,
         ...(data.repo ? { repo: data.repo } : {}),
-        ...(data.tag ? { tag: data.tag } : {}),
+        ...(data.tag ? { key: `#${data.tag.replace(/^#/, '')}` } : {}),
       }
   const payload = await requestJson<unknown>(`${BACKEND_BASE}${endpoint}`, {
     method: 'POST',

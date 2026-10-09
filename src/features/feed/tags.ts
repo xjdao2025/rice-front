@@ -25,6 +25,11 @@ export const POST_CATEGORIES = {
   },
 } as const
 
+/** 首页 banner 下的常用标签 */
+export const PLAZA_TAGS = ['活动', '任务', '商品'] as const
+export type PlazaTag = typeof PLAZA_TAGS[number]
+export const isPlazaTag = (value: unknown): value is PlazaTag => PLAZA_TAGS.includes(value as PlazaTag)
+
 export function postTags(text: string) {
   return [...new Set(text.match(/#[\p{L}\p{N}_-]+/gu) ?? [])]
 }

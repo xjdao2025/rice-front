@@ -129,6 +129,9 @@ input:-webkit-autofill:focus {
 .notification-dot { width: 7px; height: 7px; border-radius: 50%; background: #bc3d35; }
 
 /* Plaza */
+.plaza-tags { margin-bottom: var(--xj-card-gap); display: flex; gap: 8px; }
+.plaza-tag { min-height: 32px; padding: 0 14px; border: 1px solid var(--xj-line); border-radius: 999px; display: inline-flex; align-items: center; background: var(--xj-surface); color: var(--xj-accent); font-size: var(--xj-font-body); font-weight: 600; }
+.plaza-tag[aria-current="true"] { border-color: var(--xj-accent); background: var(--xj-accent); color: #fff; }
 .plaza-banner { position: relative; margin-bottom: var(--xj-card-gap); border-radius: 24px; overflow: hidden; }
 .plaza-banner-track { width: 100%; }
 .plaza-banner-track [aria-roledescription="slide"] { flex: 0 0 100%; }
