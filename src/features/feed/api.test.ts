@@ -215,7 +215,7 @@ describe('feed data', () => {
     expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toMatchObject({ page: 2, per_page: 20 })
   })
 
-  it('finds a tag by post text and keeps only exact hashtag matches of every category', async () => {
+  it('asks post-cache for the tag and keeps posts of every category that carry it', async () => {
     const tagged = (uri: string, text: string, xjdaoCategory?: 'activity') => ({ ...post, uri, record: { ...post.record, text, ...(xjdaoCategory ? { xjdaoCategory } : {}) } })
     const fetchMock = vi.fn(async (url: string | URL, _init?: RequestInit) => String(url).includes('/post/api/posts/list')
       ? new Response(JSON.stringify({ posts: [tagged('at://a', '#活动 春耕'), tagged('at://b', '开放日 #活动', 'activity'), tagged('at://c', '#活动家 聚会')], page: 1, total: 3 }))
@@ -224,8 +224,7 @@ describe('feed data', () => {
     const result = await loadPostPage({ tag: '活动' })
     expect(result.posts.map((item) => item.uri)).toEqual(['at://a', 'at://b'])
     const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body))
-    expect(body).toMatchObject({ key: '#活动', page: 1 })
-    expect(body).not.toHaveProperty('tag')
+    expect(body).toMatchObject({ tag: '活动', page: 1 })
   })
 
   it('ends list pagination at the last returned page', async () => {
