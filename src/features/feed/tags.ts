@@ -25,7 +25,10 @@ export const POST_CATEGORIES = {
   },
 } as const
 
-/** 首页 banner 下的常用标签 */
+/**
+ * 首页 banner 下的常用标签，只为兼容旧帖：旧前端发帖时自动插入这三个话题，
+ * 点了就在首页按标签筛这些帖子。**不指向**新的活动 / 任务模块 —— 那些不是帖子。
+ */
 export const PLAZA_TAGS = ['活动', '任务', '商品'] as const
 export type PlazaTag = typeof PLAZA_TAGS[number]
 export const isPlazaTag = (value: unknown): value is PlazaTag => PLAZA_TAGS.includes(value as PlazaTag)
