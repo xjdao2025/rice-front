@@ -314,6 +314,9 @@ input:-webkit-autofill:focus {
 .profile-menu-row strong { font-size: var(--xj-font-body); }
 .profile-menu-row small { color: var(--xj-muted); font-size: var(--xj-font-caption); }
 .logout-button { margin: 14px auto 0; display: flex; justify-content: center; }
+.site-info { margin: 28px 0 8px; display: grid; gap: 4px; text-align: center; color: var(--xj-muted); font-size: var(--xj-font-caption); }
+.site-info p { margin: 0; }
+.site-info a { color: inherit; }
 .primary-link { min-height: 44px; padding: 0 15px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; background: var(--xj-accent); color: #fff; font-size: var(--xj-font-body); }
 .signed-out-state { min-height: 55vh; display: grid; place-content: center; justify-items: center; gap: 9px; text-align: center; }
 .signed-out-state p { margin: 0; color: var(--xj-muted); font-size: var(--xj-font-body); }

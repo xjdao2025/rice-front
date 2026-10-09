@@ -68,5 +68,21 @@ export function ProfilePage({ initialData = null, initialError = '' }: { initial
       ['/me/posts', '我的帖子', '在广场发布过的内容'],
     ] as const).map(([to, title, copy]) => <Link to={to} className="profile-menu-row" key={to}><span className="profile-menu-copy"><strong>{title}</strong><small>{copy}</small></span><ChevronRight className="row-chevron" aria-hidden="true" /></Link>)}
     </nav><div className="logout-button"><Button label="退出登录" icon={<LogOut size={16} />} variant="ghost" clickAction={logout} /></div>
+    <SiteInfo />
   </div>
+}
+
+const external = { target: '_blank', rel: 'noopener noreferrer' }
+
+function SiteInfo() {
+  return <footer className="site-info">
+    <p>联系邮箱：<a href="mailto:xjdaos@126.com">xjdaos@126.com</a></p>
+    <p>
+      <a href="https://xjdao.xyz/doc/%E4%B9%A1%E5%BB%BADAO-%E9%9A%90%E7%A7%81%E6%94%BF%E7%AD%96.pdf" {...external}>隐私政策</a>
+      {' • '}
+      <a href="https://xjdao.xyz/doc/%E4%B9%A1%E5%BB%BADAO-%E7%94%A8%E6%88%B7%E6%9C%8D%E5%8A%A1%E5%8D%8F%E8%AE%AE.pdf" {...external}>服务条款</a>
+    </p>
+    <p>Powered by XJDAO</p>
+    <p><a href="https://beian.miit.gov.cn/" {...external}>京ICP备2025136647号</a></p>
+  </footer>
 }

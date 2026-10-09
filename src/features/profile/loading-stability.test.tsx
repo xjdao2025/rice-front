@@ -49,6 +49,16 @@ it('renders the prefetched profile and balance together on first render', () => 
   expect(html).not.toContain('节点稻米')
 })
 
+it('shows the contact, policy links and ICP filing at the bottom', () => {
+  const html = renderToStaticMarkup(<ProfilePage initialData={initialData} />)
+  expect(html).toContain('href="mailto:xjdaos@126.com"')
+  expect(html).toContain('隐私政策</a> • <a')
+  expect(html).toContain('%E9%9A%90%E7%A7%81%E6%94%BF%E7%AD%96.pdf')
+  expect(html).toContain('%E7%94%A8%E6%88%B7%E6%9C%8D%E5%8A%A1%E5%8D%8F%E8%AE%AE.pdf')
+  expect(html).toContain('Powered by XJDAO')
+  expect(html).toContain('京ICP备2025136647号')
+})
+
 it('offers the community switch alongside the personal balance only for the current session', () => {
   const adminData = { ...initialData, communities: [{ id: 'community', name: '测试社区', wallet: { ...initialData.wallet, balance: 500 } }] }
   const html = renderToStaticMarkup(<ProfilePage initialData={adminData} />)
