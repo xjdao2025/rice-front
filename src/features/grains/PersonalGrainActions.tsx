@@ -44,7 +44,7 @@ export function ReceiveGrainPage() {
     catch { setCopyError('未能复制，请手动复制下方链接。') }
   }
   return <div className="page business-panel form-stack">
-        <div style={{ background: 'white', padding: 16, alignSelf: 'center' }}><QRCode value={link} size={180} title="收稻米码" /></div>
+        <div style={{ background: 'white', padding: 16, justifySelf: 'center' }}><QRCode value={link} size={180} title="收稻米码" /></div>
         <strong>@{session.user.handle}</strong><p>请对方扫描收稻米码，核对一下账号后送稻米。</p>
         <a href={link} style={{ overflowWrap: 'anywhere' }}>{link}</a>
         {copyError && <p className="inline-error" role="alert">{copyError}</p>}
