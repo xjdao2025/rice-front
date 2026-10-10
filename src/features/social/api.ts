@@ -12,26 +12,42 @@ async function loadUserSearch(data: { q: string; before?: string }) {
   const q = data.q.trim()
   if (!q) return { data: [], meta: { next_cursor: null } } satisfies UserSearchPage
   const page = await backend<UserSearchPage>(`/api/users/search?${searchParams({ q, limit: '10', before: data.before })}`)
-  return { ...page, data: await withProfileAvatars(page.data) }
+  return withAvatars(page)
 }
 
 export const searchUsers = createServerFn({ method: 'POST' })
   .validator((data: { q: string; before?: string }) => data)
   .handler(({ data }) => loadUserSearch(data))
 
+type MissingAvatar = { id: string; did: string; handle: string; avatar: { url: string } | null }
+const isMissingAvatar = (value: object): value is MissingAvatar => {
+  const user = value as Partial<MissingAvatar>
+  return typeof user.id === 'string' && typeof user.did === 'string' && typeof user.handle === 'string' && user.avatar === null
+}
+
 /**
- * rice 用户大多没在 rice 传过头像，头像在 AT 资料里。补上缺的那些（rice 自己的优先，和个人主页一致）；
- * AppView 不可用时原样返回。只在服务端调用。
+ * rice 用户大多没在 rice 传过头像，头像在 AT 资料里。把返回值里所有缺头像的 rice 用户
+ * （任意嵌套：作者、成员、报名者……）一次 `getProfiles` 补上；rice 自己的头像优先，和个人主页一致。
+ * AppView 不可用时原样返回。只在服务端调用（图片地址要按服务端环境改写）。
  */
-export async function withProfileAvatars<T extends { did: string; avatar: { url: string } | null }>(users: T[]): Promise<T[]> {
-  const missing = [...new Set(users.filter((user) => !user.avatar).map((user) => user.did))]
+export async function withAvatars<T>(value: T): Promise<T> {
+  const users: MissingAvatar[] = []
+  const visit = (node: unknown) => {
+    if (!node || typeof node !== 'object') return
+    if (isMissingAvatar(node)) users.push(node)
+    Object.values(node).forEach(visit)
+  }
+  visit(value)
+  const dids = [...new Set(users.map((user) => user.did))]
   const avatars = new Map<string, string>()
-  for (let i = 0; i < missing.length; i += 25) {
-    const params = new URLSearchParams(missing.slice(i, i + 25).map((did) => ['actors', did]))
+  for (let i = 0; i < dids.length; i += 25) {
+    const params = new URLSearchParams(dids.slice(i, i + 25).map((did) => ['actors', did]))
     const page = await xrpcGet<{ profiles?: Array<{ did: string; avatar?: string }> }>('app.bsky.actor.getProfiles', params).catch(() => null)
     for (const { did, avatar } of page?.profiles ?? []) if (avatar) avatars.set(did, appviewImageUrl(avatar))
   }
-  return users.map((user) => !user.avatar && avatars.has(user.did) ? { ...user, avatar: { url: avatars.get(user.did)! } } : user)
+  // 返回值是刚解析出来的 JSON，原地改即可
+  for (const user of users) { const url = avatars.get(user.did); if (url) user.avatar = { url } }
+  return value
 }
 
 export function normalizeSocialProfile(value: unknown): SocialProfile {

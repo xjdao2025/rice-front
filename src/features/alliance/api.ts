@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { BACKEND_BASE, backend, backendData, readJson, withQuery } from '~/lib/http'
 import type { RiceAttachment, RicePublicUser } from '~/lib/models'
+import { withAvatars } from '../social/api'
 
 export type Foundation = { fund_scale: number; proposal_approval_votes: number; documents: RiceAttachment[] }
 export type Announcement = { id: string; title: string; position: number; attachment: RiceAttachment | null; inserted_at: string }
@@ -30,8 +31,8 @@ export function loadAnnouncements(data: PageInput) {
   return backend<GovernancePage<Announcement>>(`/api/announcements${pageQuery(data)}`)
 }
 
-export function loadProposals(data: PageInput & { token?: string; status?: ProposalStatus }) {
-  return backend<GovernancePage<Proposal>>(`/api/proposals${pageQuery(data)}`, { token: data.token })
+export async function loadProposals(data: PageInput & { token?: string; status?: ProposalStatus }) {
+  return withAvatars(await backend<GovernancePage<Proposal>>(`/api/proposals${pageQuery(data)}`, { token: data.token }))
 }
 
 export function loadGrainGrants(data: PageInput) {
@@ -43,7 +44,7 @@ export async function loadAnnouncement(data: { id: string }) {
 }
 
 export async function loadProposal(data: { id: string; token?: string }) {
-  return backendData<Proposal>(proposalPath(data.id), { token: data.token })
+  return withAvatars(await backendData<Proposal>(proposalPath(data.id), { token: data.token }))
 }
 
 export async function sendProposalVote(data: { id: string; token: string; choice: VoteChoice }) {
@@ -51,11 +52,11 @@ export async function sendProposalVote(data: { id: string; token: string; choice
 }
 
 export async function loadProposalComments(data: { id: string } & PageInput) {
-  return backend<GovernancePage<ProposalComment>>(`${proposalPath(data.id)}/comments${pageQuery(data)}`)
+  return withAvatars(await backend<GovernancePage<ProposalComment>>(`${proposalPath(data.id)}/comments${pageQuery(data)}`))
 }
 
 export async function sendProposalComment(data: { id: string; token: string; body: string }) {
-  return backendData<ProposalComment>(`${proposalPath(data.id)}/comments`, { method: 'POST', token: data.token, json: { body: data.body } })
+  return withAvatars(await backendData<ProposalComment>(`${proposalPath(data.id)}/comments`, { method: 'POST', token: data.token, json: { body: data.body } }))
 }
 
 export async function loadGovernanceBody(data: { id: string }) {

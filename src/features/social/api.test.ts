@@ -5,7 +5,7 @@ import {
   loadSocialProfile,
   normalizeSocialProfile,
   updateFollowRecord,
-  withProfileAvatars,
+  withAvatars,
 } from './api'
 
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs() })
@@ -88,34 +88,34 @@ describe('social graph data', () => {
 
 })
 
-describe('withProfileAvatars', () => {
-  const user = (did: string, avatar: { url: string } | null = null) => ({ did, avatar })
+describe('withAvatars', () => {
+  const user = (did: string, avatar: { url: string } | null = null) => ({ id: did, did, handle: `${did}.test`, avatar })
 
-  it('fills only missing avatars from one AppView getProfiles call, keeping rice avatars first', async () => {
+  it('fills every nested rice user missing an avatar from one getProfiles call, keeping rice avatars first', async () => {
     const fetchMock = vi.fn(async (_url: string | URL) => Response.json({ profiles: [
       { did: 'did:plc:a', avatar: 'https://bsky.example/img/avatar/plain/did:plc:a/cid-a' },
       { did: 'did:plc:b' },
     ] }))
     vi.stubGlobal('fetch', fetchMock)
-    const users = [user('did:plc:a'), user('did:plc:b'), user('did:plc:c', { url: '/rice.png' }), user('did:plc:a')]
+    const task = { creator: user('did:plc:a'), applications: [{ user: user('did:plc:b') }, { user: user('did:plc:c', { url: '/rice.png' }) }], assignee: user('did:plc:a'), node: { id: 'n', name: '节点', logo: null } }
 
-    const filled = await withProfileAvatars(users)
+    const filled = await withAvatars(task)
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
     const url = new URL(String(fetchMock.mock.calls[0][0]), 'https://x.test')
     expect(url.pathname).toBe('/bsky/xrpc/app.bsky.actor.getProfiles')
     expect(url.searchParams.getAll('actors')).toEqual(['did:plc:a', 'did:plc:b'])
-    expect(filled.map((u) => u.avatar?.url)).toEqual([expect.stringContaining('cid-a'), undefined, '/rice.png', expect.stringContaining('cid-a')])
+    expect(filled.creator.avatar?.url).toContain('cid-a')
+    expect(filled.assignee.avatar?.url).toContain('cid-a')
+    expect(filled.applications.map(({ user }) => user.avatar)).toEqual([null, { url: '/rice.png' }])
   })
 
-  it('returns the users unchanged when AppView is unavailable, and skips the call when nothing is missing', async () => {
+  it('returns the value unchanged when AppView is unavailable, and skips the call when nothing is missing', async () => {
     const fetchMock = vi.fn(async () => new Response('down', { status: 502 }))
     vi.stubGlobal('fetch', fetchMock)
-    const users = [user('did:plc:a')]
-    expect(await withProfileAvatars(users)).toEqual(users)
-    const withRice = [user('did:plc:c', { url: '/rice.png' })]
+    expect(await withAvatars([user('did:plc:a')])).toEqual([user('did:plc:a')])
     fetchMock.mockClear()
-    expect(await withProfileAvatars(withRice)).toEqual(withRice)
+    expect(await withAvatars({ data: [user('did:plc:c', { url: '/rice.png' })], meta: { next_cursor: null } })).toEqual({ data: [user('did:plc:c', { url: '/rice.png' })], meta: { next_cursor: null } })
     expect(fetchMock).not.toHaveBeenCalled()
   })
 })

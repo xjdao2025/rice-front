@@ -46,6 +46,9 @@ export const Route = createFileRoute('/me/')({
       })
       const [user, wallet, communities] = await Promise.all([userRequest, getWallet({ data: { token } }), communitiesRequest])
       if (!isCurrentSession() || !user) return empty
+      // 会话里的用户是登录时存的；资料（含从 AT 补的头像）有变就同步，收稻米页等直接读会话的地方才跟得上
+      const stored = readStoredSession()
+      if (stored && JSON.stringify(stored.user) !== JSON.stringify(user)) writeStoredSession({ ...stored, user })
       return { initialData: { user, wallet, accountId, sessionToken: token, ...communities }, error: '' }
     } catch (error) {
       const communities = await communitiesRequest

@@ -8,6 +8,7 @@ import { attachmentImages } from '~/lib/attachments'
 import { Button } from '@astryxdesign/core/Button'
 import { TextArea } from '~/components/AutoTextArea'
 import { Link } from '@tanstack/react-router'
+import { UserIdentity } from '~/components/UserIdentity'
 import { CheckCircle2, CircleAlert, Sprout } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
@@ -207,7 +208,7 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
             <div className="applicant-list">
               {(task.applications ?? []).filter((item) => item.status === 'pending').map((application) => (
                 <article key={application.id}>
-                  <strong>{application.user.nickname || application.user.handle}</strong>
+                  <Link to="/profile/$actor" params={{ actor: application.user.did }} className="user-identity-link"><UserIdentity user={application.user} /></Link>
                   <p>{application.reason || '没有填写申请理由'}</p>
                   {application.contact && <p>联系方式：{application.contact}</p>}
                   <div className="form-actions">
@@ -228,7 +229,7 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
             <div className="applicant-list">
               {workers.map((application) => (
                 <article key={application.id}>
-                  <strong>{application.user.nickname || application.user.handle}</strong>
+                  <Link to="/profile/$actor" params={{ actor: application.user.did }} className="user-identity-link"><UserIdentity user={application.user} /></Link>
                   {application.contact && <p>联系方式：{application.contact}</p>}
                   {releaseId === application.id ? (
                     <>

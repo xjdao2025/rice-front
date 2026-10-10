@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 
 import { BACKEND_BASE, backend, backendData, readJson } from '~/lib/http'
 import type { RiceAttachment, RiceSession, RiceUser } from '~/lib/models'
+import { withAvatars } from '../social/api'
 import { isRiceSession } from '../session/session-data'
 
 export type VerificationChannel = 'sms' | 'email'
@@ -76,11 +77,11 @@ export const resetRicePassword = createServerFn({ method: 'POST' })
 
 export const updateCurrentUser = createServerFn({ method: 'POST' })
   .validator((data: { token: string; nickname: string; bio: string; avatarId?: string }) => data)
-  .handler(async ({ data }) => backendData<RiceUser>('/api/users/me', {
+  .handler(async ({ data }) => withAvatars(await backendData<RiceUser>('/api/users/me', {
     method: 'PATCH',
     token: data.token,
     json: { nickname: data.nickname, bio: data.bio, ...(data.avatarId ? { avatar_id: data.avatarId } : {}) },
-  }))
+  })))
 
 export const uploadRiceAttachment = createServerFn({ method: 'POST' })
   .validator((data: { token: string; filename: string; contentType: string; base64: string }) => data)

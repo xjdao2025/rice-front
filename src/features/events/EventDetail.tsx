@@ -8,6 +8,7 @@ import { attachmentImages } from '~/lib/attachments'
 import { Button } from '@astryxdesign/core/Button'
 import { TextArea } from '~/components/AutoTextArea'
 import { Link } from '@tanstack/react-router'
+import { UserIdentity } from '~/components/UserIdentity'
 import { Sprout } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { formatTimestamp } from '~/lib/format'
@@ -85,7 +86,7 @@ function EventDetails({ eventId, initial }: { eventId: string; initial?: EventDe
     {(event.can_manage ?? event.creator.id === session?.user.id) && <section className="business-section"><h2>报名申请</h2>{event.applications.length ? event.applications.map((a) => {
       const actions = (['approve', 'reject', 'remove'] as const).filter(action => a.allowed_actions.includes(action) && (action === 'remove' || Date.parse(event.starts_at) > now))
       return <article className="candidate form-stack" key={a.id}>
-      <div><strong>{a.user.nickname || a.user.handle}</strong><span className="task-status">{applicationStatusLabel[a.status]}</span><p>{a.reason}</p>{a.contact && <p>联系方式：{a.contact}</p>}</div>
+      <div><Link to="/profile/$actor" params={{ actor: a.user.did }} className="user-identity-link"><UserIdentity user={a.user} badge={<span className="task-status">{applicationStatusLabel[a.status]}</span>} /></Link><p>{a.reason}</p>{a.contact && <p>联系方式：{a.contact}</p>}</div>
       {actions.length > 0 && <div className="form-actions">{actions.map(action => <Button key={action} label={action === 'approve' ? '通过' : action === 'reject' ? '拒绝' : event.fee_amount ? '移除并退回稻米' : '移除报名'} variant={action === 'approve' ? 'primary' : 'secondary'} isDisabled={busy} onClick={() => { if (action === 'approve') void run(action, a.id); else setApplicationAction({ id: a.id, action }) }} />)}</div>}
       {applicationAction?.id === a.id && <ConfirmDialog title={applicationAction.action === 'reject' ? '确认拒绝申请' : '确认移除报名'} busy={busy} error={error} onClose={() => setApplicationAction(null)} back="返回"
         confirm={applicationAction.action === 'reject' ? '确认拒绝' : event.fee_amount ? '移除并退回稻米' : '确认移除'} variant="destructive" onConfirm={() => run(applicationAction.action, a.id)}>
