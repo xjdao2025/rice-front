@@ -188,6 +188,25 @@ describe('post images', () => {
 })
 
 describe('feed data', () => {
+  it('hides posts the labeler marked !hide, in lists and threads, without re-adding them from the PDS', async () => {
+    const hidden = { ...post, uri: `${post.uri}-hidden`, labels: [{ val: '!hide' }] }
+    const restored = { ...post, uri: `${post.uri}-restored`, labels: [{ val: '!hide', neg: true }] }
+    const fetchMock = vi.fn(async (input: string | URL) => {
+      const url = String(input)
+      if (url.includes('aerox.feed.listPosts')) return new Response(JSON.stringify({ posts: [hidden, restored] }))
+      if (url.includes('collection=app.bsky.feed.post')) return new Response(JSON.stringify({ records: [{ uri: hidden.uri, cid: 'c', value: hidden.record }] }))
+      if (url.includes('/api/users/')) return new Response(JSON.stringify({ data: { did: post.author.did, handle: 'author.test' } }))
+      return new Response(JSON.stringify({ records: [], feed: [] }))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const page = await loadPostPage({ did: post.author.did, accessJwt: 'pds-token' })
+    expect(page.posts.map((item) => item.uri)).toEqual([restored.uri])
+
+    expect(() => normalizePostThread({ thread: { post: hidden } })).toThrow('未通过内容审核')
+    const thread = normalizePostThread({ thread: { post, replies: [{ post: { ...hidden, record: { ...post.record } } }, { post: restored }] } })
+    expect(thread.replies.map((reply) => reply.post.uri)).toEqual([restored.uri])
+  })
+
   it('supplements only the signed-in first page from PDS while indexing lags, then prefers indexed counts', async () => {
     const uri = `at://${post.author.did}/app.bsky.feed.post/new`
     const recent = { uri, cid: 'new-cid', value: { ...post.record, text: '刚刚发布', createdAt: '2026-09-21T12:00:00.000Z' } }

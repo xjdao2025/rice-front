@@ -223,6 +223,11 @@ export function normalizePostImages(post: PostView): PostView {
   return images.length ? { ...post, images } : post
 }
 
+/** 审核服务打了 `!hide` 的帖子(rice 补审时阿里云没通过)不显示 */
+export function isLabelHidden(post: Pick<PostView, 'labels'>) {
+  return (post.labels ?? []).some((label) => label.val === '!hide' && !label.neg)
+}
+
 export function normalizePostFeed(payload: unknown): PostFeed {
   const body = (payload ?? {}) as { posts?: Array<PostView | { post?: PostView; reply?: unknown; reason?: PostView['reason'] }> }
   const posts = (body.posts ?? [])
@@ -231,7 +236,7 @@ export function normalizePostFeed(payload: unknown): PostFeed {
       if (!item.post || item.reply) return undefined
       return item.reason ? { ...item.post, reason: item.reason } : item.post
     })
-    .filter((post): post is PostView => Boolean(post?.uri && post.record?.text !== undefined && !post.record.reply))
+    .filter((post): post is PostView => Boolean(post?.uri && post.record?.text !== undefined && !post.record.reply && !isLabelHidden(post)))
     .map(normalizePostImages)
   return { posts }
 }
@@ -287,14 +292,15 @@ export function normalizePostThread(payload: unknown): PostThread {
   const body = payload as { thread?: { post?: PostView; replies?: unknown[] } }
   const post = body.thread?.post
   if (!post?.uri || post.record?.text === undefined) throw new Error('帖子暂时无法显示')
+  if (isLabelHidden(post)) throw new Error('该帖子未通过内容审核，已隐藏')
   const replies = (body.thread?.replies ?? [])
     .flatMap((value) => {
       const node = value as { post?: PostView; replies?: unknown[] }
       const parent = node.post
-      if (!parent?.uri || parent.record?.text === undefined) return []
+      if (!parent?.uri || parent.record?.text === undefined || isLabelHidden(parent)) return []
       const children = (node.replies ?? [])
         .map((child) => (child as { post?: PostView }).post)
-        .filter((child): child is PostView => Boolean(child?.uri && child.record?.text !== undefined))
+        .filter((child): child is PostView => Boolean(child?.uri && child.record?.text !== undefined && !isLabelHidden(child)))
         .map((child) => ({ post: normalizePostImages(child), parentUri: parent.uri }))
       return [{ post: normalizePostImages(parent), parentUri: post.uri }, ...children]
     })
@@ -319,7 +325,9 @@ export async function loadPostPage(data: GetPostsInput) {
     !query && first && data.did && data.accessJwt && (!data.repo || data.repo === data.did)
       ? loadOwnRecentPosts(data.did, data.accessJwt) : [],
   ])
-  const indexedUris = new Set(feed.posts.map(post => post.uri))
+  // 被隐藏的也算「列表里有」,免得又从自己的 PDS 记录里补回来
+  const listed = (payload as { posts?: Array<{ uri?: string; post?: { uri?: string } }> }).posts ?? []
+  const indexedUris = new Set(listed.map((item) => item.post?.uri ?? item.uri))
   const posts = mergeFeedPosts([...feed.posts, ...ownPosts.filter(post => !indexedUris.has(post.uri))], timelineReposts).filter((post) =>
     (!data.tag || hasPostTag(post.record.text, data.tag)) && (!data.category || postCategory(post.record) === data.category))
   return {
