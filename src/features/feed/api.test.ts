@@ -7,6 +7,7 @@ import {
   clearCachedFeed,
   createdPostView,
   createTextPostRecord,
+  moderatePost,
   deleteOwnPostRecord,
   hideDeletedPost,
   isPostHidden,
@@ -92,6 +93,19 @@ describe('post images', () => {
     expect(immediate.record.embed).toEqual(record.embed)
     expect(immediate.images).toHaveLength(count)
     expect(immediate.images?.[count - 1]).toMatchObject({ ...thumbs(session.pds.did, images[count - 1].image.ref.$link), width: 1200, height: 800 })
+  })
+
+  it('asks rice to moderate the text and image blobs, and surfaces its refusal', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(Response.json({ data: { allowed: true } }))
+      .mockResolvedValueOnce(Response.json({ errors: { detail: '内容可能包含违规信息，请修改后再发布' } }, { status: 422 }))
+    vi.stubGlobal('fetch', fetchMock)
+    await moderatePost('rice-token', '去插秧', [image])
+    const [url, options] = fetchMock.mock.calls[0]
+    expect(new URL(String(url)).pathname).toBe('/api/moderation/check')
+    expect(options.headers.Authorization).toBe('Bearer rice-token')
+    expect(JSON.parse(options.body)).toEqual({ text: '去插秧', images: [image.image.ref.$link] })
+    await expect(moderatePost('rice-token', '违规内容')).rejects.toThrow('违规')
   })
 
   it('blocks more than nine images, invalid blob sizes, and galleries without real dimensions', async () => {
