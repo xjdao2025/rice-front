@@ -308,6 +308,7 @@ input:-webkit-autofill:focus {
 .grain-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .grain-metrics div { min-width: 0; min-height: 62px; border-radius: 10px; display: grid; place-content: center; gap: 3px; background: rgba(255,255,255,.62); text-align: center; }
 .grain-metrics b { font-size: var(--xj-font-body); overflow-wrap: anywhere; }
+.business-section > .grain-metrics { margin-bottom: 12px; }
 .grain-metrics span { color: var(--xj-muted); font-size: var(--xj-font-caption); }
 .profile-menu { border: 1px solid var(--xj-line); border-radius: 14px; overflow: hidden; background: var(--xj-surface); }
 .profile-menu-row { width: 100%; min-height: 76px; padding: 13px 14px; border: 0; border-bottom: 1px solid var(--xj-line); display: flex; align-items: center; justify-content: space-between; gap: 12px; background: transparent; text-align: left; }
