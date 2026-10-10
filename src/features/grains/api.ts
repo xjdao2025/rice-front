@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 
 import { backend, backendData, withQuery } from '~/lib/http'
 import type { RicePublicUser } from '~/lib/models'
+import { withProfileAvatars } from '../social/api'
 
 export type WalletEntry = { id: string; kind: 'reserved' | 'refunded' | 'grant' | 'gift' | 'reward' | 'task_reward' | 'event_fee' | 'community_fund'; amount: number; memo?: string | null; subject_uri: string | null; inserted_at: string; from_user: Pick<RicePublicUser, 'id' | 'nickname' | 'handle'> | null; to_user: Pick<RicePublicUser, 'id' | 'nickname' | 'handle'> | null; from_node?: { id: string; name: string } | null; to_node?: { id: string; name: string } | null }
 export type RiceWallet = { balance: number; frozen: number; earned: number; entries: WalletEntry[]; next_cursor?: string | null }
@@ -29,7 +30,7 @@ type TransferRecipientInput = { token: string; identifier: string }
 export type TransferRecipients = { exact: boolean; users: RicePublicUser[] }
 export async function requestTransferRecipients(data: TransferRecipientInput): Promise<TransferRecipients> {
   const body = await backend<{ data: RicePublicUser[]; exact: boolean }>(withQuery('/api/grain_transfers/recipients', { q: data.identifier.trim().replace(/^@/, '') }), { token: data.token })
-  return { exact: body.exact, users: body.data }
+  return { exact: body.exact, users: await withProfileAvatars(body.data) }
 }
 export const findTransferRecipients = createServerFn({ method: 'POST' })
   .validator((data: TransferRecipientInput) => data)

@@ -1,4 +1,4 @@
-import { Avatar } from '~/components/Avatar'
+import { UserIdentity } from '~/components/UserIdentity'
 import { Button } from '@astryxdesign/core/Button'
 import { TextInput } from '@astryxdesign/core/TextInput'
 import { createFileRoute, Link } from '@tanstack/react-router'
@@ -95,8 +95,7 @@ function SearchResults({ q, session }: { q?: string; session: RiceSession | null
       </SearchGroup>
       <SearchGroup title="用户" count={users.length} hasMore={!!cursors.users} emptyMessage={emptyMessage('用户')}>
         <div className="people-list">{users.map((user) => <Link to="/profile/$actor" params={{ actor: user.did }} className="person-row search-person-row" key={user.id}>
-          <Avatar name={user.nickname || user.handle} src={user.avatar?.url} />
-          <span className="person-copy"><strong>{user.nickname || user.handle}</strong><small>@{user.handle}</small>{user.bio && <p>{user.bio}</p>}</span>
+          <UserIdentity user={user} detail={user.bio && <p>{user.bio}</p>} />
         </Link>)}</div>
         {cursors.users && <Button label="更多用户" variant="ghost" isDisabled={loading} clickAction={() => more('users')} />}
       </SearchGroup>

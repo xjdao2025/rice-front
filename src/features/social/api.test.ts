@@ -5,6 +5,7 @@ import {
   loadSocialProfile,
   normalizeSocialProfile,
   updateFollowRecord,
+  withProfileAvatars,
 } from './api'
 
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs() })
@@ -85,4 +86,36 @@ describe('social graph data', () => {
     })
   })
 
+})
+
+describe('withProfileAvatars', () => {
+  const user = (did: string, avatar: { url: string } | null = null) => ({ did, avatar })
+
+  it('fills only missing avatars from one AppView getProfiles call, keeping rice avatars first', async () => {
+    const fetchMock = vi.fn(async (_url: string | URL) => Response.json({ profiles: [
+      { did: 'did:plc:a', avatar: 'https://bsky.example/img/avatar/plain/did:plc:a/cid-a' },
+      { did: 'did:plc:b' },
+    ] }))
+    vi.stubGlobal('fetch', fetchMock)
+    const users = [user('did:plc:a'), user('did:plc:b'), user('did:plc:c', { url: '/rice.png' }), user('did:plc:a')]
+
+    const filled = await withProfileAvatars(users)
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const url = new URL(String(fetchMock.mock.calls[0][0]), 'https://x.test')
+    expect(url.pathname).toBe('/bsky/xrpc/app.bsky.actor.getProfiles')
+    expect(url.searchParams.getAll('actors')).toEqual(['did:plc:a', 'did:plc:b'])
+    expect(filled.map((u) => u.avatar?.url)).toEqual([expect.stringContaining('cid-a'), undefined, '/rice.png', expect.stringContaining('cid-a')])
+  })
+
+  it('returns the users unchanged when AppView is unavailable, and skips the call when nothing is missing', async () => {
+    const fetchMock = vi.fn(async () => new Response('down', { status: 502 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const users = [user('did:plc:a')]
+    expect(await withProfileAvatars(users)).toEqual(users)
+    const withRice = [user('did:plc:c', { url: '/rice.png' })]
+    fetchMock.mockClear()
+    expect(await withProfileAvatars(withRice)).toEqual(withRice)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
 })

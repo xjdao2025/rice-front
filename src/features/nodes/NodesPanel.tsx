@@ -2,6 +2,7 @@ import { Button } from '@astryxdesign/core/Button'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { Avatar } from '~/components/Avatar'
+import { UserIdentity } from '~/components/UserIdentity'
 import { LoadingState } from '~/components/LoadingState'
 import { ConfirmDialog } from '~/components/ConfirmDialog'
 import { formatTimestamp } from '~/lib/format'
@@ -92,8 +93,7 @@ export function NodeDetail({ nodeId }: { nodeId: string }) {
     {node.role ? <p className="task-neutral-note">我的身份：{node.role === 'admin' ? '管理员' : '正式成员'}</p> : node.my_application?.status === 'pending' ? <p className="task-neutral-note">加入申请已提交，等待管理员审批。</p> : node.my_application?.status === 'rejected' ? <p className="task-neutral-note">加入申请未通过。{node.my_application.review_reason}</p> : null}
     <section className="business-section"><h2>节点成员</h2><div className="people-list node-member-list">{node.members?.map(({ user, role }) => <div className="person-row" key={user.id}>
       <Link to="/profile/$actor" params={{ actor: user.did }} className="node-member-link">
-        <Avatar name={user.nickname || user.handle} src={user.avatar?.url} />
-        <span className="person-copy"><strong><span>{user.nickname || user.handle}</span>{role === 'admin' && <span className="node-member-role">管理员</span>}</strong>{user.nickname && <small>@{user.handle}</small>}</span>
+        <UserIdentity user={user} badge={role === 'admin' && <span className="node-member-role">管理员</span>} />
       </Link>
       {node.can_manage_members && user.id !== node.owner?.id && <Button label={role === 'admin' ? '撤销管理员' : '设为管理员'} variant="ghost" isDisabled={busy} onClick={() => { setError(''); setRoleChange({ userId: user.id, name: user.nickname || user.handle, role: role === 'admin' ? 'member' : 'admin' }) }} />}
     </div>)}</div></section>

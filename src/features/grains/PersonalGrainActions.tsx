@@ -7,6 +7,7 @@ import QRCode from 'react-qr-code'
 import { QrCode, ScanLine } from 'lucide-react'
 import { DetailDialog } from '~/components/DetailDialog'
 import { Avatar } from '~/components/Avatar'
+import { UserIdentity } from '~/components/UserIdentity'
 import { integerInputError } from '~/lib/integer-input'
 import type { RicePublicUser, RiceSession } from '~/lib/models'
 import { readStoredSession, useStoredSession } from '../session/session'
@@ -177,8 +178,7 @@ function SendGrainForm({ session, to }: { session: RiceSession; to?: string }) {
         </div>
         {candidates.length > 0 && !confirming && <p className="muted">找到 {candidates.length} 位伙伴，点选要送的人：</p>}
         {candidates.length > 0 && !confirming && <div className="people-list grain-recipient-candidates" role="listbox" aria-label="选择送给谁">{candidates.map((user) => <button type="button" role="option" aria-selected={false} className="person-row search-person-row" key={user.id} disabled={busy} onClick={() => pick(user)}>
-          <Avatar name={user.nickname || user.handle} src={user.avatar?.url} />
-          <span className="person-copy"><strong>{user.nickname || user.handle}</strong><small>@{user.handle}</small><small>{user.did}</small></span>
+          <UserIdentity user={user} detail={<small>{user.did}</small>} />
         </button>)}</div>}
         {recipient && !confirming && <div role="status">送给：<strong>{recipient.nickname || recipient.handle}</strong>（@{recipient.handle}）</div>}
         {!confirming && error && <p className="inline-error" role="alert">{error}</p>}

@@ -3,7 +3,8 @@ import { requestPersonalTransfer, requestTransferRecipients, walletEntryIncoming
 
 afterEach(() => vi.unstubAllGlobals())
 it('looks up recipients through the authenticated Rice search endpoint', async () => {
-  const recipient = { id: 'receiver', did: 'did:plc:receiver', handle: 'receiver.example', nickname: '禾' }
+  // 带了 rice 头像就不会再去 AppView 补（补头像见 social/api.test.ts）
+  const recipient = { id: 'receiver', did: 'did:plc:receiver', handle: 'receiver.example', nickname: '禾', avatar: { url: '/a.png' } }
   const fetch = vi.fn().mockImplementation(() => Response.json({ data: [recipient], exact: true }))
   vi.stubGlobal('fetch', fetch)
   for (const [identifier, q] of [[' 13800138000 ', '13800138000'], [' @receiver.example ', 'receiver.example'], ['禾', '禾']]) {

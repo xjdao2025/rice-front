@@ -11,12 +11,28 @@ export type UserSearchPage = { data: RicePublicUser[]; meta: { next_cursor: stri
 async function loadUserSearch(data: { q: string; before?: string }) {
   const q = data.q.trim()
   if (!q) return { data: [], meta: { next_cursor: null } } satisfies UserSearchPage
-  return backend<UserSearchPage>(`/api/users/search?${searchParams({ q, limit: '10', before: data.before })}`)
+  const page = await backend<UserSearchPage>(`/api/users/search?${searchParams({ q, limit: '10', before: data.before })}`)
+  return { ...page, data: await withProfileAvatars(page.data) }
 }
 
 export const searchUsers = createServerFn({ method: 'POST' })
   .validator((data: { q: string; before?: string }) => data)
   .handler(({ data }) => loadUserSearch(data))
+
+/**
+ * rice 用户大多没在 rice 传过头像，头像在 AT 资料里。补上缺的那些（rice 自己的优先，和个人主页一致）；
+ * AppView 不可用时原样返回。只在服务端调用。
+ */
+export async function withProfileAvatars<T extends { did: string; avatar: { url: string } | null }>(users: T[]): Promise<T[]> {
+  const missing = [...new Set(users.filter((user) => !user.avatar).map((user) => user.did))]
+  const avatars = new Map<string, string>()
+  for (let i = 0; i < missing.length; i += 25) {
+    const params = new URLSearchParams(missing.slice(i, i + 25).map((did) => ['actors', did]))
+    const page = await xrpcGet<{ profiles?: Array<{ did: string; avatar?: string }> }>('app.bsky.actor.getProfiles', params).catch(() => null)
+    for (const { did, avatar } of page?.profiles ?? []) if (avatar) avatars.set(did, appviewImageUrl(avatar))
+  }
+  return users.map((user) => !user.avatar && avatars.has(user.did) ? { ...user, avatar: { url: avatars.get(user.did)! } } : user)
+}
 
 export function normalizeSocialProfile(value: unknown): SocialProfile {
   const profile = (value ?? {}) as Record<string, unknown>
