@@ -1,6 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
 
-import { backend, isSessionAuthError, searchParams } from '~/lib/http'
+import { backend, backendData, isSessionAuthError, searchParams } from '~/lib/http'
 import type { PdsImage, PostCategory, PostFeed, PostImage, PostThread, PostView, RicePublicUser, RiceSession } from '~/lib/models'
 import { appviewImageUrl, createPdsRecord, deleteOwnRecord, MAX_POST_IMAGE_BYTES, MAX_POST_IMAGES, MAX_POST_TEXT_LENGTH, pdsGet, thumbUrl, POST_IMAGE_TYPES, uploadPdsImage, xrpcGet } from '~/lib/pds'
 
@@ -399,9 +399,17 @@ export async function createTextPostRecord(data: TextPostInput) {
   return { uri: body.uri, cid: body.cid, text, createdAt, category: data.category, ...(images.length ? { images } : {}) }
 }
 
+/** 帖子直接写进用户的 PDS,写之前先让 rice 审一遍(阿里云内容安全);不通过就抛出 rice 的提示,不写 */
+export async function moderatePost(token: string, text: string, images: PdsImage[] = []) {
+  await backendData('/api/moderation/check', { method: 'POST', token, json: { text, images: images.map((item) => item.image.ref.$link) } })
+}
+
 export const createTextPost = createServerFn({ method: 'POST' })
-  .validator((data: TextPostInput) => data)
-  .handler(({ data }) => createTextPostRecord(data))
+  .validator((data: TextPostInput & { token: string }) => data)
+  .handler(async ({ data }) => {
+    await moderatePost(data.token, data.text.trim(), data.images)
+    return createTextPostRecord(data)
+  })
 
 type DeletePostInput = PdsAuth & { uri: string }
 
@@ -442,7 +450,7 @@ export const toggleRepost = createServerFn({ method: 'POST' })
   .handler(({ data }) => updateInteractionRecord(data, 'app.bsky.feed.repost'))
 
 type StrongRef = { uri: string; cid: string }
-type ReplyInput = PdsAuth & { text: string; root: StrongRef; parent: StrongRef }
+type ReplyInput = PdsAuth & { token: string; text: string; root: StrongRef; parent: StrongRef }
 
 export const createReply = createServerFn({ method: 'POST' })
   .validator((data: ReplyInput) => data)
@@ -450,6 +458,7 @@ export const createReply = createServerFn({ method: 'POST' })
     const text = data.text.trim()
     if (!text) throw new Error('评论内容不能为空')
     if (text.length > MAX_POST_TEXT_LENGTH) throw new Error(`评论最多 ${MAX_POST_TEXT_LENGTH} 个字符`)
+    await moderatePost(data.token, text)
 
     const createdAt = new Date().toISOString()
     const record = await createPdsRecord(data.accessJwt, {

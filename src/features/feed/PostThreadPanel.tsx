@@ -80,7 +80,7 @@ function PostThreadContent({ uri, focusReply = false, initialThread, initialErro
     if (!session || !thread) return
     const subject = { uri: thread.post.uri, cid: thread.post.cid }
     const reply = { root: subject, parent: target ? { uri: target.uri, cid: target.cid } : subject }
-    const result = await createReply({ data: { did: session.pds.did, accessJwt: session.pds.access_jwt, text, ...reply } })
+    const result = await createReply({ data: { token: session.token, did: session.pds.did, accessJwt: session.pds.access_jwt, text, ...reply } })
     const post = createdPostView(result, session, reply)
     const nextThread = {
       ...thread,

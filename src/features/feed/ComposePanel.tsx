@@ -186,7 +186,7 @@ function ComposeContent({ initialKind = 'post', editId, initialData }: ComposePa
         }
         images.push(image)
       }
-      const result = await createTextPost({ data: { did: session.pds.did, accessJwt: session.pds.access_jwt, text: text.trim(), category: 'post', images, ...postRequest.current } })
+      const result = await createTextPost({ data: { token: session.token, did: session.pds.did, accessJwt: session.pds.access_jwt, text: text.trim(), category: 'post', images, ...postRequest.current } })
       if (postDraftStored) await deletePostDraft(session.pds.did)
       if (!mounted.current) return
       prependCachedPost(createdPostView(result, session), session.pds.did)
