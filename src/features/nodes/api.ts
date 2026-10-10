@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { backendData, searchParams } from '~/lib/http'
 import type { RiceAttachment, RicePublicUser } from '~/lib/models'
+import { withProfileAvatars } from '../social/api'
 
 export type NodeApplication = { id: string; status: 'pending' | 'approved' | 'rejected'; reason: string; review_reason: string | null; inserted_at: string; reviewed_at: string | null; user?: RicePublicUser }
 export type CommunityNode = {
@@ -16,7 +17,12 @@ export const getNodes = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => backendData<CommunityNode[]>(`/api/nodes?${searchParams({ q: data.q, mine: data.mine })}`, { token: data.token }))
 export const getNode = createServerFn({ method: 'POST' })
   .validator((data: { token?: string; id: string }) => data)
-  .handler(async ({ data }) => backendData<CommunityNode>(`/api/nodes/${encodeURIComponent(data.id)}`, { token: data.token }))
+  .handler(async ({ data }) => {
+    const node = await backendData<CommunityNode>(`/api/nodes/${encodeURIComponent(data.id)}`, { token: data.token })
+    if (!node.members?.length) return node
+    const users = await withProfileAvatars(node.members.map(({ user }) => user))
+    return { ...node, members: node.members.map((member, i) => ({ ...member, user: users[i] })) }
+  })
 export const applyToNode = createServerFn({ method: 'POST' })
   .validator((data: { token: string; nodeId: string; reason: string }) => data)
   .handler(async ({ data }) => backendData<CommunityNode>(`/api/nodes/${encodeURIComponent(data.nodeId)}/applications`, { method: 'POST', token: data.token, json: { reason: data.reason } }))

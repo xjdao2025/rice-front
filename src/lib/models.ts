@@ -18,7 +18,8 @@ export type RiceUser = {
 
 export type RiceAttachment = NonNullable<RiceUser['avatar']>
 export type HistorySnapshot = Record<string, string | number | string[] | null>
-export type RicePublicUser = Pick<RiceUser, 'id' | 'did' | 'handle' | 'nickname' | 'bio' | 'avatar' | 'node_member'>
+// avatar 只要 url：rice 没有头像时会用 AppView 的（withProfileAvatars），那种没有附件记录
+export type RicePublicUser = Pick<RiceUser, 'id' | 'did' | 'handle' | 'nickname' | 'bio' | 'node_member'> & { avatar: { url: string } | null }
 
 export type RiceSession = {
   token: string
