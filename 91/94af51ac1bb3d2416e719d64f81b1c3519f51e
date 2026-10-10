@@ -1,0 +1,22 @@
+src/styles/app.css
+  s_8c80ad8d2af680::t_ad1691c69cac9b 382-386
+  s_8c80ad8d2af680::t_da990d4668cb8d 387-388
+src/features/nodes/NodesPanel.tsx
+  s_8c80ad8d2af680::t_ad1691c69cac9b 93-99
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9194af51ac1bb3d2416e719d64f81b1c3519f51e",
+  "prompts": {},
+  "sessions": {
+    "s_8c80ad8d2af680": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e1cacbb5-9264-4c9e-8d1e-0245a530ded4",
+        "model": "unknown"
+      },
+      "human_author": "jiangplus <jiang.plus.times@gmail.com>"
+    }
+  }
+}
