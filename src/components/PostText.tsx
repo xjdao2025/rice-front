@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { postTextParts } from '~/features/feed/tags'
 
 export function PostText({ text }: { text: string }) {
-  return postTextParts(text).map((part, index) => part.isTag ? (
+  return postTextParts(text).map((part, index) => part.kind === 'tag' ? (
     <Link
       to="/search"
       search={{ q: part.value }}
@@ -14,5 +14,16 @@ export function PostText({ text }: { text: string }) {
     >
       {part.value}
     </Link>
+  ) : part.kind === 'link' ? (
+    <a
+      href={part.value}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="post-text-link"
+      onClick={(event) => event.stopPropagation()}
+      key={`${part.value}:${index}`}
+    >
+      {part.value}
+    </a>
   ) : part.value)
 }
