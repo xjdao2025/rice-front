@@ -11,7 +11,7 @@ import { integerInputError } from '~/lib/integer-input'
 import type { RicePublicUser, RiceSession } from '~/lib/models'
 import { readStoredSession, useStoredSession } from '../session/session'
 import { LoginLink } from '../session/LoginLink'
-import { findTransferRecipients, sendPersonalGrains, type PersonalTransfer, type TransferRecipients } from './api'
+import { findTransferRecipients, getWallet, sendPersonalGrains, type PersonalTransfer, type TransferRecipients } from './api'
 import { GrainScannerPage } from './GrainScannerPage'
 import { errorMessage, requestIdFor, sendErrorMessage } from '~/lib/util'
 
@@ -61,6 +61,17 @@ export function SendGrainPage({ to }: { to?: string }) {
   const { session } = useStoredSession()
   if (!session) return <LoginLink className="primary-link">登录后送稻米</LoginLink>
   return <SendGrainForm key={session.token} session={session} to={to} />
+}
+
+// 送之前看一眼还剩多少；读不到就只显示「—」，不挡送稻米
+function GrainBalance({ token }: { token: string }) {
+  const [balance, setBalance] = useState<number | null>(null)
+  useEffect(() => {
+    let active = true
+    void getWallet({ data: { token } }).then((wallet) => { if (active) setBalance(wallet.balance) }).catch(() => undefined)
+    return () => { active = false }
+  }, [token])
+  return <p className="muted">个人测试稻米 · 可用 <strong>{balance ?? '—'}</strong></p>
 }
 
 function SendGrainForm({ session, to }: { session: RiceSession; to?: string }) {
@@ -159,7 +170,7 @@ function SendGrainForm({ session, to }: { session: RiceSession; to?: string }) {
   if (scanning) return <GrainScannerPage onRead={receiveCode} />
   return <div className="page business-panel form-stack">
       {receipt ? <><strong role="status">已送给 @{receipt.to.handle} {receipt.amount} 稻米</strong><Link to="/me/grains">查看稻米记录</Link><div className="form-actions"><Button label="完成" variant="primary" onClick={() => void navigate({ to: '/me/grains' })} /></div></> : <>
-        <p className="muted">个人测试稻米</p>
+        <GrainBalance token={session.token} />
         <div className="grain-recipient-field">
           <TextInput label="送给谁" value={identifier} onChange={changeIdentifier} onBlur={() => autoCheck(identifier)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.nativeEvent.isComposing) autoCheck(identifier) }} description="填写手机号、邮箱、用户名、昵称或 DID。" isDisabled={busy || confirming } width="100%" />
           <IconButton label="扫一扫" icon={<ScanLine size={22} />} variant="ghost" isDisabled={busy || confirming } onClick={() => void navigate({ to: '/me/grains/send/scan', search: {} })} />
