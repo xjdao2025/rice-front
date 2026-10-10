@@ -173,6 +173,7 @@ input:-webkit-autofill:focus {
 .post-copy-link { display: block; cursor: pointer; }
 .post-tag-link { color: var(--xj-accent); font-weight: 650; }
 .post-tag-link:hover { text-decoration: underline; }
+.post-text-link { color: var(--xj-accent); text-decoration: underline; overflow-wrap: anywhere; }
 .post-copy { margin: 16px 0 12px; color: var(--xj-text); font-size: var(--xj-font-lead); line-height: 1.65; white-space: pre-wrap; }
 .post-copy { overflow-wrap: anywhere; }
 .content-card-actions { min-height: 44px; display: flex; align-items: center; gap: 6px; }
