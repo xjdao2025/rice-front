@@ -66,7 +66,9 @@ export function ProfilePage({ initialData = null, initialError = '' }: { initial
       ['/me/tasks', '我的任务', '申请、交付、验收与历史记录'],
       ['/me/events', '我的活动', '我申请 / 主办的活动'],
       ['/me/posts', '我的帖子', '在广场发布过的内容'],
-    ] as const).map(([to, title, copy]) => <Link to={to} className="profile-menu-row" key={to}><span className="profile-menu-copy"><strong>{title}</strong><small>{copy}</small></span><ChevronRight className="row-chevron" aria-hidden="true" /></Link>)}
+      ['/profile/$actor/following', '我的关注', '我关注的人'],
+      ['/profile/$actor/followers', '我的粉丝', '关注我的人'],
+    ] as const).map(([to, title, copy]) => <Link to={to} params={{ actor: profile.did || session.pds.did }} className="profile-menu-row" key={to}><span className="profile-menu-copy"><strong>{title}</strong><small>{copy}</small></span><ChevronRight className="row-chevron" aria-hidden="true" /></Link>)}
     </nav><div className="logout-button"><Button label="退出登录" icon={<LogOut size={16} />} variant="ghost" clickAction={logout} /></div>
     <SiteInfo />
   </div>

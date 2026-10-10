@@ -52,10 +52,11 @@ function PlazaBanner({ banners }: { banners: Banner[] }) {
   </div>
 }
 
-function PlazaTags({ active }: { active?: PlazaTag }) {
+function PlazaTags() {
+  // exact：search 也要完全相同，否则「全部」（search 为空）会和每个标签一起亮
   return <nav className="plaza-tags" aria-label="常用标签">
-    <Link to="/" search={{}} className="plaza-tag" aria-current={active ? undefined : 'true'}>全部</Link>
-    {PLAZA_TAGS.map((tag) => <Link key={tag} to="/" search={tag === active ? {} : { tag }} className="plaza-tag" aria-current={tag === active ? 'true' : undefined}>#{tag}</Link>)}
+    <Link to="/" search={{}} activeOptions={{ exact: true }} className="plaza-tag">全部</Link>
+    {PLAZA_TAGS.map((tag) => <Link key={tag} to="/" search={{ tag }} activeOptions={{ exact: true }} className="plaza-tag">#{tag}</Link>)}
   </nav>
 }
 
@@ -151,7 +152,7 @@ function PlazaFeed({ initialFeed, banners, tag }: { initialFeed: PostFeed; banne
   return (
     <div className="page plaza-page">
       <PlazaBanner banners={banners} />
-      <PlazaTags active={tag} />
+      <PlazaTags />
       {error ? (
         <div className="inline-error" role="alert">
           <span>{error}</span>

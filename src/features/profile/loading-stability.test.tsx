@@ -12,7 +12,7 @@ vi.mock('@astryxdesign/core/Button', () => ({ Button: ({ label, clickAction }: {
   return <button>{label}</button>
 } }))
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a>,
+  Link: ({ children, to, params }: { children: ReactNode; to: string; params?: { actor?: string } }) => <a href={to.replace('$actor', params?.actor ?? '$actor')}>{children}</a>,
   useNavigate: () => state.navigate,
   useRouter: () => ({ invalidate: vi.fn() }),
 }))
@@ -46,6 +46,8 @@ it('renders the prefetched profile and balance together on first render', () => 
   expect(html).toContain('<strong>130</strong>')
   expect(html).toContain('<b>123</b>')
   expect(html).toContain('href="/me/posts"')
+  expect(html).toContain('href="/profile/did:example:member/following"')
+  expect(html).toContain('href="/profile/did:example:member/followers"')
   expect(html).not.toContain('href="/alliance"')
   expect(html).not.toContain('>—<')
   expect(html).not.toContain('节点稻米')
