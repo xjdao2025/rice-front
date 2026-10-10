@@ -38,7 +38,8 @@ vi.mock('react', async (original) => ({
   },
 }))
 
-import { grainReceiveLink, SendGrainPage } from './PersonalGrainActions'
+import { grainReceiveLink, ReceiveGrainPage, SendGrainPage } from './PersonalGrainActions'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { Route } from '~/routes/profile.$actor.index'
 
 const session = {
@@ -279,4 +280,14 @@ it('keeps the QR receive link send flag after Router parses the query and reject
   expect(validate(search)).toEqual({ send: '1' })
   expect(validate({ send: '1' })).toEqual({ send: '1' })
   for (const send of [undefined, null, true, 0, '0', 'true', 'other']) expect(validate({ send })).toEqual({})
+})
+
+it('shows the receiver avatar, nickname and handle centered under the QR code', () => {
+  mock.session = { ...session, user: { ...session.user, nickname: '爱丽丝', avatar: { url: '/a.png' } } } as RiceSession
+  const html = renderToStaticMarkup(<ReceiveGrainPage />)
+  const card = html.slice(html.indexOf('grain-receive-card'), html.indexOf('请对方扫描'))
+  expect(card).toContain('收稻米码')
+  expect(card).toContain('class="avatar avatar--normal"')
+  expect(card).toContain('<strong>爱丽丝</strong>')
+  expect(card).toContain('@alice.example')
 })
