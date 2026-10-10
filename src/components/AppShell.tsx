@@ -15,8 +15,8 @@ const isAccountRoute = (match: { routeId: string }) => match.routeId === '/me/' 
 const BOTTOM_NAV = [
   { to: '/', label: '广场', isActive: (pathname: string) => pathname === '/' },
   { to: '/tasks', label: '任务', isActive: (pathname: string) => pathname.startsWith('/tasks') },
-  { to: '/events', label: '活动', isActive: (pathname: string) => pathname.startsWith('/events') },
   { to: '/alliance', label: '乡建', isActive: (pathname: string) => pathname.startsWith('/alliance') || pathname.startsWith('/nodes/') },
+  { to: '/events', label: '活动', isActive: (pathname: string) => pathname.startsWith('/events') },
   { to: '/me', label: '我的', isActive: (pathname: string) => pathname.startsWith('/me') },
 ] as const
 

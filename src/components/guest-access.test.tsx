@@ -107,7 +107,7 @@ describe('guest access', () => {
     expect(html).toContain('aria-label="返回上一页"')
     expect(html).toContain('aria-label="主要导航"')
     const navigation = html.slice(html.indexOf('<nav'))
-    expect([...navigation.matchAll(/href="([^"]+)"/g)].map(match => match[1])).toEqual(['/', '/tasks', '/events', '/alliance', '/me'])
+    expect([...navigation.matchAll(/href="([^"]+)"/g)].map(match => match[1])).toEqual(['/', '/tasks', '/alliance', '/events', '/me'])
   })
 
   it.each(['/alliance', '/alliance/proposals/proposal-id', '/nodes/node-id'])('selects Xiangjian for %s and treats alliance as a main page', pathname => {
