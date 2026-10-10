@@ -58,24 +58,25 @@ export function ReceiveGrainPage() {
       </div>
 }
 
-export function SendGrainPage({ to }: { to?: string }) {
+/** 不带 nodeId 是个人送稻米;带上就是节点管理员从节点账户发放 */
+export function SendGrainPage({ to, nodeId }: { to?: string; nodeId?: string }) {
   const { session } = useStoredSession()
   if (!session) return <LoginLink className="primary-link">登录后送稻米</LoginLink>
-  return <SendGrainForm key={session.token} session={session} to={to} />
+  return <SendGrainForm key={session.token} session={session} to={to} nodeId={nodeId} />
 }
 
 // 送之前看一眼还剩多少；读不到就只显示「—」，不挡送稻米
-function GrainBalance({ token }: { token: string }) {
+function GrainBalance({ token, nodeId }: { token: string; nodeId?: string }) {
   const [balance, setBalance] = useState<number | null>(null)
   useEffect(() => {
     let active = true
-    void getWallet({ data: { token } }).then((wallet) => { if (active) setBalance(wallet.balance) }).catch(() => undefined)
+    void getWallet({ data: { token, nodeId } }).then((wallet) => { if (active) setBalance(wallet.balance) }).catch(() => undefined)
     return () => { active = false }
-  }, [token])
-  return <p className="muted">个人测试稻米 · 可用 <strong>{balance ?? '—'}</strong></p>
+  }, [token, nodeId])
+  return <p className="muted">{nodeId ? '节点' : '个人'}测试稻米 · 可用 <strong>{balance ?? '—'}</strong></p>
 }
 
-function SendGrainForm({ session, to }: { session: RiceSession; to?: string }) {
+function SendGrainForm({ session, to, nodeId }: { session: RiceSession; to?: string; nodeId?: string }) {
   const navigate = useNavigate()
   const scanning = Boolean(useMatch({ from: '/me/grains_/send/scan', shouldThrow: false }))
   const [identifier, setIdentifier] = useState(to ?? '')
@@ -124,7 +125,7 @@ function SendGrainForm({ session, to }: { session: RiceSession; to?: string }) {
       if (!users.length) throw new Error('没找到这位伙伴，再核对一下账号。')
       if (!exact) { setRecipient(null); setCandidates(users); return null }
       const [user] = users
-      if (user.did === session.pds.did) throw new Error('不能送给自己。')
+      if (!nodeId && user.did === session.pds.did) throw new Error('不能送给自己。')
       setRecipient(user)
       return user
     } catch (reason) {
@@ -161,7 +162,7 @@ function SendGrainForm({ session, to }: { session: RiceSession; to?: string }) {
         if (user && current()) setConfirming(true)
       } else {
         const clientRequestId = requestIdFor(requestIds.current, `${recipient!.id}:${amount}:${memo.trim()}`)
-        const result = await sendPersonalGrains({ data: { token: session.token, to: recipient!.id, amount: Number(amount), memo, clientRequestId } })
+        const result = await sendPersonalGrains({ data: { token: session.token, to: recipient!.id, amount: Number(amount), memo, clientRequestId, nodeId } })
         if (current()) { window.dispatchEvent(new Event('rice-changed')); setReceipt(result) }
       }
     } catch (reason) {
@@ -170,11 +171,11 @@ function SendGrainForm({ session, to }: { session: RiceSession; to?: string }) {
   }
   if (scanning) return <GrainScannerPage onRead={receiveCode} />
   return <div className="page business-panel form-stack">
-      {receipt ? <><strong role="status">已送给 @{receipt.to.handle} {receipt.amount} 稻米</strong><Link to="/me/grains">查看稻米记录</Link><div className="form-actions"><Button label="完成" variant="primary" onClick={() => void navigate({ to: '/me/grains' })} /></div></> : <>
-        <GrainBalance token={session.token} />
+      {receipt ? <><strong role="status">{nodeId ? '已发放给 @' : '已送给 @'}{receipt.to.handle} {receipt.amount} 稻米</strong>{nodeId ? <Link to="/nodes/$nodeId/grains" params={{ nodeId }}>查看节点稻米记录</Link> : <Link to="/me/grains">查看稻米记录</Link>}<div className="form-actions"><Button label="完成" variant="primary" onClick={() => void (nodeId ? navigate({ to: '/nodes/$nodeId/grains', params: { nodeId } }) : navigate({ to: '/me/grains' }))} /></div></> : <>
+        <GrainBalance token={session.token} nodeId={nodeId} />
         <div className="grain-recipient-field">
           <TextInput label="送给谁" value={identifier} onChange={changeIdentifier} onBlur={() => autoCheck(identifier)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.nativeEvent.isComposing) autoCheck(identifier) }} description="填写手机号、邮箱、用户名、昵称或 DID。" isDisabled={busy || confirming } width="100%" />
-          <IconButton label="扫一扫" icon={<ScanLine size={22} />} variant="ghost" isDisabled={busy || confirming } onClick={() => void navigate({ to: '/me/grains/send/scan', search: {} })} />
+          {!nodeId && <IconButton label="扫一扫" icon={<ScanLine size={22} />} variant="ghost" isDisabled={busy || confirming } onClick={() => void navigate({ to: '/me/grains/send/scan', search: {} })} />}
         </div>
         {candidates.length > 0 && !confirming && <p className="muted">找到 {candidates.length} 位伙伴，点选要送的人：</p>}
         {candidates.length > 0 && !confirming && <div className="people-list grain-recipient-candidates" role="listbox" aria-label="选择送给谁">{candidates.map((user) => <button type="button" role="option" aria-selected={false} className="person-row search-person-row" key={user.id} disabled={busy} onClick={() => pick(user)}>
@@ -188,7 +189,7 @@ function SendGrainForm({ session, to }: { session: RiceSession; to?: string }) {
       </>}
     {confirming && recipient && !receipt && <DetailDialog title="确认送稻米" className="post-dialog business-dialog compose-close-dialog" onClose={cancelConfirmation}>
       <div className="business-panel form-stack">
-        <section><Avatar name={recipient.nickname || recipient.handle} src={recipient.avatar?.url} /><strong>{recipient.nickname || recipient.handle}</strong><p>@{recipient.handle}</p><p>确认送出 {amount} 稻米？</p></section>
+        <section><Avatar name={recipient.nickname || recipient.handle} src={recipient.avatar?.url} /><strong>{recipient.nickname || recipient.handle}</strong><p>@{recipient.handle}</p><p>{nodeId ? `确认从节点账户发放 ${amount} 稻米？` : `确认送出 ${amount} 稻米？`}</p></section>
         {error && <p className="inline-error" role="alert">{error}</p>}
         <div className="form-actions">
           <Button label="返回修改" variant="secondary" isDisabled={busy} onClick={cancelConfirmation} />

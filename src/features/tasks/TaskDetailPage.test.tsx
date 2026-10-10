@@ -12,7 +12,7 @@ vi.mock('@tanstack/react-router', async (original) => ({
   Link: ({ children }: { children: ReactNode }) => <a>{children}</a>,
 }))
 
-it('keeps a cancelled task readable to its publisher and applicants but hidden from strangers', () => {
+it('keeps a cancelled task readable to everyone, and offers deleting it to its manager', () => {
   const task = {
     id: 'task-1', title: '修缮门楼', description: '保留任务记录', status: 'cancelled',
     creator: { id: 'publisher', did: 'did:example:publisher', handle: 'publisher' },
@@ -20,26 +20,31 @@ it('keeps a cancelled task readable to its publisher and applicants but hidden f
     application_deadline: null, execution_deadline: null, applications: [], submissions: [], events: [],
     allowed_actions: [], my_application_status: null,
   } as unknown as RiceTask
-  const initial = { task, error: '', viewerToken: 'token' }
-  state.session = { token: 'token', user: { id: 'publisher' } } as RiceSession
-  expect(renderToStaticMarkup(<TaskDetailPage taskId={task.id} initial={initial} />)).toContain('修缮门楼')
-
-  state.session = { token: 'token', user: { id: 'applicant' } } as RiceSession
-  const applicantTask = { ...task, my_application_status: 'cancelled' as const }
-  expect(renderToStaticMarkup(<TaskDetailPage taskId={task.id} initial={{ ...initial, task: applicantTask }} />)).toContain('修缮门楼')
-  const fallbackTask = { ...task, my_application: {
-    id: 'application-1', status: 'cancelled' as const, reason: '', inserted_at: '2026-09-21T09:00:00Z',
-    user: { ...task.creator, id: 'applicant', did: 'did:example:applicant', handle: 'applicant' },
-  } }
-  expect(renderToStaticMarkup(<TaskDetailPage taskId={task.id} initial={{ ...initial, task: fallbackTask }} />)).toContain('修缮门楼')
-
   state.session = { token: 'token', user: { id: 'viewer' } } as RiceSession
-  const html = renderToStaticMarkup(<TaskDetailPage taskId={task.id} initial={initial} />)
-  expect(html).toContain('任务已取消。')
-  expect(html).not.toContain('修缮门楼')
+  const html = renderToStaticMarkup(<TaskDetailPage taskId={task.id} initial={{ task, error: '', viewerToken: 'token' }} />)
+  expect(html).toContain('修缮门楼')
+  expect(html).not.toContain('删除任务')
 
   state.session = null
-  expect(renderToStaticMarkup(<TaskDetailPage taskId={task.id} initial={{ task: applicantTask, error: '', viewerToken: null }} />)).not.toContain('修缮门楼')
+  expect(renderToStaticMarkup(<TaskDetailPage taskId={task.id} initial={{ task, error: '', viewerToken: null }} />)).toContain('修缮门楼')
+
+  state.session = { token: 'token', user: { id: 'publisher' } } as RiceSession
+  const managed = { ...task, allowed_actions: ['delete'] } as RiceTask
+  expect(renderToStaticMarkup(<TaskDetailPage taskId={task.id} initial={{ task: managed, error: '', viewerToken: 'token' }} />)).toContain('删除任务')
+})
+
+it('offers completing a running task when the backend allows it', () => {
+  const task = {
+    id: 'task-2', title: '清理水渠', description: '线下做完', status: 'in_progress', capacity: 2,
+    creator: { id: 'publisher', did: 'did:example:publisher', handle: 'publisher' },
+    assignee: null, application_count: 2, reward_amount: 20, reward_status: 'reserved',
+    application_deadline: null, execution_deadline: null, applications: [], submissions: [], events: [],
+    allowed_actions: ['complete', 'close'], my_application_status: null,
+  } as unknown as RiceTask
+  state.session = { token: 'token', user: { id: 'publisher' } } as RiceSession
+  const html = renderToStaticMarkup(<TaskDetailPage taskId={task.id} initial={{ task, error: '', viewerToken: 'token' }} />)
+  expect(html).toContain('完成任务')
+  expect(html).toContain('提前结束任务')
 })
 
 it('shows an expired open task immediately and hides stale recruitment actions', () => {

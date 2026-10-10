@@ -41,7 +41,7 @@ export const buildTaskListQuery = (data: TaskListInput) => searchParams(taskList
 
 export async function fetchTaskPage(data: TaskListInput) {
   const page = await backend<TaskPage>(withQuery('/api/tasks', taskListParams(data)), { token: data.token })
-  return withAvatars(data.mine ? page : { ...page, data: page.data.filter((task) => task.status !== 'cancelled') })
+  return withAvatars(page)
 }
 
 export const getTaskPage = createServerFn({ method: 'POST' })
@@ -87,7 +87,7 @@ export const createTask = createServerFn({ method: 'POST' })
     method: 'POST', token: data.token, json: { ...taskDraftBody(data), status: data.status },
   }))
 
-const send = async (token: string, method: 'POST' | 'PATCH', segments: string[], payload?: object) =>
+const send = async (token: string, method: 'POST' | 'PATCH' | 'DELETE', segments: string[], payload?: object) =>
   withAvatars(await backendData<RiceTask>(taskPath(...segments), { method, token, json: payload }))
 
 export const updateTask = createServerFn({ method: 'POST' })
@@ -109,6 +109,16 @@ export const cancelTask = createServerFn({ method: 'POST' })
 export const closeTask = createServerFn({ method: 'POST' })
   .validator((data: TaskRef) => data)
   .handler(({ data }) => send(data.token, 'POST', [data.taskId, 'close']))
+
+/** 负责人确认完成：还在承接的人（含待验收）都记为完成并发稻米，空着的名额退回。 */
+export const completeTask = createServerFn({ method: 'POST' })
+  .validator((data: TaskRef) => data)
+  .handler(({ data }) => send(data.token, 'POST', [data.taskId, 'complete']))
+
+/** 删除已结束的任务：列表和详情里不再出现，稻米记录保留。 */
+export const deleteTask = createServerFn({ method: 'POST' })
+  .validator((data: TaskRef) => data)
+  .handler(({ data }) => send(data.token, 'DELETE', [data.taskId]))
 
 /** 多人任务撤销一个人的指派：名额让出来，奖励不发。 */
 export const releaseTaskAssignee = createServerFn({ method: 'POST' })

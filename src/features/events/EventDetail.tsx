@@ -38,6 +38,8 @@ function EventDetails({ eventId, initial }: { eventId: string; initial?: EventDe
   const [confirm, setConfirm] = useState<'apply' | 'withdraw' | 'finish' | 'cancel' | null>(null)
   const [applicationAction, setApplicationAction] = useState<{ id: string; action: 'reject' | 'remove' } | null>(null)
   const [busy, setBusy] = useState(false)
+  // 路由先显示缓存的旧数据、再在后台重新加载(比如编辑保存后跳回来):新数据到了就换上
+  useEffect(() => { if (initial?.event) setEvent(initial.event) }, [initial?.event])
   useEffect(() => {
     if (!isReady) return
     if (skipInitialFetch.current) { skipInitialFetch.current = false; return }
@@ -76,7 +78,7 @@ function EventDetails({ eventId, initial }: { eventId: string; initial?: EventDe
       <div className="form-stack"><TextArea label="参与说明" value={reason} onChange={setReason} maxLength={512} width="100%" /><ContactField value={contact} onChange={setContact} disabled={busy} />
         <div className="form-actions"><Button label="返回" variant="secondary" isDisabled={busy} onClick={() => setConfirm(null)} /><Button label="确认报名" variant="primary" isDisabled={busy || !canApply || !contact.trim() || contact.trim().length > 256} clickAction={() => run('apply')} /></div>
       </div>
-    </section> : hasEventActions && <div className="button-row business-section">{canApply && <Button label="报名参加" variant="primary" onClick={() => setConfirm('apply')} />}{canWithdraw && <Button label="撤销报名" variant="secondary" onClick={() => setConfirm('withdraw')} />}{event.allowed_actions.includes('finish') && <Button label="确认结束" variant="primary" onClick={() => setConfirm('finish')} />}{event.allowed_actions.includes('cancel') && <Button label="取消活动" variant="destructive" onClick={() => setConfirm('cancel')} />}{canEdit && <Link to="/compose" search={event.status === 'draft' ? { kind: 'activity' } : { kind: 'activity', editId: event.id }}>{event.status === 'draft' ? '继续编辑' : '编辑活动'}</Link>}</div>)}
+    </section> : hasEventActions && <div className="button-row business-section">{canApply && <Button label={event.my_application ? '重新报名' : '报名参加'} variant="primary" onClick={() => setConfirm('apply')} />}{canWithdraw && <Button label="撤销报名" variant="secondary" onClick={() => setConfirm('withdraw')} />}{event.allowed_actions.includes('finish') && <Button label="确认结束" variant="primary" onClick={() => setConfirm('finish')} />}{event.allowed_actions.includes('cancel') && <Button label="取消活动" variant="destructive" onClick={() => setConfirm('cancel')} />}{canEdit && <Link to="/compose" search={event.status === 'draft' ? { kind: 'activity' } : { kind: 'activity', editId: event.id }}>{event.status === 'draft' ? '继续编辑' : '编辑活动'}</Link>}</div>)}
     {confirm && confirm !== 'apply' && <ConfirmDialog title={confirm === 'withdraw' ? '确认撤销报名' : confirm === 'finish' ? '确认结束' : '确认取消活动'} busy={busy} error={error} onClose={() => setConfirm(null)} back="返回"
       confirm={confirm === 'withdraw' ? '确认撤销' : confirm === 'finish' ? '确认结束' : '确认取消'} variant={confirm === 'finish' ? 'primary' : 'destructive'}
       isDisabled={confirm === 'withdraw' && !canWithdraw} onConfirm={() => run(confirm, confirm === 'withdraw' ? event.my_application?.id : undefined)}>

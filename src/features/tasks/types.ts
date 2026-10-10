@@ -69,7 +69,7 @@ export type RiceTask = {
   my_application_status: TaskApplication['status'] | null
   my_application?: TaskApplication | null
   allowed_actions: Array<
-    'publish' | 'apply' | 'appoint' | 'reject_application' | 'cancel' | 'submit_result' | 'approve_result' | 'request_changes' | 'release_assignee' | 'close' | 'edit'
+    'publish' | 'apply' | 'appoint' | 'reject_application' | 'cancel' | 'submit_result' | 'approve_result' | 'request_changes' | 'release_assignee' | 'close' | 'complete' | 'delete' | 'edit'
   >
   applications: TaskApplication[] | null
   past_applications?: TaskApplication[] | null
