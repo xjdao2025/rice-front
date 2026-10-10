@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { ReactNode } from 'react'
 import { beforeEach, expect, it, vi } from 'vitest'
@@ -60,8 +61,11 @@ it('shows the contact email at the bottom; policies and ICP come from the site f
 it('puts the policy links and ICP filing in the site footer', () => {
   const html = renderToStaticMarkup(<SiteFooter />)
   expect(html).toContain('隐私政策</a> • <a')
-  expect(html).toContain('%E9%9A%90%E7%A7%81%E6%94%BF%E7%AD%96.pdf')
-  expect(html).toContain('%E7%94%A8%E6%88%B7%E6%9C%8D%E5%8A%A1%E5%8D%8F%E8%AE%AE.pdf')
+  // 文件在 public/doc，随前端一起发布
+  for (const doc of ['privacy', 'terms']) {
+    expect(html).toContain(`href="/doc/${doc}.pdf"`)
+    expect(existsSync(`public/doc/${doc}.pdf`)).toBe(true)
+  }
   expect(html).toContain('href="https://beian.miit.gov.cn/"')
   expect(html).toContain('京ICP备2025136647号')
 })
