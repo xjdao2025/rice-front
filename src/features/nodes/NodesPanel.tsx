@@ -89,11 +89,13 @@ export function NodeDetail({ nodeId }: { nodeId: string }) {
       {node.role === 'admin' && <Button label="稻米记录" variant="secondary" onClick={() => void navigate({ to: '/nodes/$nodeId/grains', params: { nodeId } })} />}
     </section>
     {node.role ? <p className="task-neutral-note">我的身份：{node.role === 'admin' ? '管理员' : '正式成员'}</p> : node.my_application?.status === 'pending' ? <p className="task-neutral-note">加入申请已提交，等待管理员审批。</p> : node.my_application?.status === 'rejected' ? <p className="task-neutral-note">加入申请未通过。{node.my_application.review_reason}</p> : null}
-    <section className="business-section"><h2>节点成员</h2>{node.members?.map(({ user, role }) => <div className="candidate" key={user.id}>
-      <div className="business-heading"><p><Link to="/profile/$actor" params={{ actor: user.did }}>{user.nickname || user.handle}</Link> · {role === 'admin' ? '管理员' : '成员'}</p>
-        {node.can_manage_members && user.id !== node.owner?.id && <Button label={role === 'admin' ? '撤销管理员' : '设为管理员'} variant="ghost" isDisabled={busy} onClick={() => { setError(''); setRoleChange({ userId: user.id, name: user.nickname || user.handle, role: role === 'admin' ? 'member' : 'admin' }) }} />}
-      </div>
-    </div>)}</section>
+    <section className="business-section"><h2>节点成员</h2><div className="people-list node-member-list">{node.members?.map(({ user, role }) => <div className="person-row" key={user.id}>
+      <Link to="/profile/$actor" params={{ actor: user.did }} className="node-member-link">
+        <Avatar name={user.nickname || user.handle} src={user.avatar?.url} />
+        <span className="person-copy"><strong><span>{user.nickname || user.handle}</span>{role === 'admin' && <span className="node-member-role">管理员</span>}</strong>{user.nickname && <small>@{user.handle}</small>}</span>
+      </Link>
+      {node.can_manage_members && user.id !== node.owner?.id && <Button label={role === 'admin' ? '撤销管理员' : '设为管理员'} variant="ghost" isDisabled={busy} onClick={() => { setError(''); setRoleChange({ userId: user.id, name: user.nickname || user.handle, role: role === 'admin' ? 'member' : 'admin' }) }} />}
+    </div>)}</div></section>
     {roleChange && session && <DetailDialog title="确认修改管理员身份" className="post-dialog business-dialog compose-close-dialog" onClose={() => { if (!busy) setRoleChange(null) }}><div className="business-panel form-stack">
       <p>{roleChange.role === 'admin' ? `确认将 ${roleChange.name} 设为管理员？管理员可管理此节点的任务、活动、申请和节点稻米。` : `确认撤销 ${roleChange.name} 的管理员身份？个人账户和已有业务记录将保留。`}</p>
       {error && <p className="inline-error" role="alert">{error}</p>}
