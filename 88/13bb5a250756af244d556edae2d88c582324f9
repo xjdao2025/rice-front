@@ -1,0 +1,24 @@
+src/features/grains/PersonalGrainActions.tsx
+  s_8c80ad8d2af680::t_2e7cc3dc6678b1 47-53
+src/styles/app.css
+  s_8c80ad8d2af680::t_2e7cc3dc6678b1 177-178
+src/features/grains/PersonalGrainActions.test.tsx
+  s_8c80ad8d2af680::t_b0067af6a1c019 41-42,284-292
+  s_8c80ad8d2af680::t_b6dde13a597910 293
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8813bb5a250756af244d556edae2d88c582324f9",
+  "prompts": {},
+  "sessions": {
+    "s_8c80ad8d2af680": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e1cacbb5-9264-4c9e-8d1e-0245a530ded4",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "jiangplus <jiang.plus.times@gmail.com>"
+    }
+  }
+}
