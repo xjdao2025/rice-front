@@ -379,6 +379,13 @@ input:-webkit-autofill:focus {
 .people-list { margin: 12px; border: 1px solid var(--xj-line); border-radius: 16px; overflow: hidden; background: var(--xj-surface); }
 .person-row { min-height: 78px; padding: 12px; border-bottom: 1px solid var(--xj-line); display: flex; align-items: flex-start; gap: 11px; }
 .person-row:hover { background: var(--xj-surface-tint); }
+.node-member-list { margin: 0; }
+.node-member-list .person-row { min-height: 0; padding: 8px 12px; align-items: center; }
+.node-member-list .person-row:last-child { border-bottom: 0; }
+.node-member-link { flex: 1; min-width: 0; display: flex; align-items: center; gap: 11px; color: inherit; text-decoration: none; }
+.node-member-link .person-copy strong { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.node-member-link .person-copy :is(strong > span:first-child, small) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.node-member-role { flex: none; padding: 1px 6px; border-radius: 6px; background: var(--xj-surface-tint); color: var(--xj-accent); font-size: var(--xj-font-caption); font-weight: 500; }
 .person-copy { min-width: 0; display: grid; gap: 2px; }
 .person-copy strong { font-size: var(--xj-font-body); }
 .person-copy small { color: var(--xj-muted); font-size: var(--xj-font-caption); overflow-wrap: anywhere; }
