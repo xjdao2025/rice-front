@@ -133,8 +133,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           任务
         </Link>
-        <Link to="/events" activeProps={{}} className={`bottom-link${pathname.startsWith('/events') ? ' active' : ''}`}>活动</Link>
         <Link to="/alliance" activeProps={{}} className={`bottom-link${pathname.startsWith('/alliance') || pathname.startsWith('/nodes/') ? ' active' : ''}`}>乡建</Link>
+        <Link to="/events" activeProps={{}} className={`bottom-link${pathname.startsWith('/events') ? ' active' : ''}`}>活动</Link>
         <Link
           to="/me"
           activeProps={{}}
