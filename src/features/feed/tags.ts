@@ -72,9 +72,19 @@ export function formatPostFieldValue(key: string, value?: string) {
   return key === 'deadline' ? value.replace('T', ' ') : value
 }
 
+// 网址只认 ASCII 字符，紧跟的中文不会被吞进去；末尾的标点不算网址
+const URL_PATTERN = /https?:\/\/[\w\-.~:/?#[\]@!$&'()*+,;=%]+[\w/#=&%~+-]/
+const TAG_PATTERN = /#[\p{L}\p{N}_-]+/u
+
+/** 正文切成纯文本、标签、网址三种片段。网址先匹配，网址里的 `#` 不会被当成标签。 */
 export function postTextParts(text: string) {
   return text
-    .split(/(#[\p{L}\p{N}_-]+)/gu)
+    .split(new RegExp(`(${URL_PATTERN.source}|${TAG_PATTERN.source})`, 'gu'))
     .filter(Boolean)
-    .map((value) => ({ value, isTag: /^#[\p{L}\p{N}_-]+$/u.test(value) }))
+    .map((value) => ({
+      value,
+      kind: new RegExp(`^${URL_PATTERN.source}$`, 'u').test(value) ? 'link' as const
+        : new RegExp(`^${TAG_PATTERN.source}$`, 'u').test(value) ? 'tag' as const
+        : 'text' as const,
+    }))
 }

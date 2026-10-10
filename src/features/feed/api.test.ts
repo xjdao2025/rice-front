@@ -325,8 +325,20 @@ describe('feed data', () => {
     expect(postCategory(productRecord)).toBe('product')
     expect(postCategory({ ...post.record, text })).toBe('post')
     expect(hasPostTag('#活动周', '活动')).toBe(false)
-    expect(postTextParts('开放日 #活动').filter((part) => part.isTag)).toEqual([
-      { value: '#活动', isTag: true },
+    expect(postTextParts('开放日 #活动').filter((part) => part.kind === 'tag')).toEqual([
+      { value: '#活动', kind: 'tag' },
+    ])
+  })
+
+  it('finds links in post text without swallowing Chinese text, trailing punctuation or fragment tags', () => {
+    expect(postTextParts('上传到飞书链接：https://x.feishu.cn/sheets/W7M?from=copy。稻米 #任务\n见 https://a.b/c#d，谢谢')).toEqual([
+      { value: '上传到飞书链接：', kind: 'text' },
+      { value: 'https://x.feishu.cn/sheets/W7M?from=copy', kind: 'link' },
+      { value: '。稻米 ', kind: 'text' },
+      { value: '#任务', kind: 'tag' },
+      { value: '\n见 ', kind: 'text' },
+      { value: 'https://a.b/c#d', kind: 'link' },
+      { value: '，谢谢', kind: 'text' },
     ])
   })
 
