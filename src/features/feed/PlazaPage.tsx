@@ -54,6 +54,7 @@ function PlazaBanner({ banners }: { banners: Banner[] }) {
 
 function PlazaTags({ active }: { active?: PlazaTag }) {
   return <nav className="plaza-tags" aria-label="常用标签">
+    <Link to="/" search={{}} className="plaza-tag" aria-current={active ? undefined : 'true'}>全部</Link>
     {PLAZA_TAGS.map((tag) => <Link key={tag} to="/" search={tag === active ? {} : { tag }} className="plaza-tag" aria-current={tag === active ? 'true' : undefined}>#{tag}</Link>)}
   </nav>
 }
