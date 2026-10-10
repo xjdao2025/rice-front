@@ -7,7 +7,7 @@ import { useTimeBoundary } from '~/components/useTimeBoundary'
 import { attachmentImages } from '~/lib/attachments'
 import { Button } from '@astryxdesign/core/Button'
 import { TextArea } from '~/components/AutoTextArea'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { UserIdentity } from '~/components/UserIdentity'
 import { CheckCircle2, CircleAlert, Sprout } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -17,7 +17,7 @@ import { businessCopy } from '~/lib/business-copy'
 
 import { useStoredSession } from '../session/session'
 import { LoginLink } from '../session/LoginLink'
-import { applyForTask, appointTaskApplication, approveTaskResult, cancelTask, closeTask, getTask, rejectTaskApplication, releaseTaskAssignee, requestTaskChanges, submitTaskResult } from './api'
+import { applyForTask, appointTaskApplication, approveTaskResult, cancelTask, closeTask, completeTask, deleteTask, getTask, rejectTaskApplication, releaseTaskAssignee, requestTaskChanges, submitTaskResult } from './api'
 import { pastTaskApplicationDeadline, pastTaskExecutionDeadline, taskEventLabel, taskApplicationStatusLabel, taskDisplayStatus, taskStatusLabel, type RiceTask, type TaskApplication, type TaskSubmission } from './types'
 import { errorMessage } from '~/lib/util'
 
@@ -51,6 +51,11 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
   const [applyOpen, setApplyOpen] = useState(false)
   const [cancelOpen, setCancelOpen] = useState(false)
   const [closeOpen, setCloseOpen] = useState(false)
+  const [completeOpen, setCompleteOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const navigate = useNavigate()
+  // 路由先显示缓存的旧数据、再在后台重新加载(比如编辑保存后跳回来):新数据到了就换上
+  useEffect(() => { if (initial?.task) setTask(initial.task) }, [initial?.task])
   const [releaseId, setReleaseId] = useState<string | null>(null)
   const [approveId, setApproveId] = useState<string | null>(null)
   const [rejectId, setRejectId] = useState<string | null>(null)
@@ -89,6 +94,7 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
       setApplyOpen(false)
       setCancelOpen(false)
       setCloseOpen(false)
+      setCompleteOpen(false)
       setReleaseId(null)
       setText(EMPTY_TEXT)
     } catch (reason) {
@@ -101,7 +107,6 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
 
   if (!isReady || (loading && !task)) return <LoadingState label="正在加载任务…" className="page loading-line" />
   if (!task) return <div className="page"><div className="inline-error">{error || '任务不存在'}</div></div>
-  if (task.status === 'cancelled' && task.creator.id !== session?.user.id && !task.can_manage && !(session && (task.my_application_status || task.my_application))) return <div className="page"><p className="search-hint">任务已取消。</p></div>
 
   const expiredOpen = pastTaskApplicationDeadline(task, now)
   const overdueProgress = pastTaskExecutionDeadline(task, now)
@@ -251,6 +256,16 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
           </section>
         ) : null}
 
+        {actions.has('complete') && token ? (
+          <section className="task-action-section">
+            <Button label="完成任务" variant="primary" onClick={() => setCompleteOpen(true)} />
+            {completeOpen && <ConfirmDialog title="确认完成任务" busy={busy} error={error} onClose={() => setCompleteOpen(false)} back="返回" confirm="确认完成" variant="primary"
+              onConfirm={act(() => completeTask({ data: { token, taskId } }))}>
+              还在承接的伙伴（包括待验收的）都记为完成{task.reward_amount > 0 ? `，每人发放 ${task.reward_amount} 稻米` : ''}；等待中的申请落选{task.reward_amount > 0 ? `，空着名额的稻米退回${refundTo}` : ''}。适合活已经在线下做完、没在这里交成果的情况。
+            </ConfirmDialog>}
+          </section>
+        ) : null}
+
         {actions.has('close') && token ? (
           <section className="task-action-section">
             <Button label="提前结束任务" variant="destructive" onClick={() => setCloseOpen(true)} />
@@ -266,6 +281,16 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
             <Button label="取消任务" variant="destructive" onClick={() => setCancelOpen(true)} />
             {cancelOpen && <ConfirmDialog title="确认取消任务" busy={busy} error={error} onClose={() => setCancelOpen(false)} back="保留任务" confirm="确认取消" variant="destructive"
               onConfirm={act(() => cancelTask({ data: { token, taskId } }))}>取消后任务保留记录，不能再申请；已冻结的 {totalReward} 稻米将退还。</ConfirmDialog>}
+          </section>
+        ) : null}
+
+        {actions.has('delete') && token ? (
+          <section className="task-action-section">
+            <Button label="删除任务" variant="destructive" onClick={() => setDeleteOpen(true)} />
+            {deleteOpen && <ConfirmDialog title="确认删除任务" busy={busy} error={error} onClose={() => setDeleteOpen(false)} back="保留任务" confirm="确认删除" variant="destructive"
+              onConfirm={() => run(async () => { const deleted = await deleteTask({ data: { token, taskId } }); void navigate({ to: '/tasks' }); return deleted })}>
+              删除后任务不再出现在列表和详情里，已发放和退回的稻米记录保留。
+            </ConfirmDialog>}
           </section>
         ) : null}
 

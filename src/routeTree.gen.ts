@@ -47,12 +47,15 @@ import { Route as MeSettingsIndexRouteImport } from './routes/me.settings.index'
 import { Route as MeSettingsAccountRouteImport } from './routes/me.settings.account'
 import { Route as MeSettingsProfileRouteImport } from './routes/me.settings.profile'
 import { Route as NodesNodeIdEventsRouteImport } from './routes/nodes_.$nodeId.events'
+import { Route as NodesNodeIdFundRouteImport } from './routes/nodes_.$nodeId.fund'
 import { Route as NodesNodeIdGrainsRouteImport } from './routes/nodes_.$nodeId.grains'
 import { Route as NodesNodeIdTasksRouteImport } from './routes/nodes_.$nodeId.tasks'
 import { Route as ProfileActorIndexRouteImport } from './routes/profile.$actor.index'
 import { Route as ProfileActorFollowersRouteImport } from './routes/profile.$actor.followers'
 import { Route as ProfileActorFollowingRouteImport } from './routes/profile.$actor.following'
 import { Route as MeGrainsSendScanRouteImport } from './routes/me.grains_.send.scan'
+import { Route as NodesNodeIdGrainsReceiveRouteImport } from './routes/nodes_.$nodeId.grains_.receive'
+import { Route as NodesNodeIdGrainsSendRouteImport } from './routes/nodes_.$nodeId.grains_.send'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -244,6 +247,11 @@ const NodesNodeIdEventsRoute = NodesNodeIdEventsRouteImport.update({
   path: '/nodes/$nodeId/events',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NodesNodeIdFundRoute = NodesNodeIdFundRouteImport.update({
+  id: '/nodes_/$nodeId/fund',
+  path: '/nodes/$nodeId/fund',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NodesNodeIdGrainsRoute = NodesNodeIdGrainsRouteImport.update({
   id: '/nodes_/$nodeId/grains',
   path: '/nodes/$nodeId/grains',
@@ -273,6 +281,17 @@ const MeGrainsSendScanRoute = MeGrainsSendScanRouteImport.update({
   id: '/scan',
   path: '/scan',
   getParentRoute: () => MeGrainsSendRoute,
+} as any)
+const NodesNodeIdGrainsReceiveRoute =
+  NodesNodeIdGrainsReceiveRouteImport.update({
+    id: '/nodes_/$nodeId/grains_/receive',
+    path: '/nodes/$nodeId/grains/receive',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const NodesNodeIdGrainsSendRoute = NodesNodeIdGrainsSendRouteImport.update({
+  id: '/nodes_/$nodeId/grains_/send',
+  path: '/nodes/$nodeId/grains/send',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -313,6 +332,7 @@ export interface FileRoutesByFullPath {
   '/me/settings/account': typeof MeSettingsAccountRoute
   '/me/settings/profile': typeof MeSettingsProfileRoute
   '/nodes/$nodeId/events': typeof NodesNodeIdEventsRoute
+  '/nodes/$nodeId/fund': typeof NodesNodeIdFundRoute
   '/nodes/$nodeId/grains': typeof NodesNodeIdGrainsRoute
   '/nodes/$nodeId/tasks': typeof NodesNodeIdTasksRoute
   '/profile/$actor/followers': typeof ProfileActorFollowersRoute
@@ -320,6 +340,8 @@ export interface FileRoutesByFullPath {
   '/me/settings/': typeof MeSettingsIndexRoute
   '/profile/$actor/': typeof ProfileActorIndexRoute
   '/me/grains/send/scan': typeof MeGrainsSendScanRoute
+  '/nodes/$nodeId/grains/receive': typeof NodesNodeIdGrainsReceiveRoute
+  '/nodes/$nodeId/grains/send': typeof NodesNodeIdGrainsSendRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -354,6 +376,7 @@ export interface FileRoutesByTo {
   '/me/settings/account': typeof MeSettingsAccountRoute
   '/me/settings/profile': typeof MeSettingsProfileRoute
   '/nodes/$nodeId/events': typeof NodesNodeIdEventsRoute
+  '/nodes/$nodeId/fund': typeof NodesNodeIdFundRoute
   '/nodes/$nodeId/grains': typeof NodesNodeIdGrainsRoute
   '/nodes/$nodeId/tasks': typeof NodesNodeIdTasksRoute
   '/profile/$actor/followers': typeof ProfileActorFollowersRoute
@@ -361,6 +384,8 @@ export interface FileRoutesByTo {
   '/me/settings': typeof MeSettingsIndexRoute
   '/profile/$actor': typeof ProfileActorIndexRoute
   '/me/grains/send/scan': typeof MeGrainsSendScanRoute
+  '/nodes/$nodeId/grains/receive': typeof NodesNodeIdGrainsReceiveRoute
+  '/nodes/$nodeId/grains/send': typeof NodesNodeIdGrainsSendRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -401,6 +426,7 @@ export interface FileRoutesById {
   '/me/settings/account': typeof MeSettingsAccountRoute
   '/me/settings/profile': typeof MeSettingsProfileRoute
   '/nodes_/$nodeId/events': typeof NodesNodeIdEventsRoute
+  '/nodes_/$nodeId/fund': typeof NodesNodeIdFundRoute
   '/nodes_/$nodeId/grains': typeof NodesNodeIdGrainsRoute
   '/nodes_/$nodeId/tasks': typeof NodesNodeIdTasksRoute
   '/profile/$actor/followers': typeof ProfileActorFollowersRoute
@@ -408,6 +434,8 @@ export interface FileRoutesById {
   '/me/settings/': typeof MeSettingsIndexRoute
   '/profile/$actor/': typeof ProfileActorIndexRoute
   '/me/grains_/send/scan': typeof MeGrainsSendScanRoute
+  '/nodes_/$nodeId/grains_/receive': typeof NodesNodeIdGrainsReceiveRoute
+  '/nodes_/$nodeId/grains_/send': typeof NodesNodeIdGrainsSendRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -449,6 +477,7 @@ export interface FileRouteTypes {
     | '/me/settings/account'
     | '/me/settings/profile'
     | '/nodes/$nodeId/events'
+    | '/nodes/$nodeId/fund'
     | '/nodes/$nodeId/grains'
     | '/nodes/$nodeId/tasks'
     | '/profile/$actor/followers'
@@ -456,6 +485,8 @@ export interface FileRouteTypes {
     | '/me/settings/'
     | '/profile/$actor/'
     | '/me/grains/send/scan'
+    | '/nodes/$nodeId/grains/receive'
+    | '/nodes/$nodeId/grains/send'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -490,6 +521,7 @@ export interface FileRouteTypes {
     | '/me/settings/account'
     | '/me/settings/profile'
     | '/nodes/$nodeId/events'
+    | '/nodes/$nodeId/fund'
     | '/nodes/$nodeId/grains'
     | '/nodes/$nodeId/tasks'
     | '/profile/$actor/followers'
@@ -497,6 +529,8 @@ export interface FileRouteTypes {
     | '/me/settings'
     | '/profile/$actor'
     | '/me/grains/send/scan'
+    | '/nodes/$nodeId/grains/receive'
+    | '/nodes/$nodeId/grains/send'
   id:
     | '__root__'
     | '/'
@@ -536,6 +570,7 @@ export interface FileRouteTypes {
     | '/me/settings/account'
     | '/me/settings/profile'
     | '/nodes_/$nodeId/events'
+    | '/nodes_/$nodeId/fund'
     | '/nodes_/$nodeId/grains'
     | '/nodes_/$nodeId/tasks'
     | '/profile/$actor/followers'
@@ -543,6 +578,8 @@ export interface FileRouteTypes {
     | '/me/settings/'
     | '/profile/$actor/'
     | '/me/grains_/send/scan'
+    | '/nodes_/$nodeId/grains_/receive'
+    | '/nodes_/$nodeId/grains_/send'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -563,8 +600,11 @@ export interface RootRouteChildren {
   NodesNodeIdRoute: typeof NodesNodeIdRoute
   ProfileActorRoute: typeof ProfileActorRouteWithChildren
   NodesNodeIdEventsRoute: typeof NodesNodeIdEventsRoute
+  NodesNodeIdFundRoute: typeof NodesNodeIdFundRoute
   NodesNodeIdGrainsRoute: typeof NodesNodeIdGrainsRoute
   NodesNodeIdTasksRoute: typeof NodesNodeIdTasksRoute
+  NodesNodeIdGrainsReceiveRoute: typeof NodesNodeIdGrainsReceiveRoute
+  NodesNodeIdGrainsSendRoute: typeof NodesNodeIdGrainsSendRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -835,6 +875,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NodesNodeIdEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/nodes_/$nodeId/fund': {
+      id: '/nodes_/$nodeId/fund'
+      path: '/nodes/$nodeId/fund'
+      fullPath: '/nodes/$nodeId/fund'
+      preLoaderRoute: typeof NodesNodeIdFundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/nodes_/$nodeId/grains': {
       id: '/nodes_/$nodeId/grains'
       path: '/nodes/$nodeId/grains'
@@ -876,6 +923,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/me/grains/send/scan'
       preLoaderRoute: typeof MeGrainsSendScanRouteImport
       parentRoute: typeof MeGrainsSendRoute
+    }
+    '/nodes_/$nodeId/grains_/receive': {
+      id: '/nodes_/$nodeId/grains_/receive'
+      path: '/nodes/$nodeId/grains/receive'
+      fullPath: '/nodes/$nodeId/grains/receive'
+      preLoaderRoute: typeof NodesNodeIdGrainsReceiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/nodes_/$nodeId/grains_/send': {
+      id: '/nodes_/$nodeId/grains_/send'
+      path: '/nodes/$nodeId/grains/send'
+      fullPath: '/nodes/$nodeId/grains/send'
+      preLoaderRoute: typeof NodesNodeIdGrainsSendRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -1004,8 +1065,11 @@ const rootRouteChildren: RootRouteChildren = {
   NodesNodeIdRoute: NodesNodeIdRoute,
   ProfileActorRoute: ProfileActorRouteWithChildren,
   NodesNodeIdEventsRoute: NodesNodeIdEventsRoute,
+  NodesNodeIdFundRoute: NodesNodeIdFundRoute,
   NodesNodeIdGrainsRoute: NodesNodeIdGrainsRoute,
   NodesNodeIdTasksRoute: NodesNodeIdTasksRoute,
+  NodesNodeIdGrainsReceiveRoute: NodesNodeIdGrainsReceiveRoute,
+  NodesNodeIdGrainsSendRoute: NodesNodeIdGrainsSendRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -11,11 +11,13 @@ export const getWallet = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => backendData<RiceWallet>(`/api/${data.nodeId ? `nodes/${encodeURIComponent(data.nodeId)}/wallet` : 'wallet'}${data.before ? `?before=${encodeURIComponent(data.before)}` : ''}`, { token: data.token }))
 export function walletEntryIncoming(entry: WalletEntry, userId: string, nodeId?: string) { return entry.kind === 'refunded' || (entry.kind !== 'reserved' && (nodeId ? entry.to_node?.id === nodeId : entry.to_user?.id === userId)) }
 
-type PersonalTransferInput = { token: string; to: string; amount: number; memo?: string; clientRequestId: string }
+type PersonalTransferInput = { token: string; to: string; amount: number; memo?: string; clientRequestId: string; nodeId?: string }
 export type PersonalTransfer = { id: string; amount: number; to: Pick<RicePublicUser, 'id' | 'did' | 'handle' | 'nickname'> }
 export async function requestPersonalTransfer(data: PersonalTransferInput) {
   if (!data.to.trim() || !Number.isSafeInteger(data.amount) || data.amount < 1) throw new Error('请选择送给谁，并输入正整数稻米数量。')
-  const result = await backendData<PersonalTransfer>('/api/grain_transfers', {
+  // 带 nodeId 就是节点管理员从节点账户发出
+  const path = data.nodeId ? `/api/nodes/${encodeURIComponent(data.nodeId)}/grain_transfers` : '/api/grain_transfers'
+  const result = await backendData<PersonalTransfer>(path, {
     method: 'POST', token: data.token,
     json: { to: data.to.trim(), amount: data.amount, kind: 'gift', memo: data.memo?.trim(), client_request_id: data.clientRequestId },
   })
@@ -38,6 +40,6 @@ export const findTransferRecipients = createServerFn({ method: 'POST' })
 
 export const fundCommunity = createServerFn({ method: 'POST' })
   .validator((data: { token: string; nodeId: string; amount: number; clientRequestId: string }) => data)
-  .handler(async ({ data }) => backendData<RiceWallet>(`/api/nodes/${encodeURIComponent(data.nodeId)}/fund`, {
+  .handler(async ({ data }) => backendData<{ id: string; amount: number }>(`/api/nodes/${encodeURIComponent(data.nodeId)}/fund`, {
     method: 'POST', token: data.token, json: { amount: data.amount, client_request_id: data.clientRequestId },
   }))

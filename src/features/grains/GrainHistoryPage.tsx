@@ -6,7 +6,7 @@ import { LoadingState } from '~/components/LoadingState'
 import { ConfirmDialog } from '~/components/ConfirmDialog'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, QrCode, Send } from 'lucide-react'
 import { formatTimestamp } from '~/lib/format'
 import { useStoredSession } from '../session/session'
 import { fundCommunity, getWallet, walletEntryIncoming, type RiceWallet, type WalletEntry } from './api'
@@ -23,6 +23,7 @@ function WalletHistory({ nodeId }: { nodeId?: string }) {
   const [wallet, setWallet] = useState<RiceWallet | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [version, setVersion] = useState(0)
   const request = useRef(0)
   useEffect(() => {
     if (!isReady) return
@@ -31,12 +32,22 @@ function WalletHistory({ nodeId }: { nodeId?: string }) {
     setLoading(true)
     void getWallet({ data: { token: session.token, nodeId } }).then((value) => { if (active) setWallet(value) }).catch((e) => { if (active) setError(e.message) }).finally(() => { if (active) setLoading(false) })
     return () => { active = false; ++request.current }
-  }, [session?.token, isReady, nodeId])
+  }, [session?.token, isReady, nodeId, version])
   const more = async () => { if (!session || !wallet?.next_cursor || loading) return; const current = request.current; setLoading(true); setError(''); try { const page = await getWallet({ data: { token: session.token, nodeId, before: wallet.next_cursor } }); if (current === request.current) setWallet((previous) => ({ ...page, entries: [...(previous?.entries ?? []), ...page.entries] })) } catch (e) { if (current === request.current) setError(errorMessage(e, '加载失败')) } finally { if (current === request.current) setLoading(false) } }
   if (isReady && !session) return <div className="page"><LoginLink className="primary-link">登录后查看稻米记录</LoginLink></div>
   return <div className="page grain-history-page"><h1>{nodeId ? '节点稻米' : '我的稻米'}</h1><p className="muted">测试稻米</p>
     <section className="grain-card"><header>稻米总量</header><div className="grain-balance-row"><strong>{wallet ? wallet.balance + wallet.frozen : '—'}</strong></div><div className="grain-metrics"><div><b>{wallet?.balance ?? '—'}</b><span>可用</span></div><div><b>{wallet?.frozen ?? '—'}</b><span>冻结稻米</span></div><div><b>{wallet?.earned ?? '—'}</b><span>累计获得</span></div></div></section>
-    {nodeId && session && wallet && <CommunityFunding nodeId={nodeId} token={session.token} onFunded={(value) => { ++request.current; setWallet(value); setLoading(false); setError('') }} />}
+    {nodeId && session && wallet && <>
+      <div className="personal-grain-actions">
+        <Button label="发放稻米" variant="ghost" href={`/nodes/${encodeURIComponent(nodeId)}/grains/send`}>
+          <span className="grain-action-content"><span className="grain-action-icon"><Send size={22} aria-hidden="true" /></span><span>发放稻米</span></span>
+        </Button>
+        <Button label="接收稻米" variant="ghost" href={`/nodes/${encodeURIComponent(nodeId)}/grains/receive`}>
+          <span className="grain-action-content"><span className="grain-action-icon"><QrCode size={22} aria-hidden="true" /></span><span>接收稻米</span></span>
+        </Button>
+      </div>
+      <CommunityFunding nodeId={nodeId} token={session.token} onFunded={() => setVersion((value) => value + 1)} />
+    </>}
     <h2>稻米记录</h2>{error && <p className="inline-error" role="alert">{error}</p>}{loading && (wallet ? <p className="refresh-status" role="status">正在加载记录…</p> : <LoadingState label="正在加载记录…" />)}
     <section className="grain-transfer-list">{wallet?.entries.map((entry) => <WalletEntryRow key={entry.id} entry={entry} userId={session?.user.id ?? ''} nodeId={nodeId} />)}</section>
     {!loading && !error && !wallet?.entries.length && <p className="search-hint">还没有稻米记录。</p>}{wallet?.next_cursor && <Button label="加载更多" variant="secondary" isDisabled={loading} clickAction={more} />}
@@ -66,8 +77,8 @@ function WalletEntryRow({ entry, userId, nodeId }: { entry: WalletEntry; userId:
   </details>
 }
 
-function CommunityFunding({ nodeId, token, onFunded }: { nodeId: string; token: string; onFunded: (wallet: RiceWallet) => void }) {
-  const [open, setOpen] = useState(false)
+export function CommunityFunding({ nodeId, token, onFunded, startOpen = false }: { nodeId: string; token: string; onFunded: (amount: number) => void; startOpen?: boolean }) {
+  const [open, setOpen] = useState(startOpen)
   const [amount, setAmount] = useState('')
   const [confirm, setConfirm] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -79,19 +90,20 @@ function CommunityFunding({ nodeId, token, onFunded }: { nodeId: string; token: 
     if (request.current?.amount !== amount) request.current = { amount, id: crypto.randomUUID() }
     setBusy(true); setError('')
     try {
-      onFunded(await fundCommunity({ data: { token, nodeId, amount: Number(amount), clientRequestId: request.current.id } }))
-      request.current = null; setAmount(''); setOpen(false); setConfirm(false)
+      const funded = await fundCommunity({ data: { token, nodeId, amount: Number(amount), clientRequestId: request.current.id } })
+      request.current = null; setAmount(''); setOpen(startOpen); setConfirm(false)
+      onFunded(funded.amount)
       window.dispatchEvent(new Event('rice-changed'))
     } catch (e) { setError(errorMessage(e, '转入失败，请重试。')) } finally { setBusy(false) }
   }
   return <section className="business-section">
     {!open ? <Button label="从个人账户转入稻米" variant="secondary" onClick={() => setOpen(true)} /> : <div className="form-stack">
       <TextInput label="转入多少稻米" value={amount} onChange={value => { setAmount(value); setConfirm(false); setError('') }} isDisabled={busy} status={amountError ? { type: 'error', message: amountError } : undefined} width="100%" isRequired />
-      <p>节点与个人账户分开记账，转入后由节点管理员用于节点任务。</p>
+      <p>节点与个人账户分开记账，转入后由节点管理员用于节点任务和发放。</p>
       {error && <p className="inline-error" role="alert">{error}</p>}
-      <div className="form-actions"><Button label="返回" variant="secondary" isDisabled={busy} onClick={() => { setOpen(false); setConfirm(false) }} /><Button label="向节点转入稻米" variant="primary" isDisabled={busy || !amount || !!amountError} onClick={() => setConfirm(true)} /></div>
+      <div className="form-actions">{!startOpen && <Button label="返回" variant="secondary" isDisabled={busy} onClick={() => { setOpen(false); setConfirm(false) }} />}<Button label="向节点转入稻米" variant="primary" isDisabled={busy || !amount || !!amountError} onClick={() => setConfirm(true)} /></div>
       {confirm && <ConfirmDialog title="确认向节点转入稻米" busy={busy} error={error} onClose={() => setConfirm(false)} back="返回修改" confirm="确认转入" variant="primary"
-        isDisabled={!amount || !!amountError} onConfirm={submit}>将你的 {amount} 稻米转入此节点，由管理员用于节点任务。</ConfirmDialog>}
+        isDisabled={!amount || !!amountError} onConfirm={submit}>将你的 {amount} 稻米转入此节点，由管理员用于节点任务和发放。</ConfirmDialog>}
     </div>}
   </section>
 }

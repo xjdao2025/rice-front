@@ -41,19 +41,15 @@ it('asks Rice to filter by real community and applicant eligibility', () => {
   expect(Object.fromEntries(new URLSearchParams(buildTaskListQuery({ nodeId: 'node-1', available: true })))).toEqual({ node_id: 'node-1', available: 'true' })
 })
 
-it('hides cancelled tasks from shared list results without losing the next page', async () => {
-  const fetch = vi.fn().mockImplementation(() => Promise.resolve(Response.json({
+it('keeps cancelled tasks in shared list results', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockImplementation(() => Promise.resolve(Response.json({
     data: [{ id: 'open', status: 'open' }, { id: 'cancelled', status: 'cancelled' }],
     meta: { next_cursor: 'next-page' },
-  })))
-  vi.stubGlobal('fetch', fetch)
+  }))))
 
   const page = await fetchTaskPage({ limit: 12 })
-  expect(page.data.map((task) => task.id)).toEqual(['open'])
+  expect(page.data.map((task) => task.id)).toEqual(['open', 'cancelled'])
   expect(page.meta.next_cursor).toBe('next-page')
-
-  const mine = await fetchTaskPage({ token: 'rice-token', mine: 'managed', limit: 12 })
-  expect(mine.data.map((task) => task.id)).toEqual(['open', 'cancelled'])
 })
 
 it('rejects the specified application using Rice auth and keeps the returned open task and reserved reward', async () => {
