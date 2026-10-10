@@ -4,7 +4,8 @@ export type RiceUser = {
   handle: string
   nickname: string | null
   bio: string | null
-  avatar: null | { id: string; kind: string; filename: string; content_type: string; byte_size: number; url: string }
+  // 只用 url：rice 没有头像时会填 AT 资料里的（withAvatars），那种没有附件记录
+  avatar: null | { url: string }
   grain_balance: number
   grain_frozen_balance: number
   node_member: boolean
@@ -16,10 +17,9 @@ export type RiceUser = {
   inserted_at: string
 }
 
-export type RiceAttachment = NonNullable<RiceUser['avatar']>
+export type RiceAttachment = { id: string; kind: string; filename: string; content_type: string; byte_size: number; url: string }
 export type HistorySnapshot = Record<string, string | number | string[] | null>
-// avatar 只要 url：rice 没有头像时会用 AppView 的（withProfileAvatars），那种没有附件记录
-export type RicePublicUser = Pick<RiceUser, 'id' | 'did' | 'handle' | 'nickname' | 'bio' | 'node_member'> & { avatar: { url: string } | null }
+export type RicePublicUser = Pick<RiceUser, 'id' | 'did' | 'handle' | 'nickname' | 'bio' | 'avatar' | 'node_member'>
 
 export type RiceSession = {
   token: string

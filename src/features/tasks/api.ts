@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 
 import { backend, backendData, searchParams, withQuery } from '~/lib/http'
+import { withAvatars } from '../social/api'
 
 import type { RiceTask, TaskListStatus, TaskMine } from './types'
 
@@ -40,7 +41,7 @@ export const buildTaskListQuery = (data: TaskListInput) => searchParams(taskList
 
 export async function fetchTaskPage(data: TaskListInput) {
   const page = await backend<TaskPage>(withQuery('/api/tasks', taskListParams(data)), { token: data.token })
-  return data.mine ? page : { ...page, data: page.data.filter((task) => task.status !== 'cancelled') }
+  return withAvatars(data.mine ? page : { ...page, data: page.data.filter((task) => task.status !== 'cancelled') })
 }
 
 export const getTaskPage = createServerFn({ method: 'POST' })
@@ -49,7 +50,7 @@ export const getTaskPage = createServerFn({ method: 'POST' })
 
 export const getTask = createServerFn({ method: 'POST' })
   .validator((data: { id: string; token?: string }) => data)
-  .handler(async ({ data }) => backendData<RiceTask>(taskPath(data.id), { token: data.token }))
+  .handler(async ({ data }) => withAvatars(await backendData<RiceTask>(taskPath(data.id), { token: data.token })))
 
 type TaskFields = {
   token: string
@@ -87,7 +88,7 @@ export const createTask = createServerFn({ method: 'POST' })
   }))
 
 const send = async (token: string, method: 'POST' | 'PATCH', segments: string[], payload?: object) =>
-  backendData<RiceTask>(taskPath(...segments), { method, token, json: payload })
+  withAvatars(await backendData<RiceTask>(taskPath(...segments), { method, token, json: payload }))
 
 export const updateTask = createServerFn({ method: 'POST' })
   .validator((data: TaskFields & { taskId: string; applicationDeadline: string | null }) => data)

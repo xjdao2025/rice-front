@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RiceSession } from '~/lib/models'
 
 const state = vi.hoisted(() => ({ session: null as RiceSession | null }))
-const api = vi.hoisted(() => ({ user: vi.fn(), wallet: vi.fn(), nodes: vi.fn() }))
-vi.mock('~/features/session/session', () => ({ readStoredSession: () => state.session }))
+const api = vi.hoisted(() => ({ user: vi.fn(), wallet: vi.fn(), nodes: vi.fn(), write: vi.fn() }))
+vi.mock('~/features/session/session', () => ({ readStoredSession: () => state.session, writeStoredSession: api.write }))
 vi.mock('~/features/session/api', () => ({ getCurrentUser: api.user }))
 vi.mock('~/features/grains/api', () => ({ getWallet: api.wallet }))
 vi.mock('~/features/nodes/api', () => ({ getNodes: api.nodes }))
@@ -60,10 +60,24 @@ beforeEach(() => {
   api.user.mockReset().mockResolvedValue({ id: 'a', nickname: '甲' })
   api.wallet.mockReset().mockResolvedValue({ balance: 100, frozen: 0, earned: 100, entries: [] })
   api.nodes.mockReset().mockResolvedValue([])
+  api.write.mockReset()
 })
 afterEach(() => { vi.clearAllTimers(); vi.useRealTimers() })
 
 describe('private profile route cache', () => {
+  it('syncs the stored session user when the fresh profile differs, e.g. an avatar filled from AT', async () => {
+    const fresh = { id: 'a', nickname: '甲', avatar: { url: '/bsky/img/avatar/a' } }
+    api.user.mockResolvedValue(fresh)
+    const router = await readyRouter()
+    await router.navigate({ to: '/me' })
+    expect(api.write).toHaveBeenCalledExactlyOnceWith({ ...session('a'), user: fresh })
+    api.write.mockReset()
+    state.session = { ...session('a'), user: fresh } as RiceSession
+    await router.invalidate({ filter: (match) => match.routeId === '/me/' })
+    await vi.advanceTimersByTimeAsync(0)
+    expect(api.write).not.toHaveBeenCalled()
+  })
+
   it('prefetches separate wallets for managed communities and excludes member communities', async () => {
     api.nodes.mockResolvedValue([
       { id: 'one', name: '一号社区', role: 'admin' },

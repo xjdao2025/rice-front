@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 
 import { backend, backendData, isSessionAuthError, RequestError } from '~/lib/http'
 import type { RiceSession, RiceUser } from '~/lib/models'
+import { withAvatars } from '../social/api'
 import { pdsPost } from '~/lib/pds'
 import { isPdsSession, isRiceSession, isSessionUser } from './session-data'
 
@@ -24,7 +25,7 @@ export async function requestSemiSession(ticket: string): Promise<RiceSession> {
   if (!handoff.riceToken) throw new Error('登录信息不完整，请重新登录。')
   const session = {
     token: handoff.riceToken,
-    user: await backendData<RiceUser>('/api/users/me', { token: handoff.riceToken, cache: 'no-store' }),
+    user: await withAvatars(await backendData<RiceUser>('/api/users/me', { token: handoff.riceToken, cache: 'no-store' })),
     pds: {
       service: handoff.service, did: handoff.did, handle: handoff.handle,
       access_jwt: handoff.accessJwt, refresh_jwt: handoff.refreshJwt,
@@ -72,7 +73,7 @@ export const logoutRice = createServerFn({ method: 'POST' })
 
 export async function requestCurrentUser(token: string): Promise<RiceUser | null> {
   try {
-    const user = await backendData<RiceUser>('/api/users/me', { token })
+    const user = await withAvatars(await backendData<RiceUser>('/api/users/me', { token }))
     if (!isSessionUser(user)) throw new Error('用户资料返回异常，请稍后重试。')
     return user
   } catch (error) {

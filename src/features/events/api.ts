@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
 import { backend, backendData, searchParams } from '~/lib/http'
+import { withAvatars } from '../social/api'
 import type { RicePublicUser, RiceAttachment, HistorySnapshot } from '~/lib/models'
 import type { CommunityNode } from '../nodes/api'
 
@@ -38,7 +39,7 @@ export async function fetchEventPage(data: EventListInput) {
   return backend<EventPage>(`/api/events?${q}`, { token: data.token })
 }
 export const getEvents = createServerFn({ method: 'POST' }).validator((data: EventListInput) => data).handler(({ data }) => fetchEventPage(data))
-export const getEvent = createServerFn({ method: 'POST' }).validator((data: { id: string; token?: string }) => data).handler(async ({ data }) => backendData<RiceEvent>(`/api/events/${encodeURIComponent(data.id)}`, { token: data.token }))
+export const getEvent = createServerFn({ method: 'POST' }).validator((data: { id: string; token?: string }) => data).handler(async ({ data }) => withAvatars(await backendData<RiceEvent>(`/api/events/${encodeURIComponent(data.id)}`, { token: data.token })))
 export type EventDraftInput = { organizer_contact?: string; attachment_ids?: string[]; node_id: string; title: string; description: string; location: string; application_deadline: string; starts_at: string; ends_at: string; fee_amount: number; capacity: number; client_request_id: string }
 export type SaveEventInput = { token: string; id?: string; editing?: boolean; status: 'draft' | 'open'; fields: EventDraftInput }
 function sameEventContent(event: RiceEvent, fields: EventDraftInput) {
@@ -81,6 +82,6 @@ export type EventActionInput = { token: string; id: string; action: 'apply' | 'a
 export async function eventActionRequest(data: EventActionInput) {
   if (data.action === 'withdraw' && !data.applicationId) throw new Error('未找到要撤销的申请，请重新打开活动详情。')
   const suffix = data.action === 'apply' ? 'applications' : data.applicationId ? `applications/${encodeURIComponent(data.applicationId)}/${data.action}` : data.action
-  return backendData<RiceEvent>(`/api/events/${encodeURIComponent(data.id)}/${suffix}`, { method: 'POST', token: data.token, json: { reason: data.reason, contact: data.contact } })
+  return withAvatars(await backendData<RiceEvent>(`/api/events/${encodeURIComponent(data.id)}/${suffix}`, { method: 'POST', token: data.token, json: { reason: data.reason, contact: data.contact } }))
 }
 export const eventAction = createServerFn({ method: 'POST' }).validator((data: EventActionInput) => data).handler(({ data }) => eventActionRequest(data))
