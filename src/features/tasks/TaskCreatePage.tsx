@@ -79,7 +79,8 @@ export function TaskCreatePage({ session, nodes, initialDraft, initialError = ''
   const nodeMissing = !nodeId && !personal
   // 草稿是在还管着某个节点时存的,现在已不再管理:它仍属于那个节点,不能悄悄改成个人发起
   const lostNode = personal && !!nodeId ? '这份草稿属于你已不再管理的节点，不能改为个人发起。' : ''
-  const fundingCopy = personal ? '使用你自己的稻米，发布时冻结。' : '使用节点稻米，不扣个人稻米。'
+  // 钱一律是发布者自己的:挂不挂节点只决定谁来管任务,不改变谁出钱
+  const fundingCopy = '发布时从你的稻米里冻结。'
   function validate(step: number): string | null {
     if (step === 0) {
       if (lostNode) return lostNode
@@ -200,7 +201,7 @@ export function TaskCreatePage({ session, nodes, initialDraft, initialError = ''
       {
         label: '参与与稻米', title: multiple ? '给每位承接者多少稻米？' : '给多少稻米？',
         content: <><PublishTextInput isDisabled={busy} isReadOnly={rewardReadOnly} label={`${rewardLabel}（测试稻米）`} value={rewardAmount} onChange={v => { set('rewardAmount', v); setError(''); setNotice('') }} status={amountError ? { type: 'error', message: amountError } : undefined} width="100%" isRequired />{totalRewardAmount !== null && <p className={multiple ? 'publish-total' : 'muted'}>总冻结：{totalRewardCopy}</p>}<p className="muted">{fundingCopy}</p></>,
-        review: <dl className="publish-review-fields">{multiple && <div><dt>承接人数上限</dt><dd>{capacity} 人</dd></div>}<div><dt>{rewardLabel}</dt><dd>{rewardAmount} 测试稻米</dd></div><div><dt>总冻结</dt><dd>{totalRewardCopy}</dd></div><div><dt>稻米从哪出</dt><dd>{personal ? fundingCopy : `${nodeName}：${fundingCopy}`}</dd></div></dl>,
+        review: <dl className="publish-review-fields">{multiple && <div><dt>承接人数上限</dt><dd>{capacity} 人</dd></div>}<div><dt>{rewardLabel}</dt><dd>{rewardAmount} 测试稻米</dd></div><div><dt>总冻结</dt><dd>{totalRewardCopy}</dd></div><div><dt>稻米从哪出</dt><dd>{fundingCopy}</dd></div></dl>,
       },
     ]} />
   </section>

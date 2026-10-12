@@ -66,7 +66,7 @@ it('restores capacity and explains the single or multiple reward before publishi
   expect(singleReward).toContain('稻米激励（测试稻米）')
   expect(singleReview).toContain('1 测试稻米')
   expect(singleReview).toContain('稻米从哪出')
-  expect(singleReward).toContain('使用节点稻米，不扣个人稻米。')
+  expect(singleReward).toContain('发布时从你的稻米里冻结。')
   expect(singleReview).not.toContain('× 1')
 
   const multiple = renderTask(null, null, 'contact', false, 'draft', 3)
@@ -103,7 +103,7 @@ it('lets an authorised person without a community publish with their own grain',
   const basics = renderToStaticMarkup(props.steps[0].content)
   expect(basics).not.toContain('所属节点')
   expect(props.validate(0)).not.toContain('所属节点')
-  expect(renderToStaticMarkup(props.steps[4].content)).toContain('使用你自己的稻米')
+  expect(renderToStaticMarkup(props.steps[4].content)).toContain('发布时从你的稻米里冻结。')
   expect(renderToStaticMarkup(props.steps[0].review)).toContain('个人发起')
 })
 
