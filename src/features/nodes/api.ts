@@ -7,7 +7,8 @@ export type NodeApplication = { id: string; status: 'pending' | 'approved' | 're
 export type CommunityNode = {
   id: string; name: string; description: string | null; position?: number | null; logo: RiceAttachment | null;
   grain_balance: number; grain_frozen_balance: number;
-  owner: RicePublicUser | null; role: 'admin' | 'member' | null; my_application: NodeApplication | null;
+  // 节点页那三个稻米数字读的是负责人账号的余额(生产就这个口径,那边没有节点钱包)
+  owner: (RicePublicUser & { grain_balance: number; grain_frozen_balance: number }) | null; role: 'admin' | 'member' | null; my_application: NodeApplication | null;
   can_manage_members?: boolean;
   members?: Array<{ user: RicePublicUser; role: 'admin' | 'member' }>; applications?: NodeApplication[]
 }
