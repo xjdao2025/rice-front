@@ -205,8 +205,8 @@ function ComposeContent({ initialKind = 'post', editId, initialData }: ComposePa
   const selectedNode = editId ? initialKind === 'task' ? loaded?.taskDraft?.node : loaded?.eventDraft?.node : null
   const publishNodes: Array<Pick<CommunityNode, 'id' | 'name'>> = selectedNode && !managedNodes.some(node => node.id === selectedNode.id) ? [selectedNode, ...managedNodes] : managedNodes
   const canPublishToNode = publishNodes.length > 0
-  // 发任务:节点管理员,或平台授权的个人(用自己的稻米);发活动仍要节点
-  const canPublishTask = canPublishToNode || session.user.can_publish_tasks
+  // 发任务:节点管理员,或平台授权的个人、后台超管(用自己的稻米);发活动仍要节点
+  const canPublishTask = canPublishToNode || session.user.can_publish_tasks || session.user.superuser
   const availableKinds = composeKinds.filter((item) => editId ? item.value === initialKind : item.value === 'post' || (item.value === 'task' ? canPublishTask : canPublishToNode))
   const selectKind = (value: ComposeKind) => { setKind(value); setVisitedKinds((visited) => visited.includes(value) ? visited : [...visited, value]) }
   return <div className="page compose-page">{availableKinds.length > 1 && <div className="compose-type-tabs filter-buttons" role="group" aria-label="发布类型">{availableKinds.map((item) => <Button label={item.label} variant="ghost" className={kind === item.value ? 'active' : undefined} aria-pressed={kind === item.value} isDisabled={submitting} onClick={() => selectKind(item.value)} key={item.value} />)}</div>}{notice && <p className="form-notice" role="status">{notice}</p>}
