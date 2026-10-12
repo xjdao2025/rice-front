@@ -71,3 +71,9 @@ it('rejects the specified application using Rice auth and keeps the returned ope
   expect(options.headers).toEqual({ Authorization: 'Bearer rice-token' })
   expect(options.body).toBeUndefined()
 })
+
+it('passes the explicitly selected funding wallet', () => {
+  for (const fundingSource of ['node', 'personal'] as const) {
+    expect(taskDraftBody({ token: 'token', title: '任务', description: '说明', capacity: 1, rewardAmount: 10, nodeId: 'node', fundingSource }).funding_source).toBe(fundingSource)
+  }
+})

@@ -66,7 +66,7 @@ it('restores capacity and explains the single or multiple reward before publishi
   expect(singleReward).toContain('稻米激励（测试稻米）')
   expect(singleReview).toContain('1 测试稻米')
   expect(singleReview).toContain('稻米从哪出')
-  expect(singleReward).toContain('发布时从你的稻米里冻结。')
+  expect(singleReward).toContain('使用节点稻米，不扣个人稻米。')
   expect(singleReview).not.toContain('× 1')
 
   const multiple = renderTask(null, null, 'contact', false, 'draft', 3)
@@ -103,7 +103,7 @@ it('lets an authorised person without a community publish with their own grain',
   const basics = renderToStaticMarkup(props.steps[0].content)
   expect(basics).not.toContain('所属节点')
   expect(props.validate(0)).not.toContain('所属节点')
-  expect(renderToStaticMarkup(props.steps[4].content)).toContain('发布时从你的稻米里冻结。')
+  expect(renderToStaticMarkup(props.steps[4].content)).toContain('使用你自己的稻米')
   expect(renderToStaticMarkup(props.steps[0].review)).toContain('个人发起')
 })
 
@@ -111,4 +111,13 @@ it('refuses to turn a draft of a community the person no longer manages into a p
   const draft = { id: 'task-1', node: { id: 'node-1', name: '社区', logo: null }, title: '任务', description: '说明', requirement: '要求', organizer_contact: 'c', reward_amount: 1, capacity: 1, attachments: [], status: 'draft', application_deadline: null, execution_deadline: null } as unknown as RiceTask
   renderToStaticMarkup(<TaskCreatePage session={{ token: 'token' } as RiceSession} nodes={[]} initialDraft={draft} onPublished={() => undefined} onCloseStateChange={() => undefined} />)
   expect(captured.props!.validate(0)).toContain('不再管理的节点')
+})
+
+it('offers a funding wallet choice to a node administrator and locks it after publishing', () => {
+  const draft = renderToStaticMarkup(renderTask(null, null).steps[4].content)
+  expect(draft).toContain('出资钱包')
+  expect(draft).toContain('节点钱包')
+  expect(draft).toContain('我的个人钱包')
+  const active = renderToStaticMarkup(renderTask(null, null, 'contact', true, 'open').steps[4].content)
+  expect(active).toMatch(/<select[^>]*disabled/)
 })
