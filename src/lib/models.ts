@@ -10,6 +10,8 @@ export type RiceUser = {
   grain_frozen_balance: number
   node_member: boolean
   can_publish_tasks: boolean
+  // 后台超级管理员（按手机号对应）。有它就能用个人稻米发任务，和 can_publish_tasks 同等
+  superuser: boolean
   email: string | null
   phone: string | null
   phone_region: string | null
