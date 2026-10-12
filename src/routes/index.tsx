@@ -11,7 +11,7 @@ import { isPlazaTag, type PlazaTag } from '~/features/feed/tags'
 import { readStoredSession, refreshStoredSession, tokenExpiresSoon } from '~/features/session/session'
 
 export const Route = createFileRoute('/')({
-  validateSearch: (search: Record<string, unknown>): { tag?: PlazaTag } => isPlazaTag(search.tag) ? { tag: search.tag } : {},
+  validateSearch: (search: Record<string, unknown>): { tag?: PlazaTag } => ({ tag: isPlazaTag(search.tag) ? search.tag : undefined }),
   loaderDeps: ({ search }) => ({ tag: search.tag }),
   loader: {
     handler: async ({ deps: { tag } }) => {

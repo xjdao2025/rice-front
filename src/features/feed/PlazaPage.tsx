@@ -84,13 +84,13 @@ function PlazaFeed({ initialFeed, banners, tag }: { initialFeed: PostFeed; banne
     const refresh = () => {
       request.current++
       setLoading(false)
-      const cached = readCachedFeed(did)
+      const cached = tag ? null : readCachedFeed(did)
       if (cached) setFeed(cached)
       else setReloadKey((value) => value + 1)
     }
     window.addEventListener('posts-changed', refresh)
     return () => window.removeEventListener('posts-changed', refresh)
-  }, [did])
+  }, [did, tag])
 
   useEffect(() => {
     request.current++
