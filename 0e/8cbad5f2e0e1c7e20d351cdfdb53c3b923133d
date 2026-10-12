@@ -1,0 +1,31 @@
+src/features/nodes/NodesPanel.tsx
+  s_aef130248f1bc9::t_649e9defdf589f 87-88
+src/features/nodes/api.ts
+  s_aef130248f1bc9::t_959822ec444002 10
+src/features/tasks/TaskCreatePage.test.tsx
+  s_aef130248f1bc9::t_c5823a7d833f81 69,106,115-123
+src/features/tasks/TaskCreatePage.tsx
+  s_aef130248f1bc9::t_b29f6c63feccfe 27,46,55,64,83,123,139-140,203-204
+src/features/tasks/api.test.ts
+  s_aef130248f1bc9::t_9b016e9b7b1eec 74-79
+src/features/tasks/api.ts
+  s_aef130248f1bc9::t_493a1794e8cbb9 60,76
+src/features/tasks/types.ts
+  s_aef130248f1bc9::t_33b979f6c379b2 66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0e8cbad5f2e0e1c7e20d351cdfdb53c3b923133d",
+  "prompts": {},
+  "sessions": {
+    "s_aef130248f1bc9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a12fdb-5eb5-7d01-b5cf-03faf7bc12a1",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "jiangplus <jiang.plus.times@gmail.com>"
+    }
+  }
+}
