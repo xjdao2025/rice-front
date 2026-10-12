@@ -64,6 +64,8 @@ export type PostView = {
     reply?: { root: StrongRef; parent: StrongRef }
   }
   embed?: PostEmbed
+  /** AppView 带上的标签(审核服务打的 + 作者自己的),见 isLabelHidden */
+  labels?: Array<{ val: string; neg?: boolean }>
   images?: PostImage[]
   replyCount: number
   repostCount: number

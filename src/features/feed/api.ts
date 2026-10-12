@@ -136,7 +136,7 @@ export function ownedInteractionUri(uri: string | undefined, did: string, collec
 }
 
 async function hydrateViewerRecords(posts: PostView[], did?: string, accessJwt?: string) {
-  // Post Cache is shared. Its viewer belongs to whoever populated it, not this reader.
+  // Lists are fetched without the reader's token, so any viewer state is not theirs.
   const publicPosts = posts.map(({ viewer: _viewer, ...post }) => post)
   if (!did || !accessJwt || posts.length === 0) return publicPosts
 
@@ -223,6 +223,11 @@ export function normalizePostImages(post: PostView): PostView {
   return images.length ? { ...post, images } : post
 }
 
+/** 审核服务打了 `!hide` 的帖子(rice 补审时阿里云没通过)不显示 */
+export function isLabelHidden(post: Pick<PostView, 'labels'>) {
+  return (post.labels ?? []).some((label) => label.val === '!hide' && !label.neg)
+}
+
 export function normalizePostFeed(payload: unknown): PostFeed {
   const body = (payload ?? {}) as { posts?: Array<PostView | { post?: PostView; reply?: unknown; reason?: PostView['reason'] }> }
   const posts = (body.posts ?? [])
@@ -231,7 +236,7 @@ export function normalizePostFeed(payload: unknown): PostFeed {
       if (!item.post || item.reply) return undefined
       return item.reason ? { ...item.post, reason: item.reason } : item.post
     })
-    .filter((post): post is PostView => Boolean(post?.uri && post.record?.text !== undefined && !post.record.reply))
+    .filter((post): post is PostView => Boolean(post?.uri && post.record?.text !== undefined && !post.record.reply && !isLabelHidden(post)))
     .map(normalizePostImages)
   return { posts }
 }
@@ -272,21 +277,30 @@ function mergeFeedPosts(posts: PostView[], reposts: PostView[]) {
       seenReposts.add(key)
       return true
     })
-    .sort((a, b) => (b.reason?.indexedAt ?? b.indexedAt).localeCompare(a.reason?.indexedAt ?? a.indexedAt))
+    .sort((a, b) => sortAt(b).localeCompare(sortAt(a)))
+}
+
+// AppView 的 sortAt:min(createdAt, indexedAt)。迁移后重新索引过的旧帖 indexedAt 全是索引那天,
+// 只按 indexedAt 排会打乱;转发按转发时间。
+function sortAt(post: PostView) {
+  if (post.reason) return post.reason.indexedAt
+  const created = post.record.createdAt
+  return created && created < post.indexedAt ? created : post.indexedAt
 }
 
 export function normalizePostThread(payload: unknown): PostThread {
   const body = payload as { thread?: { post?: PostView; replies?: unknown[] } }
   const post = body.thread?.post
   if (!post?.uri || post.record?.text === undefined) throw new Error('帖子暂时无法显示')
+  if (isLabelHidden(post)) throw new Error('该帖子未通过内容审核，已隐藏')
   const replies = (body.thread?.replies ?? [])
     .flatMap((value) => {
       const node = value as { post?: PostView; replies?: unknown[] }
       const parent = node.post
-      if (!parent?.uri || parent.record?.text === undefined) return []
+      if (!parent?.uri || parent.record?.text === undefined || isLabelHidden(parent)) return []
       const children = (node.replies ?? [])
         .map((child) => (child as { post?: PostView }).post)
-        .filter((child): child is PostView => Boolean(child?.uri && child.record?.text !== undefined))
+        .filter((child): child is PostView => Boolean(child?.uri && child.record?.text !== undefined && !isLabelHidden(child)))
         .map((child) => ({ post: normalizePostImages(child), parentUri: parent.uri }))
       return [{ post: normalizePostImages(parent), parentUri: post.uri }, ...children]
     })
@@ -297,32 +311,28 @@ export type GetPostsInput = {
   query?: string; repo?: string; tag?: string; category?: PostCategory; cursor?: string; limit?: number; accessJwt?: string; did?: string
 }
 
+// aerox.feed.listPosts:只有顶层帖子(不含回复)、最新在前,下架的不出现。公开接口,直接走 AppView。
 export async function loadPostPage(data: GetPostsInput) {
   const query = data.query?.trim()
-  const page = !query && data.cursor ? Number(data.cursor) : 1
-  if (!Number.isSafeInteger(page) || page < 1) throw new Error('帖子页码无效')
-  const endpoint = query ? '/post/api/posts/search' : '/post/api/posts/list'
-  const requestBody = query
-    ? { q: query, limit: data.limit ?? 25, sort: 'latest', ...(data.cursor ? { cursor: data.cursor } : {}) }
-    : { page, per_page: data.limit ?? FEED_PAGE_SIZE, ...(data.repo ? { repo: data.repo } : {}), ...(data.tag ? { tag: data.tag } : {}) }
-  const payload = await backend<unknown>(endpoint, { method: 'POST', json: requestBody })
+  const first = !data.cursor
+  const payload = await backend<{ cursor?: string }>(`/bsky/xrpc/aerox.feed.listPosts?${searchParams({
+    q: query, author: data.repo, tag: data.tag?.replace(/^#/, ''), limit: data.limit ?? (query ? 25 : FEED_PAGE_SIZE), cursor: data.cursor,
+  })}`)
 
   const feed = normalizePostFeed(payload)
   const [timelineReposts, ownPosts] = await Promise.all([
-    !query && !data.repo && page === 1 ? loadTimelineReposts(data.accessJwt) : [],
-    !query && page === 1 && data.did && data.accessJwt && (!data.repo || data.repo === data.did)
+    !query && !data.repo && first ? loadTimelineReposts(data.accessJwt) : [],
+    !query && first && data.did && data.accessJwt && (!data.repo || data.repo === data.did)
       ? loadOwnRecentPosts(data.did, data.accessJwt) : [],
   ])
-  const indexedUris = new Set(feed.posts.map(post => post.uri))
+  // 被隐藏的也算「列表里有」,免得又从自己的 PDS 记录里补回来
+  const listed = (payload as { posts?: Array<{ uri?: string; post?: { uri?: string } }> }).posts ?? []
+  const indexedUris = new Set(listed.map((item) => item.post?.uri ?? item.uri))
   const posts = mergeFeedPosts([...feed.posts, ...ownPosts.filter(post => !indexedUris.has(post.uri))], timelineReposts).filter((post) =>
     (!data.tag || hasPostTag(post.record.text, data.tag)) && (!data.category || postCategory(post.record) === data.category))
-  const body = payload as { cursor?: unknown; page?: number; total?: number }
-  const currentPage = body.page ?? page
   return {
     posts: await hydrateAuthorNames(await hydrateViewerRecords(posts, data.did, data.accessJwt)),
-    cursor: query
-      ? typeof body.cursor === 'string' && body.cursor ? body.cursor : null
-      : currentPage * (data.limit ?? FEED_PAGE_SIZE) < (body.total ?? 0) ? String(currentPage + 1) : null,
+    cursor: payload.cursor || null,
   }
 }
 
