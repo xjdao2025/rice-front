@@ -129,8 +129,8 @@ input:-webkit-autofill:focus {
 .notification-dot { width: 7px; height: 7px; border-radius: 50%; background: #bc3d35; }
 
 /* Plaza */
-.plaza-tags { margin-bottom: var(--xj-card-gap); display: flex; gap: 8px; }
-.plaza-tag { min-height: 32px; padding: 0 14px; border: 1px solid var(--xj-line); border-radius: 999px; display: inline-flex; align-items: center; background: var(--xj-surface); color: var(--xj-accent); font-size: var(--xj-font-body); font-weight: 600; }
+.plaza-tags { min-width: 0; margin-bottom: var(--xj-card-gap); display: flex; gap: var(--xj-form-inline-gap); overflow-x: auto; }
+.plaza-tag { flex: 0 0 auto; white-space: nowrap; min-height: 32px; padding: 0 14px; border: 1px solid var(--xj-line); border-radius: 999px; display: inline-flex; align-items: center; background: var(--xj-surface); color: var(--xj-accent); font-size: var(--xj-font-body); font-weight: 600; }
 .plaza-tag[aria-current="page"] { border-color: var(--xj-accent); background: var(--xj-accent); color: #fff; }
 .plaza-banner { position: relative; margin-bottom: var(--xj-card-gap); border-radius: 24px; overflow: hidden; }
 .plaza-banner-track { width: 100%; }
@@ -750,6 +750,8 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px soli
 }
 @media (max-width: 620px) {
   :root { --xj-panel-inset: 20px; }
+  .plaza-tags { gap: calc(var(--xj-form-inline-gap) / 2); }
+  .plaza-tag { padding-inline: var(--xj-form-inline-gap); }
   .topbar-actions { gap: 3px; }
   .business-dialog { width: calc(100% - 20px); border: 1px solid var(--xj-line); border-radius: 18px; height: auto; max-height: 92dvh; }
   .business-dialog .post-dialog-shell { max-height: 92dvh; }
