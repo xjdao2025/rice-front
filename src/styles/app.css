@@ -745,6 +745,8 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px soli
   .business-dialog .post-dialog-shell { max-height: 92dvh; }
   .business-counts { gap: 16px; }
   .button-row, .form-actions { flex-wrap: wrap; }
+  .node-member-list .person-row { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .node-member-list .person-row > button { justify-self: end; }
 }
 
 /* Short requests stay silent; slow requests do not add a popup or move content. */
