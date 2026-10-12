@@ -669,6 +669,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px soli
 .alliance-panel .business-heading > :is(h2, a) { margin: 0; font-size: var(--xj-font-lead); line-height: inherit; }
 .business-heading select, .native-field input, .native-field select, .business-search { font: inherit; min-height: 52px; max-width: 100%; padding: 10px 14px; border: 1px solid var(--xj-line-strong); border-radius: 12px; color: var(--xj-text); background: var(--xj-surface); }
 .business-heading select { max-width: 50%; }
+.task-filter { flex: 0 0 auto; }
 .business-search { width: 100%; margin: 12px 0; }
 .business-card { width: 100%; text-align: left; color: inherit; }
 .business-card-body { display: block; width: 100%; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; }
