@@ -84,8 +84,8 @@ export function NodeDetail({ nodeId }: { nodeId: string }) {
     return () => { active = false }
   }, [nodeId, session?.token])
   const run = async (action: () => Promise<CommunityNode>) => { setBusy(true); setError(''); try { setNode(await action()); setRoleChange(null); window.dispatchEvent(new Event('rice-changed')) } catch (e) { setError(errorMessage(e, '操作失败')) } finally { setBusy(false) } }
-  // 三个数字是负责人账号的余额 —— 生产(xjdao.xyz)一直是这个口径,那边没有节点钱包
-  const { grain_balance: balance = 0, grain_frozen_balance: frozen = 0 } = node?.owner ?? {}
+  // 余额与节点收款、发放和稻米记录使用同一个节点账户。
+  const { grain_balance: balance = 0, grain_frozen_balance: frozen = 0 } = node ?? {}
   return <div className="page business-panel">{error && <p className="inline-error" role="alert">{error}</p>}{!node && !error && <LoadingState label="正在加载节点…" />}{node && <>
     <div className="node-detail-heading"><Avatar name={node.name} src={node.logo?.url} size="large" /><h1>{node.name}</h1></div>
     {node.description && <p className="business-description">{node.description}</p>}

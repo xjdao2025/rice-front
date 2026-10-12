@@ -24,6 +24,7 @@ function taskFields(draft: RiceTask | null | undefined, nodeId: string, editing 
   const multiple = (draft?.capacity ?? 1) > 1
   return {
     nodeId,
+    fundingSource: (draft?.funding_source ?? (draft?.funding_node_id === null || !nodeId ? 'personal' : 'node')) as 'node' | 'personal',
     title: draft?.title ?? '',
     description: draft?.description ?? '',
     organizerContact: draft?.organizer_contact ?? '',
@@ -42,7 +43,7 @@ export function TaskCreatePage({ session, nodes, initialDraft, initialError = ''
   const originalApplication = initialDraft?.application_deadline ? beijingDateTimeValue(initialDraft.application_deadline) : ''
   const originalExecution = initialDraft?.execution_deadline ? beijingDateTimeValue(initialDraft.execution_deadline) : ''
   const [fields, setFields] = useState(() => taskFields(initialDraft, initialDraft === undefined ? '' : initialDraft?.node?.id ?? nodes[0]?.id ?? '', editing))
-  const { nodeId, title, description, organizerContact, requirement, applicationDeadline, executionDeadline, rewardAmount, participationMode, multipleCapacity } = fields
+  const { nodeId, fundingSource, title, description, organizerContact, requirement, applicationDeadline, executionDeadline, rewardAmount, participationMode, multipleCapacity } = fields
   const set = <K extends keyof typeof fields>(key: K, value: (typeof fields)[K]) => setFields((current) => ({ ...current, [key]: value }))
   const [taskId, setTaskId] = useState<string | null>(initialDraft?.id ?? null)
   const [draftLoading, setDraftLoading] = useState(initialDraft === undefined)
@@ -51,7 +52,7 @@ export function TaskCreatePage({ session, nodes, initialDraft, initialError = ''
   const [busy, setBusy] = useState(false)
   const requestId = useRef('')
   const imageSelection = useRiceImages(initialDraft?.attachments ?? [])
-  const markSaved = useFormCloseState(JSON.stringify([nodeId, title, description, organizerContact, requirement, participationMode === 'single' ? 1 : multipleCapacity, applicationDeadline, executionDeadline, rewardAmount, imageSelection.images.map(image => image.src)]), !draftLoading, busy, onCloseStateChange, () => submit(editing ? 'open' : 'draft'))
+  const markSaved = useFormCloseState(JSON.stringify([nodeId, fundingSource, title, description, organizerContact, requirement, participationMode === 'single' ? 1 : multipleCapacity, applicationDeadline, executionDeadline, rewardAmount, imageSelection.images.map(image => image.src)]), !draftLoading, busy, onCloseStateChange, () => submit(editing ? 'open' : 'draft'))
   const restoreImages = imageSelection.restore
   useEffect(() => {
     if (initialDraft !== undefined) return
@@ -60,7 +61,7 @@ export function TaskCreatePage({ session, nodes, initialDraft, initialError = ''
       if (!active) return
       const restoredNode = draft?.node?.id ?? nodes[0]?.id ?? ''
       if (draft) { setTaskId(draft.id); restoreImages(draft.attachments ?? []); setFields(taskFields(draft, restoredNode)) }
-      else set('nodeId', restoredNode)
+      else setFields(taskFields(null, restoredNode))
     }).catch((e) => { if (active) setError(e.message) }).finally(() => { if (active) setDraftLoading(false) })
     return () => { active = false }
   }, [session.token, restoreImages, nodes, initialDraft])
@@ -79,8 +80,7 @@ export function TaskCreatePage({ session, nodes, initialDraft, initialError = ''
   const nodeMissing = !nodeId && !personal
   // 草稿是在还管着某个节点时存的,现在已不再管理:它仍属于那个节点,不能悄悄改成个人发起
   const lostNode = personal && !!nodeId ? '这份草稿属于你已不再管理的节点，不能改为个人发起。' : ''
-  // 钱一律是发布者自己的:挂不挂节点只决定谁来管任务,不改变谁出钱
-  const fundingCopy = '发布时从你的稻米里冻结。'
+  const fundingCopy = fundingSource === 'personal' ? '使用你自己的稻米，发布时冻结。' : '使用节点稻米，不扣个人稻米。'
   function validate(step: number): string | null {
     if (step === 0) {
       if (lostNode) return lostNode
@@ -120,7 +120,7 @@ export function TaskCreatePage({ session, nodes, initialDraft, initialError = ''
     if (!requestId.current) requestId.current = crypto.randomUUID()
     try {
       const attachmentIds = await imageSelection.upload(session.token)
-      const fields = { attachmentIds, token: session.token, title, description, organizerContact: organizerContact.trim(), nodeId, requirement, capacity, applicationDeadline: applicationDeadline ? editing && applicationDeadline === originalApplication && initialDraft?.application_deadline ? initialDraft.application_deadline : beijingTimeIso(applicationDeadline) : null, executionDeadline: executionDeadline ? editing && executionDeadline === originalExecution && initialDraft?.execution_deadline ? initialDraft.execution_deadline : beijingTimeIso(executionDeadline) : null, rewardAmount: Number(rewardAmount || 0), clientRequestId: requestId.current }
+      const fields = { attachmentIds, token: session.token, title, description, organizerContact: organizerContact.trim(), nodeId, fundingSource, requirement, capacity, applicationDeadline: applicationDeadline ? editing && applicationDeadline === originalApplication && initialDraft?.application_deadline ? initialDraft.application_deadline : beijingTimeIso(applicationDeadline) : null, executionDeadline: executionDeadline ? editing && executionDeadline === originalExecution && initialDraft?.execution_deadline ? initialDraft.execution_deadline : beijingTimeIso(executionDeadline) : null, rewardAmount: Number(rewardAmount || 0), clientRequestId: requestId.current }
       // New tasks get a recoverable draft before publishing.
       let draftId = taskId
       if (editing && !draftId) throw new Error('未找到要编辑的任务，请重新打开详情页。')
@@ -136,8 +136,8 @@ export function TaskCreatePage({ session, nodes, initialDraft, initialError = ''
         throw new Error('此任务目前不能编辑。')
       } else if (task?.status === 'open' && status === 'open') {
         const iso = (date?: string | null) => date ? new Date(date).toISOString() : null
-        const published = [task.title, task.description, task.organizer_contact ?? '', task.requirement ?? '', task.capacity ?? 1, task.reward_amount, iso(task.application_deadline), iso(task.execution_deadline), (task.attachments ?? []).map((image) => image.id)]
-        const requested = [title, description, organizerContact.trim(), requirement, fields.capacity, fields.rewardAmount, fields.applicationDeadline, fields.executionDeadline, attachmentIds]
+        const published = [task.title, task.description, task.organizer_contact ?? '', task.requirement ?? '', task.capacity ?? 1, task.reward_amount, task.funding_source ?? (task.funding_node_id ? 'node' : 'personal'), iso(task.application_deadline), iso(task.execution_deadline), (task.attachments ?? []).map((image) => image.id)]
+        const requested = [title, description, organizerContact.trim(), requirement, fields.capacity, fields.rewardAmount, fields.fundingSource, fields.applicationDeadline, fields.executionDeadline, attachmentIds]
         if (JSON.stringify(published) !== JSON.stringify(requested)) throw new Error('这项任务已发布。请前往任务详情编辑。')
       } else {
         task = draftId
@@ -200,8 +200,8 @@ export function TaskCreatePage({ session, nodes, initialDraft, initialError = ''
       },
       {
         label: '参与与稻米', title: multiple ? '给每位承接者多少稻米？' : '给多少稻米？',
-        content: <><PublishTextInput isDisabled={busy} isReadOnly={rewardReadOnly} label={`${rewardLabel}（测试稻米）`} value={rewardAmount} onChange={v => { set('rewardAmount', v); setError(''); setNotice('') }} status={amountError ? { type: 'error', message: amountError } : undefined} width="100%" isRequired />{totalRewardAmount !== null && <p className={multiple ? 'publish-total' : 'muted'}>总冻结：{totalRewardCopy}</p>}<p className="muted">{fundingCopy}</p></>,
-        review: <dl className="publish-review-fields">{multiple && <div><dt>承接人数上限</dt><dd>{capacity} 人</dd></div>}<div><dt>{rewardLabel}</dt><dd>{rewardAmount} 测试稻米</dd></div><div><dt>总冻结</dt><dd>{totalRewardCopy}</dd></div><div><dt>稻米从哪出</dt><dd>{fundingCopy}</dd></div></dl>,
+        content: <>{!personal && <label className="native-field">出资钱包<select value={fundingSource} disabled={rewardReadOnly || busy} onChange={e => set('fundingSource', e.target.value as 'node' | 'personal')}><option value="node">节点钱包</option><option value="personal">我的个人钱包</option></select></label>}<PublishTextInput isDisabled={busy} isReadOnly={rewardReadOnly} label={`${rewardLabel}（测试稻米）`} value={rewardAmount} onChange={v => { set('rewardAmount', v); setError(''); setNotice('') }} status={amountError ? { type: 'error', message: amountError } : undefined} width="100%" isRequired />{totalRewardAmount !== null && <p className={multiple ? 'publish-total' : 'muted'}>总冻结：{totalRewardCopy}</p>}<p className="muted">{fundingCopy}</p></>,
+        review: <dl className="publish-review-fields">{multiple && <div><dt>承接人数上限</dt><dd>{capacity} 人</dd></div>}<div><dt>{rewardLabel}</dt><dd>{rewardAmount} 测试稻米</dd></div><div><dt>总冻结</dt><dd>{totalRewardCopy}</dd></div><div><dt>稻米从哪出</dt><dd>{fundingSource === 'personal' ? fundingCopy : `${nodeName}：${fundingCopy}`}</dd></div></dl>,
       },
     ]} />
   </section>

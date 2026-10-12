@@ -63,6 +63,7 @@ export type RiceTask = {
   total_reward_amount?: number
   my_status?: TaskStatus | null
   funding_node_id?: string | null
+  funding_source?: 'node' | 'personal'
   can_manage?: boolean
   reward_status: 'none' | 'reserved' | 'settled' | 'refunded'
   application_count: number
