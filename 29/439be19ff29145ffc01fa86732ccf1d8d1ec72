@@ -1,0 +1,24 @@
+src/features/feed/ComposePanel.test.tsx
+  s_8c80ad8d2af680::t_d37c4a81981ec4 42
+  s_8c80ad8d2af680::t_19ff5d945115ac 5-6,12,25-41
+src/lib/models.ts
+  s_8c80ad8d2af680::t_a1c3e2d369c155 13-14
+src/features/feed/ComposePanel.tsx
+  s_8c80ad8d2af680::t_12409a8822f16b 208-209
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "29439be19ff29145ffc01fa86732ccf1d8d1ec72",
+  "prompts": {},
+  "sessions": {
+    "s_8c80ad8d2af680": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e1cacbb5-9264-4c9e-8d1e-0245a530ded4",
+        "model": "unknown"
+      },
+      "human_author": "jiangplus <jiang.plus.times@gmail.com>"
+    }
+  }
+}
