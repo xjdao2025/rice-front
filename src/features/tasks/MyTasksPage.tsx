@@ -22,7 +22,7 @@ export function MyTasksPage({ initialData = null, initialError = '', loaderToken
   const groupOf = (task: RiceTask) => myTaskGroup(task, own(task), now)
   const publisher = tasks.some(own)
   const options: Array<[Group | 'all', string]> = [
-    ['all', '全部任务'], ['open', taskStatusLabel.open], ['applying', '申请中'],
+    ['all', '全部'], ['open', taskStatusLabel.open], ['applying', '申请中'],
     ['in_progress', taskStatusLabel.in_progress], ['overdue', taskStatusLabel.overdue],
     ['under_review', taskStatusLabel.under_review], ['completed', taskStatusLabel.completed],
     ['expired', taskStatusLabel.expired], ['cancelled', taskStatusLabel.cancelled],
