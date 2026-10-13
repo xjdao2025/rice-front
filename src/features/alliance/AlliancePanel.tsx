@@ -21,7 +21,7 @@ import { errorMessage } from '~/lib/util'
 
 const statusLabels = { open: '进行中', passed: '已通过', rejected: '未通过' }
 
-export function AlliancePanel() {
+export function AlliancePanel({ proposalStatus, onProposalStatusChange }: { proposalStatus?: ProposalStatus; onProposalStatusChange: (status?: ProposalStatus) => void }) {
   const [foundation, setFoundation] = useState<Foundation | null>(null)
   const [totalGranted, setTotalGranted] = useState<number | null>(null)
   const [error, setError] = useState('')
@@ -46,7 +46,7 @@ export function AlliancePanel() {
     </section>
     <Announcements />
     <NodePreview />
-    <Proposals />
+    <Proposals status={proposalStatus} onStatusChange={onProposalStatusChange} />
   </div>
 }
 
@@ -79,13 +79,12 @@ function Announcements() {
   </section>
 }
 
-function Proposals() {
+function Proposals({ status, onStatusChange }: { status?: ProposalStatus; onStatusChange: (status?: ProposalStatus) => void }) {
   const { session } = useStoredSession()
   const token = session?.token
-  const [status, setStatus] = useState<ProposalStatus | undefined>()
   const list = useGovernanceList(`${token}:${status}`, (before) => getProposals({ data: { token, status, before } }))
   return <section aria-label="提案"><h2>提案</h2>
-    <div className="filter-buttons" role="group" aria-label="提案状态">{([[undefined, '全部'], ['open', '进行中'], ['passed', '通过'], ['rejected', '未通过']] as const).map(([value, label]) => <Button key={label} label={label} variant="ghost" className={status === value ? 'active' : undefined} aria-pressed={status === value} onClick={() => setStatus(value)} />)}</div>
+    <div className="filter-buttons" role="group" aria-label="提案状态">{([[undefined, '全部'], ['open', '进行中'], ['passed', '通过'], ['rejected', '未通过']] as const).map(([value, label]) => <Button key={label} label={label} variant="ghost" className={status === value ? 'active' : undefined} aria-pressed={status === value} onClick={() => onStatusChange(value)} />)}</div>
     {list.error && <p className="inline-error" role="alert">{list.error}</p>}
     {!list.page && (list.error ? <Button label="重试" variant="secondary" onClick={list.retry} /> : <LoadingState label="正在加载提案…" />)}
     <div className="post-list">{list.page?.data.map((proposal) => <article key={proposal.id} className="content-card business-card task-card">

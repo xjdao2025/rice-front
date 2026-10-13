@@ -1,3 +1,4 @@
+import { Selector, SelectorOption } from '@astryxdesign/core/Selector'
 import { LoginLink } from '../session/LoginLink'
 import { useRouter } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
@@ -22,7 +23,7 @@ export function MyTasksPage({ initialData = null, initialError = '', loaderToken
   const groupOf = (task: RiceTask) => myTaskGroup(task, own(task), now)
   const publisher = tasks.some(own)
   const options: Array<[Group | 'all', string]> = [
-    ['all', '全部任务'], ['open', taskStatusLabel.open], ['applying', '申请中'],
+    ['all', '全部'], ['open', taskStatusLabel.open], ['applying', '申请中'],
     ['in_progress', taskStatusLabel.in_progress], ['overdue', taskStatusLabel.overdue],
     ['under_review', taskStatusLabel.under_review], ['completed', taskStatusLabel.completed],
     ['expired', taskStatusLabel.expired], ['cancelled', taskStatusLabel.cancelled],
@@ -31,7 +32,17 @@ export function MyTasksPage({ initialData = null, initialError = '', loaderToken
   const visibleOptions = options.filter(([value]) => value === 'open' || value === 'draft' ? publisher : value !== 'applying' || !publisher || tasks.some((task) => groupOf(task) === 'applying'))
   const selected = visibleOptions.some(([value]) => value === group) ? group : 'all'
   const shown = selected === 'all' ? tasks : tasks.filter((task) => groupOf(task) === selected)
-  return <div className="page business-panel list-panel"><div className="business-heading"><h1>我的任务</h1><select aria-label="我的任务筛选" value={selected} onChange={(event) => setGroup(event.target.value as Group | 'all')}>{visibleOptions.map(([value, label]) => <option key={value} value={value}>{label} {value === 'all' ? tasks.length : tasks.filter((task) => groupOf(task) === value).length}</option>)}</select></div>
+  const countFor = (value: string) => value === 'all' ? tasks.length : tasks.filter((task) => groupOf(task) === value).length
+  const renderFilterOption = ({ value }: { value: string }) => <SelectorOption
+    label={options.find(([key]) => key === value)?.[1] ?? value}
+    endContent={<span className="task-filter-count">{' '}{countFor(value)}</span>}
+    style={{ width: '100%' }} />
+  return <div className="page business-panel list-panel"><div className="business-heading"><h1>我的任务</h1><div className="task-filter">
+    <Selector label="我的任务筛选" isLabelHidden placement="below" width="6rem" value={selected}
+      options={visibleOptions.map(([value, label]) => ({ value, label: `${label} ${countFor(value)}` }))}
+      renderValue={renderFilterOption} renderOption={renderFilterOption}
+      onChange={(value) => setGroup(value as Group | 'all')} />
+  </div></div>
     {initialError && <p className="inline-error" role="alert">{initialError}</p>}<section className="task-list">{shown.map((task) => <TaskCard task={!own(task) && task.my_application_status === 'appointed' && task.my_status ? { ...task, status: task.my_status } : task} compact key={task.id} />)}</section>{!initialError && shown.length === 0 && <p className="search-hint">这里还没有任务。</p>}
   </div>
 }

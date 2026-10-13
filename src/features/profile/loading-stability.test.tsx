@@ -4,13 +4,20 @@ import type { ReactNode } from 'react'
 import { beforeEach, expect, it, vi } from 'vitest'
 import type { RiceSession, RiceUser } from '~/lib/models'
 
-const state = vi.hoisted(() => ({ session: null as RiceSession | null, saveSession: vi.fn(), navigate: vi.fn(), logout: vi.fn(), logoutAction: undefined as (() => Promise<void>) | undefined }))
+const state = vi.hoisted(() => ({ session: null as RiceSession | null, saveSession: vi.fn(), navigate: vi.fn(), logout: vi.fn(), logoutAction: undefined as (() => Promise<void>) | undefined, selectorOptions: [] as Array<{ value: string; label: string }> }))
 vi.mock('../session/session', () => ({ useStoredSession: () => ({ session: state.session, isReady: true, saveSession: state.saveSession }) }))
 vi.mock('../session/api', async (original) => ({ ...await original<typeof import('../session/api')>(), logoutRice: state.logout }))
 vi.mock('@astryxdesign/core/Button', () => ({ Button: ({ label, clickAction }: { label: string; clickAction?: () => Promise<void> }) => {
   if (label === '退出登录') state.logoutAction = clickAction
   return <button>{label}</button>
 } }))
+vi.mock('@astryxdesign/core/Selector', async (original) => {
+  const actual = await original<typeof import('@astryxdesign/core/Selector')>()
+  return { ...actual, Selector: (props: Parameters<typeof actual.Selector>[0]) => {
+    state.selectorOptions = props.options as Array<{ value: string; label: string }>
+    return <actual.Selector {...props} />
+  } }
+})
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, to, params }: { children: ReactNode; to: string; params?: { actor?: string } }) => <a href={to.replace('$actor', params?.actor ?? '$actor')}>{children}</a>,
   useNavigate: () => state.navigate,
@@ -29,6 +36,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   state.logout.mockResolvedValue(true)
   state.logoutAction = undefined
+  state.selectorOptions = []
   state.session = { token: 'token', user, pds: { did: user.did } } as RiceSession
 })
 
@@ -105,12 +113,14 @@ it('does not guess task filters or zero counts before the personal history has l
 it('renders the prefetched personal task filter on the first paint', () => {
   const html = renderToStaticMarkup(<MyTasksPage initialData={{ accountId: 'member', sessionToken: 'token', tasks: [] }} />)
   expect(html).toContain('我的任务筛选')
-  expect(html).toContain('全部任务 0')
+  expect(html).toContain('role="combobox"')
+  expect(html).toContain('aria-haspopup="listbox"')
+  expect(html.replace(/<[^>]*>/g, '')).toContain('全部 0')
   expect(html).toContain('这里还没有任务')
   expect(html).not.toContain('正在加载任务')
 })
 
-it('shows separate task states and counts in the native filter', () => {
+it('provides separate task states and counts to the library filter', () => {
   const task = (id: string, status: RiceTask['status'], creator = user, my_application_status: RiceTask['my_application_status'] = null) => ({
     id, title: id, status, creator, my_application_status, reward_amount: 1, application_deadline: null,
   }) as unknown as RiceTask
@@ -121,14 +131,17 @@ it('shows separate task states and counts in the native filter', () => {
     task('完成任务', 'completed'), task('未入选任务', 'completed', { ...user, id: 'publisher' }, 'not_selected'),
   ]
   const html = renderToStaticMarkup(<MyTasksPage initialData={{ accountId: 'member', sessionToken: 'token', tasks }} />)
-  expect(html).toContain('<select aria-label="我的任务筛选"')
-  expect(html).toContain('招募中 1')
-  expect(html).toContain('已超时 2')
-  expect(html).toContain('进行中 0')
-  expect(html).toContain('待验收 1')
+  expect(state.selectorOptions).toEqual(expect.arrayContaining([
+    { value: 'all', label: '全部 6' },
+    { value: 'open', label: '招募中 1' },
+    { value: 'overdue', label: '已超时 2' },
+    { value: 'in_progress', label: '进行中 0' },
+    { value: 'under_review', label: '待验收 1' },
+    { value: 'completed', label: '已完成 1' },
+    { value: 'not_selected', label: '未入选 1' },
+  ]))
   expect((html.match(/status-overdue/g) ?? []).length).toBe(2)
-  expect(html).toContain('已完成 1')
-  expect(html).toContain('未入选 1')
+  expect(state.selectorOptions.some(option => /审核中|已结束/.test(option.label))).toBe(false)
   expect(html).not.toContain('审核中')
   expect(html).not.toContain('已结束')
 })

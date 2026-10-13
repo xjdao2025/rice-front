@@ -264,12 +264,12 @@ describe('feed data', () => {
   })
 
   // 迁移后旧帖全部重新索引,indexedAt 都是索引那天,先后顺序和发帖顺序无关
-  it('orders reindexed posts by createdAt, as the AppView sortAt does', async () => {
+  it('keeps reindexed posts in publication order and caps future timestamps at indexing time', async () => {
     const at = (uri: string, createdAt: string, indexedAt: string) => ({ ...post, uri, indexedAt, record: { ...post.record, text: '#活动', createdAt } })
     vi.stubGlobal('fetch', vi.fn(async (url: string | URL) => String(url).includes('aerox.feed.listPosts')
-      ? new Response(JSON.stringify({ posts: [at('at://new', '2026-08-17T00:00:00Z', '2026-10-09T17:22:22Z'), at('at://old', '2026-07-30T00:00:00Z', '2026-10-09T17:22:40Z')] }))
+      ? new Response(JSON.stringify({ posts: [at('at://old', '2026-07-30T00:00:00Z', '2026-10-09T17:22:40Z'), at('at://future', '2027-01-01T00:00:00Z', '2026-08-01T00:00:00Z'), at('at://new', '2026-08-17T00:00:00Z', '2026-10-09T17:22:22Z')] }))
       : new Response(JSON.stringify({ error: 'not_found' }), { status: 404 })))
-    expect((await loadPostPage({ tag: '活动' })).posts.map((item) => item.uri)).toEqual(['at://new', 'at://old'])
+    expect((await loadPostPage({ tag: '活动' })).posts.map((item) => item.uri)).toEqual(['at://new', 'at://future', 'at://old'])
   })
 
   it('ends list pagination when listPosts returns no cursor', async () => {
