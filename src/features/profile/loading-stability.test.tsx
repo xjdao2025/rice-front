@@ -115,7 +115,7 @@ it('renders the prefetched personal task filter on the first paint', () => {
   expect(html).toContain('我的任务筛选')
   expect(html).toContain('role="combobox"')
   expect(html).toContain('aria-haspopup="listbox"')
-  expect(html).toContain('全部 0')
+  expect(html.replace(/<[^>]*>/g, '')).toContain('全部 0')
   expect(html).toContain('这里还没有任务')
   expect(html).not.toContain('正在加载任务')
 })
