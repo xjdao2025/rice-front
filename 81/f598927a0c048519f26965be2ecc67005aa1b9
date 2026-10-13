@@ -1,0 +1,35 @@
+src/components/PostList.tsx
+  s_8c80ad8d2af680::t_b30b72df72f67b 72-78
+  s_8c80ad8d2af680::t_78eaa98604df91 3
+src/features/feed/api.ts
+  s_8c80ad8d2af680::t_a0b749b45b2dd9 2
+  s_8c80ad8d2af680::t_aec0d3526b831f 102
+  s_8c80ad8d2af680::t_c8689a866133c6 120
+  s_8c80ad8d2af680::t_351495470bd017 376
+  s_8c80ad8d2af680::t_5304bfb1180a3f 397,401-403,417,419
+  s_8c80ad8d2af680::t_4bdc44ff62406f 422-434,440-441
+src/lib/models.ts
+  s_8c80ad8d2af680::t_2649430c2aca4f 63-64
+src/styles/app.css
+  s_8c80ad8d2af680::t_6d8910aaf8da3e 172-173
+src/features/feed/api.test.ts
+  s_8c80ad8d2af680::t_a88764bac20b58 123
+  s_8c80ad8d2af680::t_f037f81a07218f 378,380-381,383-384
+  s_8c80ad8d2af680::t_83227ee240077f 111-122,124-136
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "81f598927a0c048519f26965be2ecc67005aa1b9",
+  "prompts": {},
+  "sessions": {
+    "s_8c80ad8d2af680": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e1cacbb5-9264-4c9e-8d1e-0245a530ded4",
+        "model": "mimo-v2.6-flash"
+      },
+      "human_author": "jiangplus <jiang.plus.times@gmail.com>"
+    }
+  }
+}
