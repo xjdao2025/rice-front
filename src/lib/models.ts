@@ -60,6 +60,8 @@ export type PostView = {
     text: string
     createdAt: string
     xjdaoCategory?: PostCategory
+    /** 发布时按 IP 记的地点(境内到城市,境外到国家/省州),只有详情页显示 */
+    xjdaoPlace?: string
     embed?: PostEmbed
     reply?: { root: StrongRef; parent: StrongRef }
   }

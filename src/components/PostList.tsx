@@ -1,6 +1,6 @@
 import { EmptyState } from '@astryxdesign/core/EmptyState'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { Repeat2 } from 'lucide-react'
+import { MapPin, Repeat2 } from 'lucide-react'
 import { useState } from 'react'
 
 import { ContentCardHeader } from '~/components/ContentCardHeader'
@@ -69,7 +69,13 @@ export function PostCard({ post, detail = false, commentCount, onOpenComments, o
         </div>
       ) : null}
       <ContentCardHeader name={authorDisplayName(post.author)} timestamp={formatTimestamp(post.record.createdAt || post.indexedAt)}
-        profileActor={post.author.did} avatarUrl={post.author.avatar} />
+        profileActor={post.author.did} avatarUrl={post.author.avatar}
+        aside={detail && post.record.xjdaoPlace ? (
+          <span className="content-card-place" title={post.record.xjdaoPlace}>
+            <MapPin size={12} aria-hidden="true" />
+            <span>{post.record.xjdaoPlace}</span>
+          </span>
+        ) : undefined} />
       <p
         className={`post-copy${detail ? '' : ' post-copy-link'}`}
         role={detail ? undefined : 'link'}

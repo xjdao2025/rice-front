@@ -169,6 +169,8 @@ input:-webkit-autofill:focus {
 .content-card-author-copy { min-width: 0; height: 46px; display: grid; grid-template-rows: 24px 22px; align-items: center; }
 .content-card-author-copy strong { min-width: 0; overflow: hidden; color: var(--xj-text); font-size: var(--xj-font-body-strong); line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
 .content-card-time { color: var(--xj-muted); font-size: var(--xj-font-small); line-height: 1.2; }
+.content-card-place { display: inline-flex; align-items: center; gap: 4px; color: var(--xj-muted); font-size: var(--xj-font-small); line-height: 1.2; }
+.content-card-place > span { min-width: 0; max-width: 10em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .content-card-name-link:hover strong, .post-reason a:hover { color: var(--xj-accent); }
 .post-reason { margin: 0 0 10px 55px; display: flex; align-items: center; gap: 5px; color: var(--xj-text-soft); font-size: var(--xj-font-small); font-weight: 650; }
 .post-row.activity-post { border-color: rgba(31, 91, 67, .16); }

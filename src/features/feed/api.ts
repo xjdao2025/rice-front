@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
+import { getRequest } from '@tanstack/react-start/server'
 
 import { backend, backendData, isSessionAuthError, searchParams } from '~/lib/http'
 import type { PdsImage, PostCategory, PostFeed, PostImage, PostThread, PostView, RicePublicUser, RiceSession } from '~/lib/models'
@@ -98,7 +99,7 @@ function postImageEmbed(images: PdsImage[]) {
 }
 
 export function createdPostView(
-  created: Pick<CreatedPost, 'uri' | 'cid' | 'text' | 'createdAt'> & { category?: PostCategory; images?: PdsImage[] },
+  created: Pick<CreatedPost, 'uri' | 'cid' | 'text' | 'createdAt'> & { category?: PostCategory; images?: PdsImage[]; place?: string },
   session: RiceSession,
   reply?: PostView['record']['reply'],
 ): PostView {
@@ -116,6 +117,7 @@ export function createdPostView(
       text: created.text,
       createdAt: created.createdAt,
       ...(created.category ? { xjdaoCategory: created.category } : {}),
+      ...(created.place ? { xjdaoPlace: created.place } : {}),
       ...(reply ? { reply } : {}),
       ...(created.images?.length ? { embed: postImageEmbed(created.images) } : {}),
     },
@@ -371,7 +373,7 @@ export function loadCachedThread(data: PostThreadInput): Promise<PostThread> {
 }
 
 type PdsAuth = { did: string; accessJwt: string }
-type TextPostInput = PdsAuth & { text: string; category: PostCategory; rkey: string; createdAt: string; images?: PdsImage[] }
+type TextPostInput = PdsAuth & { text: string; category: PostCategory; rkey: string; createdAt: string; images?: PdsImage[]; place?: string }
 type CreatedPost = Awaited<ReturnType<typeof createTextPostRecord>>
 
 export const uploadPostImage = createServerFn({ method: 'POST' })
@@ -392,9 +394,13 @@ export async function createTextPostRecord(data: TextPostInput) {
   const createdAt = data.createdAt
   const record = {
     $type: 'app.bsky.feed.post', text, langs: ['zh'], xjdaoCategory: data.category, createdAt,
+    ...(data.place ? { xjdaoPlace: data.place } : {}),
     ...(images.length ? { embed: postImageEmbed(images) } : {}),
   }
   let body: { uri: string; cid: string }
+  // 认领已经发出去的那条时以它记录里的地点为准:地点不参与同一性判断(IP 会变),
+  // 但实际展示的是写进 PDS 的那一份
+  let place = data.place
   try {
     body = await createPdsRecord(data.accessJwt, { repo: data.did, collection: 'app.bsky.feed.post', rkey: data.rkey, record })
   } catch (error) {
@@ -408,20 +414,31 @@ export async function createTextPostRecord(data: TextPostInput) {
     // to the reader. Publish it under a fresh key instead of blocking the composer.
     if (existing.value.text !== text || existing.value.createdAt !== createdAt || existing.value.xjdaoCategory !== data.category || JSON.stringify(imageIdentity(existing.value.embed)) !== JSON.stringify(imageIdentity(record.embed))) return createTextPostRecord({ ...data, rkey: newPostRecordKey() })
     body = existing
+    place = existing.value.xjdaoPlace
   }
-  return { uri: body.uri, cid: body.cid, text, createdAt, category: data.category, ...(images.length ? { images } : {}) }
+  return { uri: body.uri, cid: body.cid, text, createdAt, category: data.category, ...(place ? { place } : {}), ...(images.length ? { images } : {}) }
 }
 
-/** 帖子直接写进用户的 PDS,写之前先让 rice 审一遍(阿里云内容安全);不通过就抛出 rice 的提示,不写 */
-export async function moderatePost(token: string, text: string, images: PdsImage[] = []) {
-  await backendData('/api/moderation/check', { method: 'POST', token, json: { text, images: images.map((item) => item.image.ref.$link) } })
+/** 发布者的 IP 只能从服务端的请求头里取,浏览器送来的字段一律不可信。Traefik 把真实
+ *  客户端放在 X-Forwarded-For 的第一段(xjdao.net 前面没有 CDN,没有第二跳)。 */
+function clientIp() {
+  return getRequest().headers.get('x-forwarded-for')?.split(',')[0].trim() || undefined
+}
+
+/** 帖子直接写进用户的 PDS,写之前先让 rice 审一遍(阿里云内容安全);不通过就抛出 rice 的提示,不写。
+ *  同一次请求把发布者 IP 一起送去,rice 按它算出地点(境内到城市、境外到国家/省州)回给我们。 */
+export async function moderatePost(token: string, text: string, images: PdsImage[] = [], ip?: string) {
+  const checked = await backendData<{ allowed: boolean; place?: string | null }>('/api/moderation/check', {
+    method: 'POST', token, json: { text, images: images.map((item) => item.image.ref.$link), ip },
+  })
+  return checked?.place ?? undefined
 }
 
 export const createTextPost = createServerFn({ method: 'POST' })
   .validator((data: TextPostInput & { token: string }) => data)
   .handler(async ({ data }) => {
-    await moderatePost(data.token, data.text.trim(), data.images)
-    return createTextPostRecord(data)
+    const place = await moderatePost(data.token, data.text.trim(), data.images, clientIp())
+    return createTextPostRecord({ ...data, place })
   })
 
 type DeletePostInput = PdsAuth & { uri: string }

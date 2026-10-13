@@ -108,6 +108,32 @@ describe('post images', () => {
     await expect(moderatePost('rice-token', '违规内容')).rejects.toThrow('违规')
   })
 
+  it('把发布者 IP 一起送给 rice,拿回地点;拿不到就没有地点', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(Response.json({ data: { allowed: true, place: '广东省·广州市' } }))
+      .mockResolvedValueOnce(Response.json({ data: { allowed: true, place: null } }))
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(moderatePost('rice-token', '去插秧', [], '1.2.3.4')).resolves.toBe('广东省·广州市')
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ text: '去插秧', images: [], ip: '1.2.3.4' })
+    await expect(moderatePost('rice-token', '去插秧')).resolves.toBeUndefined()
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ text: '去插秧', images: [] })
+  })
+
+  it('地点写进帖子记录,没有地点就不写这个键', async () => {
+    const fetchMock = vi.fn().mockImplementation(() => new Response(JSON.stringify({ uri: post.uri, cid: 'created' })))
+    vi.stubGlobal('fetch', fetchMock)
+    const input = { did: 'did:example', accessJwt: 'pds-token', text: '去插秧', category: 'post' as const, rkey: 'recordkey', createdAt: post.indexedAt }
+    const session = { user: { nickname: 'Mo' }, pds: { did: 'did:example', handle: 'mo.local' } } as RiceSession
+
+    const created = await createTextPostRecord({ ...input, place: '广东省·广州市' })
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).record.xjdaoPlace).toBe('广东省·广州市')
+    expect(createdPostView(created, session).record.xjdaoPlace).toBe('广东省·广州市')
+
+    await createTextPostRecord(input)
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).record).not.toHaveProperty('xjdaoPlace')
+    expect(createdPostView(await createTextPostRecord(input), session).record.xjdaoPlace).toBeUndefined()
+  })
+
   it('blocks more than nine images, invalid blob sizes, and galleries without real dimensions', async () => {
     const fetchMock = vi.fn()
     vi.stubGlobal('fetch', fetchMock)
@@ -349,11 +375,13 @@ describe('feed data', () => {
     const rkey = newPostRecordKey()
     expect(rkey).toMatch(/^[234567abcdefghij][234567abcdefghijklmnopqrstuvwxyz]{12}$/)
     expect(newPostRecordKey() > rkey).toBe(true)
-    const input = { did: 'did:alice', accessJwt: 'pds-token', text: '一起种花 #社区', category: 'post' as const, rkey, createdAt: '2026-09-15T01:00:00.000Z' }
+    const input = { did: 'did:alice', accessJwt: 'pds-token', text: '一起种花 #社区', category: 'post' as const, rkey, createdAt: '2026-09-15T01:00:00.000Z', place: '广东省·广州市' }
     const uri = `at://${input.did}/app.bsky.feed.post/${rkey}`
-    const fetchMock = vi.fn().mockRejectedValueOnce(new Error('response lost')).mockResolvedValueOnce(new Response(JSON.stringify({ uri, cid: 'stored-cid', value: { text: input.text, createdAt: input.createdAt, xjdaoCategory: 'post' } })))
+    const stored = { text: input.text, createdAt: input.createdAt, xjdaoCategory: 'post', xjdaoPlace: '山东省·济南市' }
+    const fetchMock = vi.fn().mockRejectedValueOnce(new Error('response lost')).mockResolvedValueOnce(new Response(JSON.stringify({ uri, cid: 'stored-cid', value: stored })))
     vi.stubGlobal('fetch', fetchMock)
-    await expect(createTextPostRecord(input)).resolves.toMatchObject({ uri, cid: 'stored-cid' })
+    // 地点不参与同一性判断(换台机器发 IP 会变),认领时以已经写进 PDS 的那份为准
+    await expect(createTextPostRecord(input)).resolves.toMatchObject({ uri, cid: 'stored-cid', place: '山东省·济南市' })
     expect(JSON.parse(fetchMock.mock.calls[0][1].body).rkey).toBe(rkey)
     expect(String(fetchMock.mock.calls[1][0])).toContain(`rkey=${rkey}`)
     expect(fetchMock.mock.calls[1][1].headers.Authorization).toBe('Bearer pds-token')
