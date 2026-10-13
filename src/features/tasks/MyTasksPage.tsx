@@ -38,11 +38,11 @@ export function MyTasksPage({ initialData = null, initialError = '', loaderToken
     endContent={<span className="task-filter-count">{' '}{countFor(value)}</span>}
     style={{ width: '100%' }} />
   return <div className="page business-panel list-panel"><div className="business-heading"><h1>我的任务</h1><div className="task-filter">
-      <Selector label="我的任务筛选" isLabelHidden placement="below" width="8rem" value={selected}
-        options={visibleOptions.map(([value, label]) => ({ value, label: `${label} ${countFor(value)}` }))}
-        renderValue={renderFilterOption} renderOption={renderFilterOption}
-        onChange={(value) => setGroup(value as Group | 'all')} />
-    </div></div>
+    <Selector label="我的任务筛选" isLabelHidden placement="below" width="6rem" value={selected}
+      options={visibleOptions.map(([value, label]) => ({ value, label: `${label} ${countFor(value)}` }))}
+      renderValue={renderFilterOption} renderOption={renderFilterOption}
+      onChange={(value) => setGroup(value as Group | 'all')} />
+  </div></div>
     {initialError && <p className="inline-error" role="alert">{initialError}</p>}<section className="task-list">{shown.map((task) => <TaskCard task={!own(task) && task.my_application_status === 'appointed' && task.my_status ? { ...task, status: task.my_status } : task} compact key={task.id} />)}</section>{!initialError && shown.length === 0 && <p className="search-hint">这里还没有任务。</p>}
   </div>
 }
