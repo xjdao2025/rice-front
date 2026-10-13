@@ -672,6 +672,8 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px soli
 .business-heading select, .native-field input, .native-field select, .business-search { font: inherit; min-height: 52px; max-width: 100%; padding: 10px 14px; border: 1px solid var(--xj-line-strong); border-radius: 12px; color: var(--xj-text); background: var(--xj-surface); }
 .business-heading select { max-width: 50%; }
 .task-filter { flex: 0 0 auto; }
+/* Align the visible text with the chevron, beyond line-box centering. */
+.task-filter [role="combobox"] .astryx-selector-option { transform: translateY(-1px); }
 .task-filter-count { min-width: 2ch; text-align: end; font-size: var(--text-body-size); font-variant-numeric: tabular-nums; }
 .business-search { width: 100%; margin: 12px 0; }
 .business-card { width: 100%; text-align: left; color: inherit; }
