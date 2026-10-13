@@ -38,7 +38,7 @@ export function MyTasksPage({ initialData = null, initialError = '', loaderToken
     endContent={<span className="task-filter-count">{' '}{countFor(value)}</span>}
     style={{ width: '100%' }} />
   return <div className="page business-panel list-panel"><div className="business-heading"><h1>我的任务</h1><div className="task-filter">
-      <Selector label="我的任务筛选" isLabelHidden placement="below" width="10rem" value={selected}
+      <Selector label="我的任务筛选" isLabelHidden placement="below" width="8rem" value={selected}
         options={visibleOptions.map(([value, label]) => ({ value, label: `${label} ${countFor(value)}` }))}
         renderValue={renderFilterOption} renderOption={renderFilterOption}
         onChange={(value) => setGroup(value as Group | 'all')} />
