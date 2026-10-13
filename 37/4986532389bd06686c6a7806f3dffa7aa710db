@@ -1,0 +1,26 @@
+src/features/feed/api.test.ts
+  s_8c80ad8d2af680::t_5160a416f9a83a 363-374
+  s_8c80ad8d2af680::t_28e29f98df74f8 128-134
+  s_8c80ad8d2af680::t_4ddaa299b32c8f 122
+src/features/feed/api.ts
+  s_8c80ad8d2af680::t_c3209ed270ef51 5
+  s_8c80ad8d2af680::t_4cc35ac0fc4a78 406-409
+src/features/feed/ComposePanel.tsx
+  s_8c80ad8d2af680::t_e127d9d4a49d96 190-191
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "374986532389bd06686c6a7806f3dffa7aa710db",
+  "prompts": {},
+  "sessions": {
+    "s_8c80ad8d2af680": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e1cacbb5-9264-4c9e-8d1e-0245a530ded4",
+        "model": "mimo-v2.6-flash"
+      },
+      "human_author": "jiangplus <jiang.plus.times@gmail.com>"
+    }
+  }
+}
