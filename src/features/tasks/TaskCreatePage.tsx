@@ -74,7 +74,7 @@ export function TaskCreatePage({ session, nodes, initialDraft, initialError = ''
   const rewardReadOnly = editing && ['open', 'in_progress', 'overdue', 'under_review'].includes(initialDraft?.status ?? '')
   const amountError = rewardAmount === '' ? null : integerInputError(rewardAmount, rewardLabel)
   const totalRewardAmount = !amountError && rewardAmount !== '' && !capacityError ? Number(rewardAmount) * capacity : null
-  const totalRewardCopy = totalRewardAmount === null ? '待填写' : multiple ? `${rewardAmount} × ${capacity} = ${totalRewardAmount} 测试稻米` : `${totalRewardAmount} 测试稻米`
+  const totalRewardCopy = totalRewardAmount === null ? '待填写' : multiple ? `${rewardAmount} × ${capacity} = ${totalRewardAmount} 稻米` : `${totalRewardAmount} 稻米`
   // 没有可管的节点却能进到这里,说明是平台授权的个人发布者:奖励从自己的稻米里冻结
   const personal = nodes.length === 0
   const nodeMissing = !nodeId && !personal
@@ -200,8 +200,8 @@ export function TaskCreatePage({ session, nodes, initialDraft, initialError = ''
       },
       {
         label: '参与与稻米', title: multiple ? '给每位承接者多少稻米？' : '给多少稻米？',
-        content: <>{!personal && <label className="native-field">出资钱包<select value={fundingSource} disabled={rewardReadOnly || busy} onChange={e => set('fundingSource', e.target.value as 'node' | 'personal')}><option value="node">节点钱包</option><option value="personal">我的个人钱包</option></select></label>}<PublishTextInput isDisabled={busy} isReadOnly={rewardReadOnly} label={`${rewardLabel}（测试稻米）`} value={rewardAmount} onChange={v => { set('rewardAmount', v); setError(''); setNotice('') }} status={amountError ? { type: 'error', message: amountError } : undefined} width="100%" isRequired />{totalRewardAmount !== null && <p className={multiple ? 'publish-total' : 'muted'}>总冻结：{totalRewardCopy}</p>}<p className="muted">{fundingCopy}</p></>,
-        review: <dl className="publish-review-fields">{multiple && <div><dt>承接人数上限</dt><dd>{capacity} 人</dd></div>}<div><dt>{rewardLabel}</dt><dd>{rewardAmount} 测试稻米</dd></div><div><dt>总冻结</dt><dd>{totalRewardCopy}</dd></div><div><dt>稻米从哪出</dt><dd>{fundingSource === 'personal' ? fundingCopy : `${nodeName}：${fundingCopy}`}</dd></div></dl>,
+        content: <>{!personal && <label className="native-field">出资账户<select value={fundingSource} disabled={rewardReadOnly || busy} onChange={e => set('fundingSource', e.target.value as 'node' | 'personal')}><option value="node">节点账户</option><option value="personal">我的个人账户</option></select></label>}<PublishTextInput isDisabled={busy} isReadOnly={rewardReadOnly} label={rewardLabel} value={rewardAmount} onChange={v => { set('rewardAmount', v); setError(''); setNotice('') }} status={amountError ? { type: 'error', message: amountError } : undefined} width="100%" isRequired />{totalRewardAmount !== null && <p className={multiple ? 'publish-total' : 'muted'}>总冻结：{totalRewardCopy}</p>}<p className="muted">{fundingCopy}</p></>,
+        review: <dl className="publish-review-fields">{multiple && <div><dt>承接人数上限</dt><dd>{capacity} 人</dd></div>}<div><dt>{rewardLabel}</dt><dd>{rewardAmount} 稻米</dd></div><div><dt>总冻结</dt><dd>{totalRewardCopy}</dd></div><div><dt>稻米从哪出</dt><dd>{fundingSource === 'personal' ? fundingCopy : `${nodeName}：${fundingCopy}`}</dd></div></dl>,
       },
     ]} />
   </section>

@@ -332,6 +332,7 @@ input:-webkit-autofill:focus {
 .site-info a { color: inherit; }
 .profile-site-info { margin-top: 28px; }
 .primary-link { min-height: 44px; padding: 0 15px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; background: var(--xj-accent); color: #fff; font-size: var(--xj-font-body); }
+.task-action-section > .primary-link { min-height: var(--size-element-md); height: var(--size-element-md); border-radius: var(--radius-element); }
 .signed-out-state { min-height: 55vh; display: grid; place-content: center; justify-items: center; gap: 9px; text-align: center; }
 .signed-out-state p { margin: 0; color: var(--xj-muted); font-size: var(--xj-font-body); }
 .my-posts-page { max-width: 760px; margin: 0 auto; }
@@ -603,6 +604,9 @@ button.notification-row:focus-visible { outline: 2px solid var(--xj-green, #1b60
 .button-row > *, .form-actions > * { min-width: 112px; }
 .form-actions > button { justify-content: center; }
 .form-actions > button:only-child { width: 100%; }
+.task-detail-page .review-section > .form-actions, .event-detail-actions { display: grid; grid-template-columns: minmax(0, 1fr); }
+.task-detail-page .review-section > .form-actions > button, .event-detail-actions > * { width: 100%; }
+.event-edit-link { height: var(--size-element-md); padding-inline: var(--spacing-3); border-radius: var(--radius-element); display: flex; align-items: center; justify-content: center; background: var(--color-neutral); color: var(--color-text-primary); font: inherit; white-space: nowrap; }
 .code-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--xj-form-inline-gap); }
 .form-notice { padding: 10px 12px; border-radius: 10px; background: #e8f2e2; color: #41653f; font-size: var(--xj-font-small); }
 .settings-page, .account-security-page, .profile-edit-page { max-width: 760px; }

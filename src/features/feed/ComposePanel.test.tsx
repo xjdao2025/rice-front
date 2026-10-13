@@ -7,6 +7,7 @@ const sessionState = vi.hoisted(() => ({ user: {} as Record<string, unknown> }))
 vi.mock('@tanstack/react-router', async original => ({
   ...await original<typeof import('@tanstack/react-router')>(),
   useNavigate: () => async () => undefined,
+  useRouter: () => ({ clearCache: () => undefined }),
   useBlocker: () => undefined,
 }))
 vi.mock('../session/session', () => ({ useStoredSession: () => ({ session: { token: 'token', user: sessionState.user as unknown as RiceSession['user'], pds: { did: 'did:example:account' } } as RiceSession, isReady: true }) }))

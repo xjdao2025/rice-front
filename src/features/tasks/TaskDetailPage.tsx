@@ -268,10 +268,10 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
 
         {actions.has('close') && token ? (
           <section className="task-action-section">
-            <Button label="提前结束任务" variant="destructive" onClick={() => setCloseOpen(true)} />
-            {closeOpen && <ConfirmDialog title="确认提前结束" busy={busy} error={error} onClose={() => setCloseOpen(false)} back="继续任务" confirm="确认结束" variant="destructive"
+            <Button label="提前取消任务" variant="destructive" onClick={() => setCloseOpen(true)} />
+            {closeOpen && <ConfirmDialog title="确认提前取消任务" busy={busy} error={error} onClose={() => setCloseOpen(false)} back="继续任务" confirm="确认提前取消" variant="destructive"
               onConfirm={act(() => closeTask({ data: { token, taskId } }))}>
-              {multiple ? `已验收通过的交付保留；还在承接的伙伴会被撤销指派，等待中的申请落选，没发出去的稻米退回${refundTo}。` : `承接的伙伴会被撤销指派，冻结的稻米退回${refundTo}。`}结束后不能再申请或指派。
+              {multiple ? `已验收通过的交付保留；还在承接的伙伴会被撤销指派，等待中的申请落选，没发出去的稻米退回${refundTo}。` : `承接的伙伴会被撤销指派，冻结的稻米退回${refundTo}。`}提前取消后不能再申请或指派。
             </ConfirmDialog>}
           </section>
         ) : null}

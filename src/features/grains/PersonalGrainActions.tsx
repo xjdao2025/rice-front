@@ -73,7 +73,7 @@ function GrainBalance({ token, nodeId }: { token: string; nodeId?: string }) {
     void getWallet({ data: { token, nodeId } }).then((wallet) => { if (active) setBalance(wallet.balance) }).catch(() => undefined)
     return () => { active = false }
   }, [token, nodeId])
-  return <p className="muted">{nodeId ? '节点' : '个人'}测试稻米 · 可用 <strong>{balance ?? '—'}</strong></p>
+  return <p className="muted">{nodeId ? '节点' : '个人'}稻米 · 可用 <strong>{balance ?? '—'}</strong></p>
 }
 
 function SendGrainForm({ session, to, nodeId }: { session: RiceSession; to?: string; nodeId?: string }) {

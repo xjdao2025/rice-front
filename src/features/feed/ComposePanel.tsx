@@ -1,6 +1,6 @@
 import { Button } from '@astryxdesign/core/Button'
 import { TextArea } from '~/components/AutoTextArea'
-import { useBlocker, useNavigate } from '@tanstack/react-router'
+import { useBlocker, useNavigate, useRouter } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ImagePicker } from '~/components/ContentImages'
 import { DetailDialog } from '~/components/DetailDialog'
@@ -46,6 +46,7 @@ function ComposeContent({ initialKind = 'post', editId, initialData }: ComposePa
   const loaded = initialData?.token === session?.token ? initialData : null
   const startingKind = editId ? initialKind : loaded && !loaded.managedNodes.length ? 'post' : initialKind
   const navigate = useNavigate()
+  const router = useRouter()
   const mounted = useRef(false)
   useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
   const [kind, setKind] = useState(startingKind)
@@ -155,7 +156,10 @@ function ComposeContent({ initialKind = 'post', editId, initialData }: ComposePa
     if (remaining.length) { setKind(remaining[0].value); setNotice('发布成功，其他类型的未保存内容已保留。'); return }
     closeState.current = { dirty: false, busy: false }
     if (publishedKind === 'task' && itemId) await navigate({ to: '/tasks/$taskId', params: { taskId: itemId } })
-    else if (publishedKind === 'activity' && editId && itemId) await navigate({ to: '/events/$eventId', params: { eventId: itemId } })
+    else if (publishedKind === 'activity' && editId && itemId) {
+      router.clearCache({ filter: match => match.routeId === '/events_/$eventId' && match.params.eventId === itemId })
+      await navigate({ to: '/events/$eventId', params: { eventId: itemId } })
+    }
     else await navigate({ to: publishedKind === 'activity' ? '/events' : '/' })
   }
   useEffect(() => {
@@ -211,7 +215,7 @@ function ComposeContent({ initialKind = 'post', editId, initialData }: ComposePa
   const selectKind = (value: ComposeKind) => { setKind(value); setVisitedKinds((visited) => visited.includes(value) ? visited : [...visited, value]) }
   return <div className="page compose-page">{availableKinds.length > 1 && <div className="compose-type-tabs filter-buttons" role="group" aria-label="发布类型">{availableKinds.map((item) => <Button label={item.label} variant="ghost" className={kind === item.value ? 'active' : undefined} aria-pressed={kind === item.value} isDisabled={submitting} onClick={() => selectKind(item.value)} key={item.value} />)}</div>}{notice && <p className="form-notice" role="status">{notice}</p>}
     {!editId && <div hidden={kind !== 'post'}><div className="form-stack"><div><TextArea rows={4} isDisabled={busy} label="想分享什么" value={text} onChange={setText} placeholder="分享你的见闻、想法或近况… 输入 #话题" width="100%" /><p className="compose-character-count">{text.trim().length}/{MAX_POST_TEXT_LENGTH}</p></div><ImagePicker images={previews} onSelect={(selected) => setFiles((current) => [...current, ...selected])} onRemove={(index) => setFiles((current) => current.filter((_, i) => i !== index))} disabled={busy} />{error && <p className="form-error" role="alert">{error}</p>}<div className="publish-step-actions"><Button label="发布帖子" variant="primary" isLoading={busy} isDisabled={!session || (!text.trim() && !files.length) || text.trim().length > MAX_POST_TEXT_LENGTH || busy} clickAction={submit} /></div></div></div>}
-    {canPublishToNode && visitedKinds.includes('activity') && <div hidden={kind !== 'activity'}><EventCreateForm key={session.token} session={session} nodes={publishNodes} initialDraft={loaded?.kind === 'activity' ? loaded.eventDraft : undefined} initialError={loaded?.eventDraftError} editing={Boolean(editId)} onPublished={id => { void published('activity', id) }} onCloseStateChange={updateActivity} /></div>}
+    {canPublishToNode && visitedKinds.includes('activity') && <div hidden={kind !== 'activity'}><EventCreateForm key={session.token} session={session} nodes={publishNodes} initialDraft={loaded?.kind === 'activity' ? loaded.eventDraft : undefined} initialError={loaded?.eventDraftError} editing={Boolean(editId)} onPublished={id => published('activity', id)} onCloseStateChange={updateActivity} /></div>}
     {canPublishTask && visitedKinds.includes('task') && <div hidden={kind !== 'task'}><TaskCreatePage key={session.token} session={session} nodes={publishNodes} initialDraft={loaded?.kind === 'task' ? loaded.taskDraft : undefined} initialError={loaded?.taskDraftError} editing={Boolean(editId)} onPublished={id => { void published('task', id) }} onCloseStateChange={updateTask} /></div>}
     {confirmClose && <DetailDialog title={editId ? '放弃修改' : '保存草稿'} className="post-dialog business-dialog compose-close-dialog" onClose={() => { if (!savingDrafts) finishClose(false) }}><div className="business-panel form-stack"><p>{editId ? '修改尚未保存。确定离开吗？' : '有内容尚未保存。请问是保存草稿还是直接关闭？'}</p>{!editId && dirtyPost && <p className="muted">帖子草稿含图片，仅保存在当前浏览器，重新打开发布页面可继续编辑。</p>}{closeError && <p className="form-error" role="alert">{closeError}</p>}<div className="form-actions"><Button label={editId ? '放弃修改' : '直接关闭'} variant="secondary" isDisabled={savingDrafts} clickAction={() => finishClose(true)} />{editId ? <Button label="继续编辑" variant="primary" onClick={() => finishClose(false)} /> : <Button label="保存草稿" variant="primary" isLoading={savingDrafts} isDisabled={savingDrafts} clickAction={saveAndClose} />}</div></div></DetailDialog>}
   </div>

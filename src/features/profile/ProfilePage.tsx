@@ -35,10 +35,10 @@ export function ProfilePage({ initialData = null, initialError = '' }: { initial
       <header>
         {communities.length ? (
           <div className="filter-buttons grain-wallet-tabs" role="group" aria-label="稻米账户">
-            <Button label="我的测试稻米" variant="ghost" className={!community ? 'active' : undefined} aria-pressed={!community} onClick={() => setCommunitySelection(null)} />
+            <Button label="我的稻米" variant="ghost" className={!community ? 'active' : undefined} aria-pressed={!community} onClick={() => setCommunitySelection(null)} />
             <Button label="节点稻米" variant="ghost" className={community ? 'active' : undefined} aria-pressed={!!community} onClick={() => selectCommunity(community?.id ?? communities[0].id)} />
           </div>
-        ) : <span>我的测试稻米</span>}
+        ) : <span>我的稻米</span>}
         <Button label="稻米记录" variant="ghost" isDisabled={!wallet} onClick={() => community ? void navigate({ to: '/nodes/$nodeId/grains', params: { nodeId: community.id } }) : void navigate({ to: '/me/grains' })}>稻米记录 →</Button>
       </header>
       {community && (communities.length > 1 ? (
