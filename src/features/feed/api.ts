@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 
 import { backend, backendData, isSessionAuthError, searchParams } from '~/lib/http'
 import type { PdsImage, PostCategory, PostFeed, PostImage, PostThread, PostView, RicePublicUser, RiceSession } from '~/lib/models'
-import { appviewImageUrl, createPdsRecord, deleteOwnRecord, MAX_POST_IMAGE_BYTES, MAX_POST_IMAGES, MAX_POST_TEXT_LENGTH, pdsGet, thumbUrl, POST_IMAGE_TYPES, uploadPdsImage, xrpcGet } from '~/lib/pds'
+import { appviewImageUrl, createPdsRecord, deleteOwnRecord, MAX_POST_IMAGE_BYTES, MAX_POST_IMAGES, MAX_POST_TEXT_LENGTH, newPostRecordKey, pdsGet, thumbUrl, POST_IMAGE_TYPES, uploadPdsImage, xrpcGet } from '~/lib/pds'
 
 import { hasPostTag, postCategory } from './tags'
 
@@ -403,7 +403,10 @@ export async function createTextPostRecord(data: TextPostInput) {
     const query = new URLSearchParams({ repo: data.did, collection: 'app.bsky.feed.post', rkey: data.rkey })
     const existing = await pdsGet<{ uri: string; cid: string; value: typeof record }>('com.atproto.repo.getRecord', query, data.accessJwt).catch(() => { throw error })
     const imageIdentity = (embed: typeof record.embed) => [embed?.$type, (embed?.items ?? []).map((item) => [item.image.ref.$link, item.alt, item.aspectRatio?.width, item.aspectRatio?.height])]
-    if (existing.value.text !== text || existing.value.createdAt !== createdAt || existing.value.xjdaoCategory !== data.category || JSON.stringify(imageIdentity(existing.value.embed)) !== JSON.stringify(imageIdentity(record.embed))) throw new Error('上次提交的帖子已发布。请离开发布页面后查看，再发布新内容。')
+    // The key already holds a *different* post, so it was never this payload that
+    // got published — the saved retry key is spent and the content is still owed
+    // to the reader. Publish it under a fresh key instead of blocking the composer.
+    if (existing.value.text !== text || existing.value.createdAt !== createdAt || existing.value.xjdaoCategory !== data.category || JSON.stringify(imageIdentity(existing.value.embed)) !== JSON.stringify(imageIdentity(record.embed))) return createTextPostRecord({ ...data, rkey: newPostRecordKey() })
     body = existing
   }
   return { uri: body.uri, cid: body.cid, text, createdAt, category: data.category, ...(images.length ? { images } : {}) }

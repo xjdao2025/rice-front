@@ -187,7 +187,8 @@ function ComposeContent({ initialKind = 'post', editId, initialData }: ComposePa
         images.push(image)
       }
       const result = await createTextPost({ data: { token: session.token, did: session.pds.did, accessJwt: session.pds.access_jwt, text: text.trim(), category: 'post', images, ...postRequest.current } })
-      if (postDraftStored) await deletePostDraft(session.pds.did)
+      // 发出去了就不再留草稿:留着的重试键下次发帖会撞上这条已经发布的帖子
+      await deletePostDraft(session.pds.did)
       if (!mounted.current) return
       prependCachedPost(createdPostView(result, session), session.pds.did)
       window.dispatchEvent(new Event('posts-changed'))

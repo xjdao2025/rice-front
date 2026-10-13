@@ -119,14 +119,19 @@ describe('post images', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it('recovers the same gallery after a lost response but rejects changed gallery items', async () => {
+  it('recovers the same gallery after a lost response and republishes when the stored gallery differs', async () => {
     const images = Array.from({ length: 2 }, (_, index): PdsImage => ({ ...image, image: { ...image.image, ref: { $link: `bafkreiimage${index}` } }, aspectRatio: { width: 4, height: 3 } }))
     const input = { did: 'did:example', accessJwt: 'pds-token', text: post.record.text, category: 'post' as const, rkey: 'recordkey', createdAt: post.indexedAt, images }
     const stored = { uri: post.uri, cid: 'stored', value: { text: input.text, createdAt: input.createdAt, xjdaoCategory: input.category, embed: { $type: 'app.bsky.embed.gallery', items: images.map((item) => ({ $type: 'app.bsky.embed.gallery#image', ...item })) } } }
     vi.stubGlobal('fetch', vi.fn().mockRejectedValueOnce(new Error('response lost')).mockResolvedValueOnce(new Response(JSON.stringify(stored))))
     await expect(createTextPostRecord(input)).resolves.toMatchObject({ uri: post.uri, cid: 'stored' })
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValueOnce(new Error('response lost')).mockResolvedValueOnce(new Response(JSON.stringify({ ...stored, value: { ...stored.value, embed: { ...stored.value.embed, items: stored.value.embed.items.map((item, index) => index === 1 ? { ...item, alt: '另一张' } : item) } } }))))
-    await expect(createTextPostRecord(input)).rejects.toThrow('上次提交的帖子已发布')
+    const fetchMock = vi.fn()
+      .mockRejectedValueOnce(new Error('response lost'))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ...stored, value: { ...stored.value, embed: { ...stored.value.embed, items: stored.value.embed.items.map((item, index) => index === 1 ? { ...item, alt: '另一张' } : item) } } })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ uri: `at://did:example/app.bsky.feed.post/${newPostRecordKey()}`, cid: 'fresh-cid' })))
+    vi.stubGlobal('fetch', fetchMock)
+    expect((await createTextPostRecord(input)).uri).not.toBe(post.uri)
+    expect(JSON.parse(fetchMock.mock.calls[2][1].body).rkey).not.toBe(input.rkey)
   })
 
   it('normalizes raw repo embeds for feeds and detail without an arbitrary URL proxy', () => {
@@ -355,9 +360,18 @@ describe('feed data', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
-  it('does not replace an already published post with a changed retry payload', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValueOnce(new Error('already exists')).mockResolvedValueOnce(new Response(JSON.stringify({ value: { text: '已发布内容', createdAt: '2026-09-15T01:00:00.000Z', xjdaoCategory: 'post' } }))))
-    await expect(createTextPostRecord({ did: 'did:alice', accessJwt: 'pds-token', text: '编辑后的内容', category: 'post', rkey: newPostRecordKey(), createdAt: '2026-09-15T01:00:00.000Z' })).rejects.toThrow('上次提交的帖子已发布')
+  it('publishes changed content under a fresh key when the saved retry key already holds another post', async () => {
+    const spentKey = newPostRecordKey()
+    const publishedUri = `at://did:alice/app.bsky.feed.post/${spentKey}`
+    const fetchMock = vi.fn()
+      .mockRejectedValueOnce(new Error('already exists'))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ uri: publishedUri, cid: 'stored-cid', value: { text: '已发布内容', createdAt: '2026-09-15T01:00:00.000Z', xjdaoCategory: 'post' } })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ uri: `at://did:alice/app.bsky.feed.post/${newPostRecordKey()}`, cid: 'new-cid' })))
+    vi.stubGlobal('fetch', fetchMock)
+    const created = await createTextPostRecord({ did: 'did:alice', accessJwt: 'pds-token', text: '编辑后的内容', category: 'post', rkey: spentKey, createdAt: '2026-09-15T01:00:00.000Z' })
+    expect(created.uri).not.toBe(publishedUri)
+    expect(JSON.parse(fetchMock.mock.calls[2][1].body).rkey).not.toBe(spentKey)
+    expect(fetchMock).toHaveBeenCalledTimes(3)
   })
 
   it('keeps category independent from exact searchable tags', () => {
