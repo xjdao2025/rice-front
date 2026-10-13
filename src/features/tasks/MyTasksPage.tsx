@@ -34,7 +34,7 @@ export function MyTasksPage({ initialData = null, initialError = '', loaderToken
   const shown = selected === 'all' ? tasks : tasks.filter((task) => groupOf(task) === selected)
   const countFor = (value: string) => value === 'all' ? tasks.length : tasks.filter((task) => groupOf(task) === value).length
   const renderFilterOption = ({ value }: { value: string }) => <SelectorOption
-    label={options.find(([key]) => key === value)?.[1] ?? value}
+    label={<span style={{ display: 'block', whiteSpace: 'nowrap', textAlign: value === 'all' ? 'center' : 'start' }}>{options.find(([key]) => key === value)?.[1] ?? value}</span>}
     endContent={<span className="task-filter-count">{' '}{countFor(value)}</span>}
     style={{ width: '100%', columnGap: 0 }} />
   return <div className="page business-panel list-panel"><div className="business-heading"><h1>我的任务</h1><div className="task-filter">
