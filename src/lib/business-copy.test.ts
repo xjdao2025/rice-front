@@ -7,4 +7,6 @@ it('updates saved Rice system messages without changing node names', () => {
   expect(businessCopy('邻里 · 春游 · 活动申请已通过')).toBe('邻里 · 春游 · 报名通过')
   expect(businessCopy('收款人不存在')).toBe('没找到这位伙伴，再核对一下账号。')
   expect(businessCopy('任务奖励核对')).toBe('任务奖励核对')
+  expect(businessCopy('已发布任务不能修改出资钱包')).toBe('已发布任务不能修改出资账户')
+  expect(businessCopy('我的测试稻米')).toBe('我的稻米')
 })

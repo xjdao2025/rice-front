@@ -35,7 +35,7 @@ function WalletHistory({ nodeId }: { nodeId?: string }) {
   }, [session?.token, isReady, nodeId, version])
   const more = async () => { if (!session || !wallet?.next_cursor || loading) return; const current = request.current; setLoading(true); setError(''); try { const page = await getWallet({ data: { token: session.token, nodeId, before: wallet.next_cursor } }); if (current === request.current) setWallet((previous) => ({ ...page, entries: [...(previous?.entries ?? []), ...page.entries] })) } catch (e) { if (current === request.current) setError(errorMessage(e, '加载失败')) } finally { if (current === request.current) setLoading(false) } }
   if (isReady && !session) return <div className="page"><LoginLink className="primary-link">登录后查看稻米记录</LoginLink></div>
-  return <div className="page grain-history-page"><h1>{nodeId ? '节点稻米' : '我的稻米'}</h1><p className="muted">测试稻米</p>
+  return <div className="page grain-history-page"><h1>{nodeId ? '节点稻米' : '我的稻米'}</h1><p className="muted">稻米</p>
     <section className="grain-card"><header>稻米总量</header><div className="grain-balance-row"><strong>{wallet ? wallet.balance + wallet.frozen : '—'}</strong></div><div className="grain-metrics"><div><b>{wallet?.balance ?? '—'}</b><span>可用</span></div><div><b>{wallet?.frozen ?? '—'}</b><span>冻结稻米</span></div><div><b>{wallet?.earned ?? '—'}</b><span>累计获得</span></div></div></section>
     {nodeId && session && wallet && <>
       <div className="personal-grain-actions">

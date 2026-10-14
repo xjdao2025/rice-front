@@ -44,7 +44,7 @@ it('offers completing a running task when the backend allows it', () => {
   state.session = { token: 'token', user: { id: 'publisher' } } as RiceSession
   const html = renderToStaticMarkup(<TaskDetailPage taskId={task.id} initial={{ task, error: '', viewerToken: 'token' }} />)
   expect(html).toContain('完成任务')
-  expect(html).toContain('提前结束任务')
+  expect(html).toContain('提前取消任务')
 })
 
 it('shows an expired open task immediately and hides stale recruitment actions', () => {
@@ -217,8 +217,8 @@ it('lets an administrator release a worker or end a multi-assignee task early on
   const html = render(task)
   expect(html.match(/撤销指派/g)).toHaveLength(1)
   expect(html).toContain('微信 a')
-  expect(html).toContain('提前结束任务')
+  expect(html).toContain('提前取消任务')
   const locked = render({ ...task, allowed_actions: ['release_assignee'] })
-  expect(locked).not.toContain('提前结束任务')
+  expect(locked).not.toContain('提前取消任务')
   expect(render({ ...task, allowed_actions: [] })).not.toContain('撤销指派')
 })

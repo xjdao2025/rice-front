@@ -59,7 +59,7 @@ it('appointed: 名额满后承接者能交成果,落选者看到未入选,管理
   const manager = render('appointed', 'manager').html
   expect(manager).toContain('承接中')
   expect(manager.match(/撤销指派/g)).toHaveLength(2)
-  expect(manager).toContain('提前结束任务')
+  expect(manager).toContain('提前取消任务')
   expect(manager).not.toContain('待审批申请')
   expect(render('appointed', 'guest').html).not.toContain('申请承接')
 })
@@ -79,7 +79,7 @@ it('submitted: 管理员按人验收,有待验收成果时没有提前结束;承
   const manager = render('submitted', 'manager').html
   expect(manager).toContain('小林的提交')
   expect(manager).toContain('通过并发放稻米')
-  expect(manager).not.toContain('提前结束任务')
+  expect(manager).not.toContain('提前取消任务')
   expect(render('submitted', 'worker_b').html).toContain('待验收')
   const c = render('submitted', 'worker_c')
   expect(c.html).toContain('我的进度：进行中')
@@ -96,13 +96,13 @@ it('approved: 通过验收的人看到自己已完成和已到账,其他人照�
   const c = render('approved', 'worker_c')
   expect(c.html).toContain('<h2>交成果</h2>')
   expect(myTaskGroup(c.task, false)).toBe('in_progress')
-  expect(render('approved', 'manager').html).toContain('提前结束任务')
+  expect(render('approved', 'manager').html).toContain('提前取消任务')
 })
 
 it('closed: 任务完成,没有任何动作;被撤销的人和已完成的人各自看到结果', () => {
   const manager = render('closed', 'manager').html
   expect(manager).toContain('稻米激励已发放')
-  for (const action of ['撤销指派', '提前结束任务', '通过并发放稻米', '编辑任务']) expect(manager).not.toContain(action)
+  for (const action of ['撤销指派', '提前取消任务', '通过并发放稻米', '编辑任务']) expect(manager).not.toContain(action)
   expect(render('closed', 'worker_c').html).toContain('撤销了对你的指派')
   const b = render('closed', 'worker_b')
   expect(b.html).toContain('验收通过')

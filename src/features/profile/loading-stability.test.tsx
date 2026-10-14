@@ -83,7 +83,7 @@ it('puts the policy links and ICP filing in the site footer', () => {
 it('offers the community switch alongside the personal balance only for the current session', () => {
   const adminData = { ...initialData, communities: [{ id: 'community', name: '测试社区', wallet: { ...initialData.wallet, balance: 500 } }] }
   const html = renderToStaticMarkup(<ProfilePage initialData={adminData} />)
-  expect(html).toContain('我的测试稻米')
+  expect(html).toContain('我的稻米')
   expect(html).toContain('节点稻米')
   expect(html).toContain('<strong>130</strong>')
   expect(html).not.toContain('<strong>507</strong>')

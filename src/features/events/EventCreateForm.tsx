@@ -65,7 +65,7 @@ export function eventDurationLabel(fields: EventTimes) {
   return [days ? `${days} 天` : '', hours ? `${hours} 小时` : '', remainder ? `${remainder} 分钟` : ''].filter(Boolean).join(' ')
 }
 
-export function EventCreateForm({ session, nodes, initialDraft, initialError = '', editing = false, onPublished, onCloseStateChange }: { session: RiceSession; nodes: Array<Pick<CommunityNode, 'id' | 'name'>>; initialDraft?: RiceEvent | null; initialError?: string; editing?: boolean; onPublished: (id: string) => void; onCloseStateChange: (state: FormCloseState) => void }) {
+export function EventCreateForm({ session, nodes, initialDraft, initialError = '', editing = false, onPublished, onCloseStateChange }: { session: RiceSession; nodes: Array<Pick<CommunityNode, 'id' | 'name'>>; initialDraft?: RiceEvent | null; initialError?: string; editing?: boolean; onPublished: (id: string) => void | Promise<void>; onCloseStateChange: (state: FormCloseState) => void }) {
   const mounted = useRef(false)
   useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
   const [fields, setFields] = useState(() => { if (initialDraft) return draftFields(initialDraft, editing); const start = nextTimeSlot(); return { ...emptyFields, node_id: initialDraft === null ? nodes[0]?.id ?? '' : '', application_deadline: start, starts_at: start, ends_at: addMinutes(start, DEFAULT_DURATION_MINUTES) } })
@@ -121,7 +121,7 @@ export function EventCreateForm({ session, nodes, initialDraft, initialError = '
       markSaved()
       if (status === 'draft') { setNotice('草稿已保存'); return true }
       window.dispatchEvent(new Event('rice-changed'))
-      onPublished(event.id)
+      await onPublished(event.id)
       return true
     } catch (e) { if (mounted.current) setError(errorMessage(e, '保存失败')); return false } finally { if (mounted.current) setBusy(false) }
   }
