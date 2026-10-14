@@ -1,0 +1,28 @@
+src/components/SiteFooter.tsx
+  s_8c80ad8d2af680::t_99ca37d928efe5 1-2,14
+package.json
+  s_8c80ad8d2af680::t_53d6844e808d81 12-13
+src/features/profile/loading-stability.test.tsx
+  s_8c80ad8d2af680::t_fe5723867525ce 29
+  s_8c80ad8d2af680::t_52ca2a4eb714a6 82-83
+src/lib/version.ts
+  s_8c80ad8d2af680::t_6767ac65d5a684 1-2
+scripts/update-version.mjs
+  s_8c80ad8d2af680::t_b931017d6d9945 1-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0fd91838ebcee8fe44bcceee903f7f3fe78ce7fc",
+  "prompts": {},
+  "sessions": {
+    "s_8c80ad8d2af680": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e1cacbb5-9264-4c9e-8d1e-0245a530ded4",
+        "model": "deepseek/deepseek-v4.1-flash"
+      },
+      "human_author": "jiangplus <jiang.plus.times@gmail.com>"
+    }
+  }
+}
