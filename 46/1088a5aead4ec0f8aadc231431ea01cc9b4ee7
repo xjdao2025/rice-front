@@ -1,0 +1,21 @@
+src/components/PostList.tsx
+  s_8c80ad8d2af680::t_234a241303106a 19-21
+  s_8c80ad8d2af680::t_cc9efb7c3ba73e 77
+  s_8c80ad8d2af680::t_66c4561b7654c3 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "461088a5aead4ec0f8aadc231431ea01cc9b4ee7",
+  "prompts": {},
+  "sessions": {
+    "s_8c80ad8d2af680": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e1cacbb5-9264-4c9e-8d1e-0245a530ded4",
+        "model": "deepseek/deepseek-v4.1-flash"
+      },
+      "human_author": "jiangplus <jiang.plus.times@gmail.com>"
+    }
+  }
+}
