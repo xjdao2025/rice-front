@@ -1,0 +1,29 @@
+src/features/grains/PersonalGrainActions.test.tsx
+  s_8c80ad8d2af680::t_1fbe01dc87eb66 294-310
+  s_8c80ad8d2af680::t_e4bcc5d77d50d9 41
+src/features/grains/GrainHistoryPage.tsx
+  s_8c80ad8d2af680::t_3465b61f582e9a 13
+  s_8c80ad8d2af680::t_7dcb822afa3582 42
+  s_8c80ad8d2af680::t_35f011eb86d4f5 9
+src/features/profile/ProfilePage.tsx
+  s_8c80ad8d2af680::t_fbab343390abe6 56
+src/features/grains/PersonalGrainActions.tsx
+  s_8c80ad8d2af680::t_bfa6eeaaa42c40 23-24,27-37
+  s_8c80ad8d2af680::t_96c3365abf704d 7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8475f52bbc5155a0ef49fee2a47875bc919a4b6f",
+  "prompts": {},
+  "sessions": {
+    "s_8c80ad8d2af680": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e1cacbb5-9264-4c9e-8d1e-0245a530ded4",
+        "model": "deepseek/deepseek-v4.1-flash"
+      },
+      "human_author": "jiangplus <jiang.plus.times@gmail.com>"
+    }
+  }
+}
