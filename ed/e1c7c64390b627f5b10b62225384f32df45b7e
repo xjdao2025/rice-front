@@ -1,0 +1,21 @@
+src/styles/app.css
+  s_8c80ad8d2af680::t_31693fc8ce3aab 45-47
+  s_8c80ad8d2af680::t_5989aa48e65ceb 596-599
+  s_8c80ad8d2af680::t_4e82de559b2c08 601
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ede1c7c64390b627f5b10b62225384f32df45b7e",
+  "prompts": {},
+  "sessions": {
+    "s_8c80ad8d2af680": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e1cacbb5-9264-4c9e-8d1e-0245a530ded4",
+        "model": "deepseek/deepseek-v4.1-flash"
+      },
+      "human_author": "jiangplus <jiang.plus.times@gmail.com>"
+    }
+  }
+}
