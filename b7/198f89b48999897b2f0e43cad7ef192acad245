@@ -1,0 +1,37 @@
+src/features/feed/PostThreadPanel.tsx
+  s_8c80ad8d2af680::t_c9801c827445ba 132
+  s_8c80ad8d2af680::t_d07e4dccb1e712 35
+  s_8c80ad8d2af680::t_b70d443d2af2e1 22
+src/components/PostList.tsx
+  s_8c80ad8d2af680::t_072be89d287244 73
+  s_8c80ad8d2af680::t_51e477e9955dca 47-48
+src/routes/-post-ready.test.ts
+  s_8c80ad8d2af680::t_17feca0d64fe07 34,37-48
+  s_8c80ad8d2af680::t_5299c712c27196 4,6
+  s_8c80ad8d2af680::t_0249af8aaa13f1 22
+  s_8c80ad8d2af680::t_bbef34fbfbd664 49
+src/features/feed/api.ts
+  s_8c80ad8d2af680::t_5fc51c8dd12f54 349
+  s_8c80ad8d2af680::t_b07364207252de 346-348,350
+src/routes/posts.tsx
+  s_8c80ad8d2af680::t_d152bbeff6b8bb 51
+  s_8c80ad8d2af680::t_50c17fff51b983 20-21,23-28,30
+  s_8c80ad8d2af680::t_91020975da57bb 4
+  s_8c80ad8d2af680::t_f56dede9e538f9 39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b7198f89b48999897b2f0e43cad7ef192acad245",
+  "prompts": {},
+  "sessions": {
+    "s_8c80ad8d2af680": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e1cacbb5-9264-4c9e-8d1e-0245a530ded4",
+        "model": "deepseek/deepseek-v4.1-flash"
+      },
+      "human_author": "jiangplus <jiang.plus.times@gmail.com>"
+    }
+  }
+}
