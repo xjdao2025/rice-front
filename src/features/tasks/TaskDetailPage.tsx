@@ -261,7 +261,7 @@ function TaskDetails({ taskId, initial }: { taskId: string; initial?: TaskDetail
             <Button label="完成任务" variant="primary" onClick={() => setCompleteOpen(true)} />
             {completeOpen && <ConfirmDialog title="确认完成任务" busy={busy} error={error} onClose={() => setCompleteOpen(false)} back="返回" confirm="确认完成" variant="primary"
               onConfirm={act(() => completeTask({ data: { token, taskId } }))}>
-              还在承接的伙伴（包括待验收的）都记为完成{task.reward_amount > 0 ? `，每人发放 ${task.reward_amount} 稻米` : ''}；等待中的申请落选{task.reward_amount > 0 ? `，空着名额的稻米退回${refundTo}` : ''}。适合活已经在线下做完、没在这里交成果的情况。
+              交过成果的伙伴记为完成{task.reward_amount > 0 ? `，每人发放 ${task.reward_amount} 稻米` : ''}；还没交成果的释放名额{task.reward_amount > 0 ? `，稻米退回${refundTo}` : ''}，等待中的申请落选。一个人都没交成果时不能确认完成。
             </ConfirmDialog>}
           </section>
         ) : null}
