@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { EmptyState } from '@astryxdesign/core/EmptyState'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { MapPin, Repeat2 } from 'lucide-react'
@@ -14,6 +15,9 @@ import { authorDisplayName, formatTimestamp } from '~/lib/format'
 import type { PostView } from '~/lib/models'
 
 type PostCallbacks = Pick<PostActionsProps, 'onRepostChange' | 'onPostDeleted'>
+
+/** 帖子地点先不显示:构建时给了 VITE_XIANGJIAN_POST_PLACE=1 才打开,默认关。 */
+const showPostPlace = import.meta.env.VITE_XIANGJIAN_POST_PLACE === '1'
 
 export function PostList({ posts, onRepostChange, onPostDeleted }: PostCallbacks & { posts: PostView[] }) {
   const [deletedUris, setDeletedUris] = useState(() => new Set<string>())
@@ -70,7 +74,7 @@ export function PostCard({ post, detail = false, commentCount, onOpenComments, o
       ) : null}
       <ContentCardHeader name={authorDisplayName(post.author)} timestamp={formatTimestamp(post.record.createdAt || post.indexedAt)}
         profileActor={post.author.did} avatarUrl={post.author.avatar}
-        aside={detail && post.record.xjdaoPlace ? (
+        aside={detail && showPostPlace && post.record.xjdaoPlace ? (
           <span className="content-card-place" title={post.record.xjdaoPlace}>
             <MapPin size={12} aria-hidden="true" />
             <span>{post.record.xjdaoPlace}</span>
