@@ -6,10 +6,11 @@ import { LoadingState } from '~/components/LoadingState'
 import { ConfirmDialog } from '~/components/ConfirmDialog'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { ChevronDown, QrCode, Send } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { formatTimestamp } from '~/lib/format'
 import { useStoredSession } from '../session/session'
 import { fundCommunity, getWallet, walletEntryIncoming, type RiceWallet, type WalletEntry } from './api'
+import { PersonalGrainActions } from './PersonalGrainActions'
 import { errorMessage } from '~/lib/util'
 
 const labels: Record<WalletEntry['kind'], string> = { reserved: '冻结稻米', refunded: '退还稻米', grant: '发放稻米', gift: '送稻米', reward: '内容赞赏', task_reward: '任务激励', event_fee: '活动报名', community_fund: '向节点转入稻米' }
@@ -38,14 +39,7 @@ function WalletHistory({ nodeId }: { nodeId?: string }) {
   return <div className="page grain-history-page"><h1>{nodeId ? '节点稻米' : '我的稻米'}</h1><p className="muted">稻米</p>
     <section className="grain-card"><header>稻米总量</header><div className="grain-balance-row"><strong>{wallet ? wallet.balance + wallet.frozen : '—'}</strong></div><div className="grain-metrics"><div><b>{wallet?.balance ?? '—'}</b><span>可用</span></div><div><b>{wallet?.frozen ?? '—'}</b><span>冻结稻米</span></div><div><b>{wallet?.earned ?? '—'}</b><span>累计获得</span></div></div></section>
     {nodeId && session && wallet && <>
-      <div className="personal-grain-actions">
-        <Button label="发放稻米" variant="ghost" href={`/nodes/${encodeURIComponent(nodeId)}/grains/send`}>
-          <span className="grain-action-content"><span className="grain-action-icon"><Send size={22} aria-hidden="true" /></span><span>发放稻米</span></span>
-        </Button>
-        <Button label="接收稻米" variant="ghost" href={`/nodes/${encodeURIComponent(nodeId)}/grains/receive`}>
-          <span className="grain-action-content"><span className="grain-action-icon"><QrCode size={22} aria-hidden="true" /></span><span>接收稻米</span></span>
-        </Button>
-      </div>
+      <PersonalGrainActions nodeId={nodeId} />
       <CommunityFunding nodeId={nodeId} token={session.token} onFunded={() => setVersion((value) => value + 1)} />
     </>}
     <h2>稻米记录</h2>{error && <p className="inline-error" role="alert">{error}</p>}{loading && (wallet ? <p className="refresh-status" role="status">正在加载记录…</p> : <LoadingState label="正在加载记录…" />)}

@@ -53,7 +53,7 @@ export function ProfilePage({ initialData = null, initialError = '' }: { initial
       )}
       <div className="grain-balance-row">
         <strong>{wallet ? wallet.balance + wallet.frozen : '—'}</strong>
-        {!community && <PersonalGrainActions />}
+        <PersonalGrainActions nodeId={community?.id} />
       </div>
       <div className="grain-metrics">
         <div><b>{wallet?.balance ?? '—'}</b><span>可用</span></div>

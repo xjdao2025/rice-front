@@ -38,7 +38,7 @@ vi.mock('react', async (original) => ({
   },
 }))
 
-import { grainReceiveLink, ReceiveGrainPage, SendGrainPage } from './PersonalGrainActions'
+import { grainReceiveLink, PersonalGrainActions, ReceiveGrainPage, SendGrainPage } from './PersonalGrainActions'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { Route } from '~/routes/profile.$actor.index'
 
@@ -290,4 +290,21 @@ it('shows the receiver avatar, nickname and handle centered under the QR code', 
   expect(card).toContain('class="avatar avatar--normal"')
   expect(card).toContain('<strong>爱丽丝</strong>')
   expect(card).toContain('@alice.example')
+})
+
+// 节点管理员在「我的 - 节点稻米」上也要有这两个按钮,指向节点的收 / 发页面
+it('节点稻米账户上给出发放和接收两个按钮', () => {
+  mock.session = session
+  const html = renderToStaticMarkup(<PersonalGrainActions nodeId="3mtluow7pbfr5" />)
+  expect(html).toContain('发放稻米')
+  expect(html).toContain('/nodes/3mtluow7pbfr5/grains/send')
+  expect(html).toContain('/nodes/3mtluow7pbfr5/grains/receive')
+})
+
+it('个人稻米账户上还是送稻米和接收稻米', () => {
+  mock.session = session
+  const html = renderToStaticMarkup(<PersonalGrainActions />)
+  expect(html).toContain('/me/grains/send')
+  expect(html).toContain('/me/grains/receive')
+  expect(html).not.toContain('发放稻米')
 })

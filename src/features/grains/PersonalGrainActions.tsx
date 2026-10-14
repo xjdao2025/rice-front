@@ -4,7 +4,7 @@ import { IconButton } from '@astryxdesign/core/IconButton'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useMatch, useNavigate } from '@tanstack/react-router'
 import QRCode from 'react-qr-code'
-import { QrCode, ScanLine } from 'lucide-react'
+import { QrCode, ScanLine, Send } from 'lucide-react'
 import { DetailDialog } from '~/components/DetailDialog'
 import { Avatar } from '~/components/Avatar'
 import { UserIdentity } from '~/components/UserIdentity'
@@ -20,9 +20,21 @@ export function grainReceiveLink(origin: string, did: string) {
   return `${origin}/profile/${encodeURIComponent(did)}?send=1`
 }
 
-export function PersonalGrainActions({ to }: { to?: string }) {
+/** 稻米账户上那两个按钮。带 nodeId 时是节点账户(发放给伙伴 / 收稻米),不带就是自己的。 */
+export function PersonalGrainActions({ to, nodeId }: { to?: string; nodeId?: string }) {
   const { session } = useStoredSession()
   if (!session) return null
+  if (nodeId) {
+    const node = `/nodes/${encodeURIComponent(nodeId)}/grains`
+    return <div className="personal-grain-actions">
+      <Button label="发放稻米" variant="ghost" href={`${node}/send`}>
+        <span className="grain-action-content"><span className="grain-action-icon"><Send size={22} aria-hidden="true" /></span><span>发放稻米</span></span>
+      </Button>
+      <Button label="接收稻米" variant="ghost" href={`${node}/receive`}>
+        <span className="grain-action-content"><span className="grain-action-icon"><QrCode size={22} aria-hidden="true" /></span><span>接收稻米</span></span>
+      </Button>
+    </div>
+  }
   const own = !to || to === session.pds.did
   return <div className="personal-grain-actions">
       <Button label="送稻米" variant="ghost" href={`/me/grains/send${own ? '' : `?to=${encodeURIComponent(to)}`}`}>
