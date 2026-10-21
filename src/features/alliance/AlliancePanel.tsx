@@ -195,6 +195,6 @@ function GovernanceBody({ attachment }: { attachment: RiceAttachment }) {
     {readable && html === null && !error && <LoadingState label="正在加载正文…" />}
     {html !== null && (htmlPreview ? <iframe title={attachment.filename || '正文'} sandbox="allow-same-origin" referrerPolicy="no-referrer" onLoad={(event) => { stopObserving.current?.(); stopObserving.current = observeGovernanceBody(event.currentTarget) }} srcDoc={`<base href="${new URL(url, window.location.origin).href.replaceAll('"', '&quot;')}"><style>${bodyStyle}</style>${html}`} /> : <p className="business-description">{html}</p>)}
     {image && <img className="governance-attachment-image" src={url} alt={attachment.filename || '附件图片'} />}
-    <a href={readable ? `${url}?download=1` : url} target="_blank" rel="noopener noreferrer">{readable ? '下载原文附件' : '打开附件'}</a>
+    <a href={htmlPreview ? `${url}?download=html` : readable ? `${url}?download=1` : url} target="_blank" rel="noopener noreferrer">{readable ? '下载原文附件' : '打开附件'}</a>
   </div>
 }

@@ -95,6 +95,10 @@ function UserProfileContent({ actor, initialSend = false }: UserProfileProps) {
             <Avatar name={authorDisplayName(profile)} src={profile.avatar} size="large" />
             <h1>{authorDisplayName(profile)}</h1>
             <p className="social-profile-handle">@{profile.handle}</p>
+            <p className="social-profile-did">{profile.did}</p>
+            {profile.walletAddress ? (
+              <p className="social-profile-wallet">Semi ID {profile.walletAddress}</p>
+            ) : null}
             {profile.description ? (
               <p className="social-profile-description">{profile.description}</p>
             ) : null}

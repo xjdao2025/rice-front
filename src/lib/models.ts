@@ -21,7 +21,10 @@ export type RiceUser = {
 
 export type RiceAttachment = { id: string; kind: string; filename: string; content_type: string; byte_size: number; url: string }
 export type HistorySnapshot = Record<string, string | number | string[] | null>
-export type RicePublicUser = Pick<RiceUser, 'id' | 'did' | 'handle' | 'nickname' | 'bio' | 'avatar' | 'node_member'>
+export type RicePublicUser = Pick<RiceUser, 'id' | 'did' | 'handle' | 'nickname' | 'bio' | 'avatar' | 'node_member'> & {
+  // 只有公开主页接口带。搜索和嵌在帖子里的作者没有这个字段。
+  wallet_address?: string | null
+}
 
 export type RiceSession = {
   token: string
@@ -110,6 +113,7 @@ export type SocialProfile = {
   followersCount: number
   followsCount: number
   postsCount: number
+  walletAddress?: string
   viewer?: { following?: string; followedBy?: string }
 }
 

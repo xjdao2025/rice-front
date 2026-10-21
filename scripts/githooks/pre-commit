@@ -1,0 +1,48 @@
+#!/bin/bash
+# 提交时把页脚版本写成 1.<序号>+<日期>。
+# 序号是 `git log --oneline | wc -l`。默认的 git log 一行提交占多行，所以加 --oneline，wc 数的才是提交个数。
+# 这次提交还没进 log：新提交用 wc+1，提交完成后 wc 与页脚里的序号相同。
+# --amend 时 HEAD 已经算进去，不再 +1。
+set -euo pipefail
+
+root=$(git rev-parse --show-toplevel)
+cd "$root"
+
+if git rev-parse --verify HEAD >/dev/null 2>&1; then
+  seq=$(git log --oneline | wc -l | tr -d '[:space:]')
+else
+  seq=0
+fi
+if [[ ! "$seq" =~ ^[0-9]+$ ]]; then
+  echo "git log 没有数出提交序号：${seq}" >&2
+  exit 1
+fi
+
+# git 2.55 的 pre-commit 看不到 GIT_REFLOG_ACTION。--amend 时父进程命令行里有 --amend，
+# HEAD 已经算进 wc，序号不再 +1。
+if ! ps -o command= -p "$PPID" | grep -Eq '(^|[[:space:]])--amend($|[[:space:]=])'; then
+  seq=$((seq + 1))
+fi
+
+date=$(TZ=Asia/Shanghai date +%Y-%m-%d)
+version="1.${seq}+${date}"
+
+file=src/lib/version.ts
+if [[ ! -f "$file" ]]; then
+  echo "找不到 ${file}" >&2
+  exit 1
+fi
+
+if grep -q "APP_VERSION = '${version}'" "$file"; then
+  echo "版本号没变: ${version}"
+else
+  if ! grep -q "APP_VERSION = '" "$file"; then
+    echo "${file} 里没有 APP_VERSION" >&2
+    exit 1
+  fi
+  sed -i.bak "s/APP_VERSION = '.*'/APP_VERSION = '${version}'/" "$file"
+  rm -f "${file}.bak"
+  echo "前端版本号 → ${version}"
+fi
+
+git add "$file"

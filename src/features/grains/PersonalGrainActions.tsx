@@ -90,7 +90,10 @@ function GrainBalance({ token, nodeId }: { token: string; nodeId?: string }) {
 
 function SendGrainForm({ session, to, nodeId }: { session: RiceSession; to?: string; nodeId?: string }) {
   const navigate = useNavigate()
-  const scanning = Boolean(useMatch({ from: '/me/grains_/send/scan', shouldThrow: false }))
+  // 个人和节点共用这一页。扫码是子路由，组件不换，填过的数量和留言还在。
+  const personalScan = Boolean(useMatch({ from: '/me/grains_/send/scan', shouldThrow: false }))
+  const nodeScan = Boolean(useMatch({ from: '/nodes_/$nodeId/grains_/send/scan', shouldThrow: false }))
+  const scanning = nodeId ? nodeScan : personalScan
   const [identifier, setIdentifier] = useState(to ?? '')
   const [amount, setAmount] = useState('')
   const [memo, setMemo] = useState('')
@@ -157,9 +160,14 @@ function SendGrainForm({ session, to, nodeId }: { session: RiceSession; to?: str
     void lookup(query)
   }
   useEffect(() => { if (to) autoCheck(to) }, [to])
+  const openScan = () => {
+    if (nodeId) void navigate({ to: '/nodes/$nodeId/grains/send/scan', params: { nodeId } })
+    else void navigate({ to: '/me/grains/send/scan', search: {} })
+  }
   const receiveCode = (value: string) => {
     changeIdentifier(value); autoCheck(value)
-    void navigate({ to: '/me/grains/send', search: {} })
+    if (nodeId) void navigate({ to: '/nodes/$nodeId/grains/send', params: { nodeId } })
+    else void navigate({ to: '/me/grains/send', search: {} })
   }
   const cancelConfirmation = () => {
     if (pending.current) return
@@ -187,7 +195,7 @@ function SendGrainForm({ session, to, nodeId }: { session: RiceSession; to?: str
         <GrainBalance token={session.token} nodeId={nodeId} />
         <div className="grain-recipient-field">
           <TextInput label="送给谁" value={identifier} onChange={changeIdentifier} onBlur={() => autoCheck(identifier)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.nativeEvent.isComposing) autoCheck(identifier) }} description="填写手机号、邮箱、用户名、昵称或 DID。" isDisabled={busy || confirming } width="100%" />
-          {!nodeId && <IconButton label="扫一扫" icon={<ScanLine size={22} />} variant="ghost" isDisabled={busy || confirming } onClick={() => void navigate({ to: '/me/grains/send/scan', search: {} })} />}
+          <IconButton label="扫一扫" icon={<ScanLine size={22} />} variant="ghost" isDisabled={busy || confirming } onClick={openScan} />
         </div>
         {candidates.length > 0 && !confirming && <p className="muted">找到 {candidates.length} 位伙伴，点选要送的人：</p>}
         {candidates.length > 0 && !confirming && <div className="people-list grain-recipient-candidates" role="listbox" aria-label="选择送给谁">{candidates.map((user) => <button type="button" role="option" aria-selected={false} className="person-row search-person-row" key={user.id} disabled={busy} onClick={() => pick(user)}>

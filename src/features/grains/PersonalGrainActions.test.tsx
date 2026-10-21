@@ -6,7 +6,7 @@ import { defaultParseSearch } from '@tanstack/react-router'
 const mock = vi.hoisted(() => ({
   recipient: vi.fn(), send: vi.fn(), session: null as RiceSession | null,
   stored: null as RiceSession | null, values: [] as unknown[], index: 0,
-  parent: [] as unknown[], child: [] as unknown[], key: '', scanning: false,
+  parent: [] as unknown[], child: [] as unknown[], key: '', scanning: false, nodeId: undefined as string | undefined,
   navigate: vi.fn(),
 }))
 vi.mock('./api', () => ({ findTransferRecipients: mock.recipient, sendPersonalGrains: mock.send }))
@@ -62,7 +62,7 @@ function cleanup() {
 }
 function render() {
   mock.values = mock.parent; mock.index = 0
-  const form = elements(SendGrainPage({})).find((node) => node.props.session)
+  const form = elements(SendGrainPage({ nodeId: mock.nodeId })).find((node) => node.props.session)
   if (!form) return []
   const key = String(form.key)
   if (key !== mock.key) { cleanup(); mock.child = []; mock.key = key }
@@ -82,7 +82,8 @@ async function confirmRecipient(identifier = '@bob.example') {
 beforeEach(() => {
   mock.session = session; mock.stored = session
   mock.recipient.mockResolvedValue(found)
-  mock.navigate.mockImplementation(async ({ to }: { to: string }) => { mock.scanning = to === '/me/grains/send/scan' })
+  mock.nodeId = undefined
+  mock.navigate.mockImplementation(async ({ to }: { to: string }) => { mock.scanning = to.endsWith('/scan') })
   vi.stubGlobal('window', Object.assign(new EventTarget(), { location: { origin: 'https://community.example' } }))
 })
 afterEach(() => {
@@ -177,6 +178,24 @@ it('reports no match when the search finds nobody', async () => {
   change('送给谁', '没有这个人')
   ;(field('送给谁')!.onBlur as () => void)()
   await vi.waitFor(() => expect(render().find((node) => node.props.role === 'alert')?.props.children).toBe('没找到这位伙伴，再核对一下账号。'))
+})
+
+it('节点发放页用同一套扫码，扫完留在节点发放页', async () => {
+  mock.nodeId = '3mtluow7pbfr5'
+  change('送多少稻米', '12')
+  ;(field('扫一扫')!.onClick as () => void)()
+  expect(mock.navigate).toHaveBeenLastCalledWith({ to: '/nodes/$nodeId/grains/send/scan', params: { nodeId: '3mtluow7pbfr5' } })
+  const scanner = render().find((node) => typeof node.props.onRead === 'function')!
+  ;(scanner.props.onRead as (value: string) => void)('13800138000')
+  expect(mock.navigate).toHaveBeenLastCalledWith({ to: '/nodes/$nodeId/grains/send', params: { nodeId: '3mtluow7pbfr5' } })
+  expect(field('送给谁')?.value).toBe('13800138000')
+  expect(field('送多少稻米')?.value).toBe('12')
+  expect(mock.recipient).toHaveBeenCalledWith({ data: { token: 'rice-alice', identifier: '13800138000' } })
+  await vi.waitFor(() => expect(render().find((node) => node.props.role === 'status')).toBeDefined())
+  await action('下一步')()
+  mock.send.mockResolvedValueOnce(receipt)
+  await action('确认送出')()
+  expect(mock.send).toHaveBeenCalledWith({ data: expect.objectContaining({ to: 'bob-id', amount: 12, nodeId: '3mtluow7pbfr5' }) })
 })
 
 it('checks a scanned recipient once before sending', async () => {

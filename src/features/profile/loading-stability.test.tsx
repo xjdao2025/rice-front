@@ -79,7 +79,7 @@ it('puts the policy links and ICP filing in the site footer', () => {
   }
   expect(html).toContain('href="https://beian.miit.gov.cn/"')
   expect(html).toContain('京ICP备2025136647号')
-  // 版本号是编译进包里的常量,见 scripts/update-version.mjs
+  // 版本号是编译进包里的常量,见 scripts/githooks/pre-commit
   expect(html).toContain(`版本 ${APP_VERSION}`)
 })
 

@@ -85,7 +85,8 @@ export async function loadSocialProfile(actor: string, accessJwt?: string) {
   const social = pds.status === 'fulfilled' ? normalizeSocialProfile(pds.value) : null
   if (rice.status === 'fulfilled') {
     const profile = rice.value.data
-    return { ...(social ?? { followersCount: 0, followsCount: 0, postsCount: 0 }), socialAvailable: Boolean(social), did: profile.did, handle: profile.handle, displayName: profile.nickname || social?.displayName, description: profile.bio || social?.description, avatar: profile.avatar?.url || social?.avatar } satisfies SocialProfile
+    const walletAddress = profile.wallet_address?.trim()
+    return { ...(social ?? { followersCount: 0, followsCount: 0, postsCount: 0 }), socialAvailable: Boolean(social), did: profile.did, handle: profile.handle, displayName: profile.nickname || social?.displayName, description: profile.bio || social?.description, avatar: profile.avatar?.url || social?.avatar, ...(walletAddress ? { walletAddress } : {}) } satisfies SocialProfile
   }
   if (social) return social
   throw new Error('用户资料暂时无法显示')

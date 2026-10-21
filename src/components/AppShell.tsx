@@ -46,6 +46,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isMainPage = ['/', '/tasks', '/events', '/alliance', '/me'].includes(pathname)
   const isGrainPage = pathname === '/me/grains' || pathname.startsWith('/me/grains/')
   const nodeChild = pathname.match(/^\/nodes\/([^/]+)\/(?:tasks|events|grains)$/)
+  const nodeGrainScan = pathname.match(/^\/nodes\/([^/]+)\/grains\/send\/scan$/)
   const profileChild = pathname.match(/^\/profile\/([^/]+)\/(?:followers|following)$/)
   const parentPage = pathname.startsWith('/tasks/') ? '/tasks'
     : pathname.startsWith('/events/') ? '/events'
@@ -62,6 +63,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     : '/'
   const goBack = () => {
     if (isGrainPage) void router.navigate({ to: parentPage, replace: true })
+    else if (nodeGrainScan) void router.navigate({ to: '/nodes/$nodeId/grains/send', params: { nodeId: decodeURIComponent(nodeGrainScan[1]) }, replace: true })
     else if (canGoBack) router.history.back()
     else if (pathname === '/register') void router.navigate({ to: '/login', search: { returnTo: loginReturnTo(new URLSearchParams(href.split('?')[1] ?? '').get('returnTo')) }, replace: true })
     else if (nodeChild) void router.navigate({ to: '/nodes/$nodeId', params: { nodeId: decodeURIComponent(nodeChild[1]) }, replace: true })

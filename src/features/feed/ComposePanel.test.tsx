@@ -25,7 +25,7 @@ it.each([['task', 'taskDraft', '任务'], ['activity', 'eventDraft', '活动']] 
 })
 
 // 发活动永远要节点,所以没有可管节点的人只会看到发帖 + 发任务两个入口
-it('发任务入口只给节点管理员、平台授权的人和后台超管', () => {
+it('发任务入口给节点用户、平台授权的人和后台超管，发活动仍要节点', () => {
   const initialData = {
     token: 'token', kind: 'post', managedNodes: [], nodesError: '',
     postDraft: null, postDraftError: null, taskDraft: null, taskDraftError: null, eventDraft: null, eventDraftError: null,
@@ -34,6 +34,11 @@ it('发任务入口只给节点管理员、平台授权的人和后台超管', (
 
   sessionState.user = { id: 'account' }
   expect(render()).not.toContain('发任务')
+
+  sessionState.user = { id: 'account', node_member: true }
+  const nodeMember = render()
+  expect(nodeMember).toContain('发任务')
+  expect(nodeMember).not.toContain('发活动')
 
   sessionState.user = { id: 'account', can_publish_tasks: true }
   expect(render()).toContain('发任务')

@@ -31,6 +31,13 @@ describe('social graph data', () => {
     expect(String(fetchMock.mock.calls[0][0])).toContain('/bsky/xrpc/app.bsky.actor.getProfile')
   })
 
+  it('puts a Semi wallet under the profile when Rice has one', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: string | URL) => new Response(JSON.stringify(String(url).includes('/bsky/')
+      ? profile
+      : { data: { did: profile.did, handle: profile.handle, nickname: null, bio: null, avatar: null, wallet_address: ' 0xabc ' } }))))
+    await expect(loadSocialProfile(profile.did)).resolves.toMatchObject({ did: profile.did, walletAddress: '0xabc' })
+  })
+
   it('shows a legacy PDS user without a Rice account', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string | URL) => String(url).includes('/bsky/')
       ? new Response(JSON.stringify(profile))

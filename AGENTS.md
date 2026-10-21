@@ -5,12 +5,12 @@
 ## 版本号
 
 页脚显示的版本是**编译进包里的常量**（`src/lib/version.ts` 的 `APP_VERSION`），页面上不会因此多一次请求。
-**不要手改**，用脚本更新：
+格式是 `1.<提交序号>+<YYYY-MM-DD>`，例如 `1.142+2026-10-18`。序号用 `git log --oneline | wc -l`，日期是 Asia/Shanghai 的当天。
+
+`scripts/githooks/pre-commit` 在每次提交时写入并 `git add`。新提交还没进 log，所以序号是 wc 再加 1；`git commit --amend` 不再加 1。**不要手改，构建前也不用再跑脚本。** 本仓库需要：
 
 ```bash
-pnpm version:update              # 取最后一次提交的日期（YYYY-MM-DD）
-pnpm version:update 2026-10-20   # 也可以直接指定日期
+git config core.hooksPath scripts/githooks
 ```
 
-发版习惯：**提交完代码、构建镜像之前跑一次**。它记的是「这一版包含的最后一个改动是哪天」，
-不含这次改版本号本身；工作区有未提交改动时脚本会提醒一句。只显示前端版本，后端版本另有其事。
+只显示前端版本，后端版本另有其事。

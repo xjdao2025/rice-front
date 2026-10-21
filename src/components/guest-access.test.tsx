@@ -52,6 +52,10 @@ describe('child-page back navigation', () => {
     state.canGoBack = true; state.pathname = '/me/grains/send/scan'
     clickBack(AppShell({ children: null }))
     expect(state.navigate).toHaveBeenLastCalledWith({ to: '/me/grains/send', replace: true })
+    state.pathname = '/nodes/node-id/grains/send/scan'; state.navigate.mockClear(); state.back.mockClear()
+    clickBack(AppShell({ children: null }))
+    expect(state.navigate).toHaveBeenLastCalledWith({ to: '/nodes/$nodeId/grains/send', params: { nodeId: 'node-id' }, replace: true })
+    expect(state.back).not.toHaveBeenCalled()
     state.pathname = '/posts'; state.navigate.mockClear()
     clickBack(AppShell({ children: null }))
     expect(state.back).toHaveBeenCalledOnce()
