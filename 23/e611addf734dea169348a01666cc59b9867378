@@ -1,0 +1,20 @@
+scripts/githooks/pre-commit
+  s_1af61b20427355::t_29fc0a48aeee33 1-43
+  s_1af61b20427355::t_8de62983eab064 44-46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "23e611addf734dea169348a01666cc59b9867378",
+  "prompts": {},
+  "sessions": {
+    "s_1af61b20427355": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a13e0b-0424-7f90-81ee-f2b994fab907",
+        "model": "unknown"
+      },
+      "human_author": "jiangplus <jiang.plus.times@gmail.com>"
+    }
+  }
+}
