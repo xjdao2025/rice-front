@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 
-import { backend, backendData, isSessionAuthError, RequestError } from '~/lib/http'
+import { BACKEND_BASE, backend, backendData, fetchWithTimeout, isSessionAuthError, readJson, RequestError } from '~/lib/http'
+import { credential, object, text } from '~/lib/validation'
 import type { RiceSession, RiceUser } from '~/lib/models'
 import { withAvatars } from '../social/api'
 import { pdsPost } from '~/lib/pds'
@@ -36,7 +37,7 @@ export async function requestSemiSession(ticket: string): Promise<RiceSession> {
 }
 
 export const redeemSemiSession = createServerFn({ method: 'POST' })
-  .validator((ticket: string) => ticket)
+  .validator(text(32, 32))
   .handler(({ data }) => requestSemiSession(data))
 
 export async function requestPdsSessionRefresh(pds: RiceSession['pds']) {
@@ -55,7 +56,7 @@ export async function requestPdsSessionRefresh(pds: RiceSession['pds']) {
 }
 
 export const loginRice = createServerFn({ method: 'POST' })
-  .validator((data: { identifier: string; password: string }) => data)
+  .validator(object({ identifier: text(256, 1), password: text(1024, 1) }))
   .handler(async ({ data }) => {
     const session = await backendData<RiceSession>('/api/session', {
       method: 'POST', json: { identifier: data.identifier.trim().toLowerCase(), password: data.password },
@@ -64,12 +65,25 @@ export const loginRice = createServerFn({ method: 'POST' })
     return session
   })
 
+export const logoutInput = object({ token: credential, refreshJwt: credential })
+
+export async function requestLogout(input: unknown) {
+  const data = logoutInput(input)
+  const revoke = async (request: Promise<unknown>) => {
+    try { await request; return true } catch (error) { return isSessionAuthError(error) }
+  }
+  const [riceRevoked, pdsRevoked] = await Promise.all([
+    revoke(backend('/api/session', { method: 'DELETE', token: data.token })),
+    revoke(fetchWithTimeout(`${BACKEND_BASE}/pds/xrpc/com.atproto.server.deleteSession`, {
+      method: 'POST', headers: { Authorization: `Bearer ${data.refreshJwt}` },
+    }, 30_000, async response => { if (!response.ok) await readJson(response) })),
+  ])
+  return { riceRevoked, pdsRevoked }
+}
+
 export const logoutRice = createServerFn({ method: 'POST' })
-  .validator((token: string) => token)
-  .handler(async ({ data: token }) => {
-    await backend('/api/session', { method: 'DELETE', token })
-    return true
-  })
+  .validator(logoutInput)
+  .handler(({ data }) => requestLogout(data))
 
 export async function requestCurrentUser(token: string): Promise<RiceUser | null> {
   try {
@@ -84,9 +98,12 @@ export async function requestCurrentUser(token: string): Promise<RiceUser | null
 }
 
 export const getCurrentUser = createServerFn({ method: 'POST' })
-  .validator((token: string) => token)
+  .validator(credential)
   .handler(({ data: token }) => requestCurrentUser(token))
 
 export const refreshPdsSession = createServerFn({ method: 'POST' })
-  .validator((pds: RiceSession['pds']) => pds)
+  .validator((pds: unknown) => {
+    if (!isPdsSession(pds)) throw new Error('登录信息不完整，请重新登录。')
+    return pds
+  })
   .handler(({ data }) => requestPdsSessionRefresh(data))

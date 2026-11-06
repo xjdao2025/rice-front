@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 
 import { backendData } from '~/lib/http'
+import { credential, id, integer, object, text } from '~/lib/validation'
 import type { RicePublicUser } from '~/lib/models'
 
 type PostRewardInput = { token: string; to: string; amount: number; subjectUri: string; clientRequestId: string }
@@ -21,5 +22,5 @@ export async function requestPostReward(data: PostRewardInput) {
 }
 
 export const sendPostReward = createServerFn({ method: 'POST' })
-  .validator((data: PostRewardInput) => data)
+  .validator(object({ token: credential, to: id, amount: integer(1, Number.MAX_SAFE_INTEGER), subjectUri: text(2048, 1), clientRequestId: text(128, 1) }))
   .handler(({ data }) => requestPostReward(data))

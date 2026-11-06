@@ -4,8 +4,7 @@ import { ChevronRight, LogOut, Settings } from 'lucide-react'
 import { useState } from 'react'
 import { Avatar } from '~/components/Avatar'
 import type { RiceUser } from '~/lib/models'
-import { logoutRice } from '../session/api'
-import { useStoredSession } from '../session/session'
+import { logoutStoredSession, useStoredSession } from '../session/session'
 import type { RiceWallet } from '../grains/api'
 import { PersonalGrainActions } from '../grains/PersonalGrainActions'
 export type ProfileInitialData = {
@@ -15,11 +14,16 @@ export type ProfileInitialData = {
 }
 
 export function ProfilePage({ initialData = null, initialError = '' }: { initialData?: ProfileInitialData | null; initialError?: string }) {
-  const { session, isReady, saveSession } = useStoredSession()
+  const { session, isReady } = useStoredSession()
+  const [logoutWarning, setLogoutWarning] = useState('')
   const [communitySelection, setCommunitySelection] = useState<{ accountId: string; sessionToken: string; nodeId: string } | null>(null)
   const navigate = useNavigate()
-  const logout = async () => { if (session) await logoutRice({ data: session.token }).catch(() => undefined); saveSession(null) }
-  if (!isReady || !session) return null
+  const logout = async () => {
+    if (!session) return
+    const result = await logoutStoredSession(session).catch(() => ({ riceRevoked: false, pdsRevoked: false }))
+    if (!result.riceRevoked || !result.pdsRevoked) setLogoutWarning('本机已退出，但部分服务端会话未能撤销，请稍后重试或重置密码。')
+  }
+  if (!isReady || !session) return logoutWarning ? <p role="alert">{logoutWarning}</p> : null
   const current = initialData?.accountId === session.user.id && initialData.sessionToken === session.token ? initialData : null
   const profile = current?.user ?? session.user
   const communities = current?.communities ?? []

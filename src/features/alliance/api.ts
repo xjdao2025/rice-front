@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
-import { BACKEND_BASE, backend, backendData, readJson, withQuery } from '~/lib/http'
+import { credential, id, object, oneOf, optional, pageFields, text } from '~/lib/validation'
+import { BACKEND_BASE, backend, backendData, fetchWithTimeout, readJson, withQuery } from '~/lib/http'
 import type { RiceAttachment, RicePublicUser } from '~/lib/models'
 import { withAvatars } from '../social/api'
 
@@ -61,29 +62,28 @@ export async function sendProposalComment(data: { id: string; token: string; bod
 
 export async function loadGovernanceBody(data: { id: string }) {
   if (typeof data.id !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(data.id)) throw new Error('正文附件无效。')
-  let response: Response
-  try { response = await fetch(`${BACKEND_BASE}/api/attachments/${encodeURIComponent(data.id)}`) }
-  catch { throw new Error('网络连接失败，请检查网络后重试。') }
-  if (!response.ok) await readJson(response)
-  return (await response.text()).replace(/https?:\/\/[^/"'\s<>]+(?=\/api\/v1\/file\/download\?)/gi, '')
+  return fetchWithTimeout(`${BACKEND_BASE}/api/attachments/${encodeURIComponent(data.id)}`, undefined, 30_000, async response => {
+    if (!response.ok) await readJson(response)
+    return (await response.text()).replace(/https?:\/\/[^/"'\s<>]+(?=\/api\/v1\/file\/download\?)/gi, '')
+  })
 }
 
 export const getFoundation = createServerFn({ method: 'GET' }).handler(() => loadFoundation())
 export const getAnnouncements = createServerFn({ method: 'POST' })
-  .validator((data: PageInput) => data).handler(({ data }) => loadAnnouncements(data))
+  .validator(object(pageFields)).handler(({ data }) => loadAnnouncements(data))
 export const getProposals = createServerFn({ method: 'POST' })
-  .validator((data: PageInput & { token?: string; status?: ProposalStatus }) => data).handler(({ data }) => loadProposals(data))
+  .validator(object({ ...pageFields, token: optional(credential), status: optional(oneOf(['open', 'passed', 'rejected'])) })).handler(({ data }) => loadProposals(data))
 export const getGrainGrants = createServerFn({ method: 'POST' })
-  .validator((data: PageInput) => data).handler(({ data }) => loadGrainGrants(data))
+  .validator(object(pageFields)).handler(({ data }) => loadGrainGrants(data))
 export const getAnnouncement = createServerFn({ method: 'POST' })
-  .validator((data: { id: string }) => data).handler(({ data }) => loadAnnouncement(data))
+  .validator(object({ id })).handler(({ data }) => loadAnnouncement(data))
 export const getProposal = createServerFn({ method: 'POST' })
-  .validator((data: { id: string; token?: string }) => data).handler(({ data }) => loadProposal(data))
+  .validator(object({ id, token: optional(credential) })).handler(({ data }) => loadProposal(data))
 export const voteOnProposal = createServerFn({ method: 'POST' })
-  .validator((data: { id: string; token: string; choice: VoteChoice }) => data).handler(({ data }) => sendProposalVote(data))
+  .validator(object({ id, token: credential, choice: oneOf(['agree', 'oppose']) })).handler(({ data }) => sendProposalVote(data))
 export const getProposalComments = createServerFn({ method: 'POST' })
-  .validator((data: { id: string } & PageInput) => data).handler(({ data }) => loadProposalComments(data))
+  .validator(object({ id, ...pageFields })).handler(({ data }) => loadProposalComments(data))
 export const postProposalComment = createServerFn({ method: 'POST' })
-  .validator((data: { id: string; token: string; body: string }) => data).handler(({ data }) => sendProposalComment(data))
+  .validator(object({ id, token: credential, body: text(4000, 1) })).handler(({ data }) => sendProposalComment(data))
 export const getGovernanceBody = createServerFn({ method: 'POST' })
-  .validator((data: { id: string }) => data).handler(({ data }) => loadGovernanceBody(data))
+  .validator(object({ id })).handler(({ data }) => loadGovernanceBody(data))

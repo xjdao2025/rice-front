@@ -11,7 +11,10 @@ vi.mock('./api', async (original) => ({
   ...await original<typeof import('./api')>(), verifyRegistration: mock.verify, registerRice: mock.register,
   uploadRiceAttachment: mock.upload, updateCurrentUser: mock.update,
 }))
-vi.mock('../session/session', () => ({ useStoredSession: () => ({ saveSession: mock.save, session: mock.session, isReady: true }) }))
+vi.mock('../session/session', () => ({
+  useStoredSession: () => ({ saveSession: mock.save, session: mock.session, isReady: true }),
+  writeStoredUser: (stored: object, user: unknown) => mock.save({ ...stored, user }),
+}))
 vi.mock('~/lib/images', async (original) => ({ ...await original<typeof import('~/lib/images')>(), readFileBase64: async () => 'image-bytes' }))
 vi.mock('../session/useAuthOptions', () => ({ useAuthOptions: () => ({
   options: { registration_channels: mock.channels, handle_domain: 'configured.example', verification_mode: 'live' },

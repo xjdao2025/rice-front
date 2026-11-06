@@ -5,7 +5,13 @@ import { beforeEach, expect, it, vi } from 'vitest'
 import type { RiceSession, RiceUser } from '~/lib/models'
 
 const state = vi.hoisted(() => ({ session: null as RiceSession | null, saveSession: vi.fn(), navigate: vi.fn(), logout: vi.fn(), logoutAction: undefined as (() => Promise<void>) | undefined, selectorOptions: [] as Array<{ value: string; label: string }> }))
-vi.mock('../session/session', () => ({ useStoredSession: () => ({ session: state.session, isReady: true, saveSession: state.saveSession }) }))
+vi.mock('../session/session', () => ({
+  useStoredSession: () => ({ session: state.session, isReady: true, saveSession: state.saveSession }),
+  logoutStoredSession: async (session: RiceSession) => {
+    state.saveSession(null)
+    return state.logout({ data: { token: session.token, refreshJwt: session.pds.refresh_jwt } })
+  },
+}))
 vi.mock('../session/api', async (original) => ({ ...await original<typeof import('../session/api')>(), logoutRice: state.logout }))
 vi.mock('@astryxdesign/core/Button', () => ({ Button: ({ label, clickAction }: { label: string; clickAction?: () => Promise<void> }) => {
   if (label === '退出登录') state.logoutAction = clickAction
@@ -35,16 +41,16 @@ const user = { id: 'member', did: 'did:example:member', handle: 'member.test', n
 const initialData: ProfileInitialData = { accountId: user.id, sessionToken: 'token', user, wallet: { balance: 123, frozen: 7, earned: 140, entries: [] } }
 beforeEach(() => {
   vi.clearAllMocks()
-  state.logout.mockResolvedValue(true)
+  state.logout.mockResolvedValue({ riceRevoked: true, pdsRevoked: true })
   state.logoutAction = undefined
   state.selectorOptions = []
-  state.session = { token: 'token', user, pds: { did: user.did } } as RiceSession
+  state.session = { token: 'token', user, pds: { did: user.did, refresh_jwt: 'refresh-token' } } as RiceSession
 })
 
 it('clears the session without starting a late homepage navigation over the personal login form', async () => {
   renderToStaticMarkup(<ProfilePage initialData={initialData} />)
   await state.logoutAction!()
-  expect(state.logout).toHaveBeenCalledWith({ data: 'token' })
+  expect(state.logout).toHaveBeenCalledWith({ data: { token: 'token', refreshJwt: 'refresh-token' } })
   expect(state.saveSession).toHaveBeenCalledWith(null)
   expect(state.navigate).not.toHaveBeenCalled()
 })

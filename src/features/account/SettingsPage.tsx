@@ -3,20 +3,24 @@ import { Button } from '@astryxdesign/core/Button'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { ChevronRight, LogOut } from 'lucide-react'
 
-import { logoutRice } from '../session/api'
-import { useStoredSession } from '../session/session'
+import { useState } from 'react'
+import { logoutStoredSession, useStoredSession } from '../session/session'
 
 export function SettingsPage() {
-  const { session, saveSession } = useStoredSession()
+  const { session } = useStoredSession()
+  const [logoutWarning, setLogoutWarning] = useState('')
   const navigate = useNavigate()
 
   if (!session) {
-    return <SignedOutState title="登录后管理账号" />
+    return <><SignedOutState title="登录后管理账号" />{logoutWarning && <p role="alert">{logoutWarning}</p>}</>
   }
 
   const logout = async () => {
-    await logoutRice({ data: session.token }).catch(() => undefined)
-    saveSession(null)
+    const result = await logoutStoredSession(session).catch(() => ({ riceRevoked: false, pdsRevoked: false }))
+    if (!result.riceRevoked || !result.pdsRevoked) {
+      setLogoutWarning('本机已退出，但部分服务端会话未能撤销，请稍后重试或重置密码。')
+      return
+    }
     await navigate({ to: '/login' })
   }
 

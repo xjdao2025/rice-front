@@ -6,6 +6,15 @@ import type { PdsImage, PostCategory, PostFeed, PostImage, PostThread, PostView,
 import { appviewImageUrl, createPdsRecord, deleteOwnRecord, MAX_POST_IMAGE_BYTES, MAX_POST_IMAGES, MAX_POST_TEXT_LENGTH, newPostRecordKey, pdsGet, thumbUrl, POST_IMAGE_TYPES, uploadPdsImage, xrpcGet } from '~/lib/pds'
 
 import { hasPostTag, postCategory } from './tags'
+import { array, credential, id, integer, object, oneOf, optional, text } from '~/lib/validation'
+
+const pdsAuth = { did: id, accessJwt: credential }
+const strongRef = object({ uri: text(2048, 1), cid: id })
+const interactionInput = object({ ...pdsAuth, postUri: text(2048, 1), postCid: id, recordUri: optional(text(2048, 1)) })
+const imageInput = object({
+  image: object({ $type: oneOf(['blob']), ref: object({ $link: id }), mimeType: oneOf(POST_IMAGE_TYPES), size: integer(1, MAX_POST_IMAGE_BYTES) }),
+  alt: text(2000), aspectRatio: object({ width: integer(1, 100_000), height: integer(1, 100_000) }),
+})
 
 let clientFeedCache: { owner: string | null; feed: PostFeed } | null = null
 let clientSelectedPost: { owner: string | null; post: PostView } | null = null
@@ -142,46 +151,46 @@ async function hydrateViewerRecords(posts: PostView[], did?: string, accessJwt?:
   const publicPosts = posts.map(({ viewer: _viewer, ...post }) => post)
   if (!did || !accessJwt || posts.length === 0) return publicPosts
 
-  const subjects = new Set(posts.map((post) => post.uri))
-  const list = async (collection: InteractionCollection) => {
-    // ponytail: Scan the reader's records; use authenticated AppView lookups if histories become large.
-    const found = new Map<string, string>()
-    let cursor: string | undefined
-    do {
-      const body = await pdsGet<{ records?: Array<{ uri: string; value?: { subject?: { uri?: string } } }>; cursor?: string }>(
-        'com.atproto.repo.listRecords', searchParams({ repo: did, collection, limit: '100', cursor }), accessJwt,
-      )
-      for (const record of body.records ?? []) {
-        const subject = record.value?.subject?.uri
-        const uri = ownedInteractionUri(record.uri, did, collection)
-        if (subject && subjects.has(subject) && uri) found.set(subject, uri)
-      }
-      if (found.size === subjects.size || body.cursor === cursor) break
-      cursor = body.cursor
-    } while (cursor)
-    return found
-  }
-
+  const uris = [...new Set(posts.map((post) => post.uri))]
+  const viewers = new Map<string, PostView['viewer']>()
   try {
-    const [likes, reposts] = await Promise.all([list('app.bsky.feed.like'), list('app.bsky.feed.repost')])
-    return publicPosts.map((post) => {
-      const like = likes.get(post.uri)
-      const repost = reposts.get(post.uri)
-      return like || repost ? { ...post, viewer: { ...(like ? { like } : {}), ...(repost ? { repost } : {}) } } : post
-    })
+    // getPosts is indexed by the displayed subjects, not by the reader's entire
+    // interaction history. Its lexicon accepts at most 25 URIs per request.
+    for (let offset = 0; offset < uris.length; offset += 25) {
+      const params = new URLSearchParams()
+      for (const uri of uris.slice(offset, offset + 25)) params.append('uris', uri)
+      const body = await xrpcGet<{ posts?: PostView[] }>('app.bsky.feed.getPosts', params, accessJwt)
+      for (const post of body.posts ?? []) viewers.set(post.uri, post.viewer)
+    }
+    return publicPosts.map((post) => withOwnedViewer(post, viewers.get(post.uri), did))
   } catch (error) {
     if (isSessionAuthError(error)) throw error
+    // No full-history fallback when the index is unavailable or still catching up.
     return publicPosts
   }
 }
 
+function withOwnedViewer(post: PostView, viewer: PostView['viewer'], did?: string): PostView {
+  const { viewer: _viewer, ...publicPost } = post
+  if (!did) return publicPost
+  const like = ownedInteractionUri(viewer?.like, did, 'app.bsky.feed.like')
+  const repost = ownedInteractionUri(viewer?.repost, did, 'app.bsky.feed.repost')
+  return like || repost ? { ...publicPost, viewer: { ...(like ? { like } : {}), ...(repost ? { repost } : {}) } } : publicPost
+}
+
 async function hydrateAuthorNames(posts: PostView[]) {
   const authors = posts.flatMap((post) => post.reason ? [post.author, post.reason.by] : [post.author])
+  const dids = [...new Set(authors.map((author) => author.did))]
   const profiles = new Map<string, RicePublicUser>()
-  await Promise.all([...new Set(authors.map((author) => author.did))].map(async (did) => {
-    const profile = await backend<{ data: RicePublicUser }>(`/api/users/${encodeURIComponent(did)}/profile`).catch(() => null)
-    if (profile?.data?.did === did) profiles.set(did, profile.data)
-  }))
+  for (let offset = 0; offset < dids.length; offset += 100) {
+    const batch = dids.slice(offset, offset + 100)
+    const result = await backend<{ data: RicePublicUser[] }>('/api/users/profiles', {
+      method: 'POST', json: { dids: batch },
+    }).catch(() => null)
+    for (const profile of Array.isArray(result?.data) ? result.data : []) {
+      if (batch.includes(profile.did)) profiles.set(profile.did, profile)
+    }
+  }
   const authorName = (author: PostView['author']) => {
     const profile = profiles.get(author.did)
     const avatar = profile?.avatar?.url || author.avatar
@@ -339,20 +348,23 @@ export async function loadPostPage(data: GetPostsInput) {
 }
 
 export const getPosts = createServerFn({ method: 'POST' })
-  .validator((data: GetPostsInput) => data)
+  .validator(object({ query: optional(text(1000)), repo: optional(id), tag: optional(text(256)), category: optional(oneOf(['post', 'activity', 'product'])), cursor: optional(text(4096)), limit: optional(integer(1, 100)), accessJwt: optional(credential), did: optional(id) }))
   .handler(({ data }) => loadPostPage(data))
 
 type PostThreadInput = { uri: string; accessJwt?: string; did?: string }
 export async function loadPostThread(data: PostThreadInput): Promise<PostThread> {
   const params = new URLSearchParams({ uri: data.uri, depth: '2', parentHeight: '0' })
   const thread = normalizePostThread(await xrpcGet<unknown>('app.bsky.feed.getPostThread', params, data.accessJwt))
-  const posts = await hydrateViewerRecords([thread.post, ...thread.replies.map((reply) => reply.post)], data.did, data.accessJwt)
+  // The authenticated thread response already carries this reader's viewer
+  // state. Guests (and mismatched record owners) must never inherit it.
+  const posts = [thread.post, ...thread.replies.map((reply) => reply.post)]
+    .map((post) => withOwnedViewer(post, post.viewer, data.accessJwt ? data.did : undefined))
   const [namedPost, ...replies] = await hydrateAuthorNames(posts)
   return { post: namedPost, replies: replies.map((reply, index) => ({ post: reply, parentUri: thread.replies[index].parentUri })) }
 }
 
 export const getPostThread = createServerFn({ method: 'POST' })
-  .validator((data: PostThreadInput) => data)
+  .validator(object({ uri: text(2048, 1), accessJwt: optional(credential), did: optional(id) }))
   .handler(({ data }) => loadPostThread(data))
 
 const clientThreadRequests = new Map<string, Promise<PostThread>>()
@@ -377,7 +389,7 @@ type TextPostInput = PdsAuth & { text: string; category: PostCategory; rkey: str
 type CreatedPost = Awaited<ReturnType<typeof createTextPostRecord>>
 
 export const uploadPostImage = createServerFn({ method: 'POST' })
-  .validator((data: { accessJwt: string; base64: string; contentType: string }) => data)
+  .validator(object({ accessJwt: credential, base64: text(Math.ceil(MAX_POST_IMAGE_BYTES / 3) * 4, 1), contentType: oneOf(POST_IMAGE_TYPES) }))
   .handler(({ data }) => uploadPdsImage(data.accessJwt, data.base64, data.contentType))
 
 export async function createTextPostRecord(data: TextPostInput) {
@@ -435,7 +447,7 @@ export async function moderatePost(token: string, text: string, images: PdsImage
 }
 
 export const createTextPost = createServerFn({ method: 'POST' })
-  .validator((data: TextPostInput & { token: string }) => data)
+  .validator(object({ ...pdsAuth, token: credential, text: text(MAX_POST_TEXT_LENGTH), category: oneOf(['post', 'activity', 'product']), rkey: text(512, 1), createdAt: text(64, 1), images: optional(array(imageInput, MAX_POST_IMAGES)) }))
   .handler(async ({ data }) => {
     const place = await moderatePost(data.token, data.text.trim(), data.images, clientIp())
     return createTextPostRecord({ ...data, place })
@@ -451,7 +463,7 @@ export async function deleteOwnPostRecord(data: DeletePostInput) {
 }
 
 export const deletePost = createServerFn({ method: 'POST' })
-  .validator((data: DeletePostInput) => data)
+  .validator(object({ ...pdsAuth, uri: text(2048, 1) }))
   .handler(({ data }) => deleteOwnPostRecord(data))
 
 type ToggleInteractionInput = PdsAuth & { postUri: string; postCid: string; recordUri?: string }
@@ -472,18 +484,18 @@ export async function updateInteractionRecord(data: ToggleInteractionInput, coll
 }
 
 export const toggleLike = createServerFn({ method: 'POST' })
-  .validator((data: ToggleInteractionInput) => data)
+  .validator(interactionInput)
   .handler(({ data }) => updateInteractionRecord(data, 'app.bsky.feed.like'))
 
 export const toggleRepost = createServerFn({ method: 'POST' })
-  .validator((data: ToggleInteractionInput) => data)
+  .validator(interactionInput)
   .handler(({ data }) => updateInteractionRecord(data, 'app.bsky.feed.repost'))
 
 type StrongRef = { uri: string; cid: string }
 type ReplyInput = PdsAuth & { token: string; text: string; root: StrongRef; parent: StrongRef }
 
 export const createReply = createServerFn({ method: 'POST' })
-  .validator((data: ReplyInput) => data)
+  .validator(object({ ...pdsAuth, token: credential, text: text(MAX_POST_TEXT_LENGTH, 1), root: strongRef, parent: strongRef }))
   .handler(async ({ data }) => {
     const text = data.text.trim()
     if (!text) throw new Error('评论内容不能为空')

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { requestCurrentUser, requestPdsSessionRefresh, requestSemiSession } from './api'
+import { requestCurrentUser, requestLogout, requestPdsSessionRefresh, requestSemiSession } from './api'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -54,6 +54,41 @@ describe('PDS session refresh', () => {
       .mockResolvedValueOnce(Response.json({ message: 'PDS unavailable' }, { status: 503 })))
     await expect(requestPdsSessionRefresh(pds)).resolves.toBeNull()
     await expect(requestPdsSessionRefresh(pds)).rejects.toThrow('PDS unavailable')
+  })
+})
+
+describe('current-session logout', () => {
+  it('revokes Rice and PDS separately, using the refresh token and accepting empty success bodies', async () => {
+    const fetch = vi.fn(async (url: string, init: RequestInit) => {
+      if (url.endsWith('/api/session')) {
+        expect(init.method).toBe('DELETE')
+        expect((init.headers as Record<string, string>).Authorization).toBe('Bearer rice-token')
+        return new Response(null, { status: 204 })
+      }
+      expect(new URL(url).pathname).toBe('/pds/xrpc/com.atproto.server.deleteSession')
+      expect(init.method).toBe('POST')
+      expect((init.headers as Record<string, string>).Authorization).toBe('Bearer refresh-token')
+      return new Response(null, { status: 200 })
+    })
+    vi.stubGlobal('fetch', fetch)
+    await expect(requestLogout({ token: 'rice-token', refreshJwt: 'refresh-token' })).resolves.toEqual({ riceRevoked: true, pdsRevoked: true })
+    expect(fetch).toHaveBeenCalledTimes(2)
+  })
+
+  it.each(['Rice', 'PDS'])('still attempts the other service when %s fails, exposing partial failure', async failed => {
+    const fetch = vi.fn(async (url: string) => {
+      const rice = url.endsWith('/api/session')
+      if ((failed === 'Rice') === rice) return Response.json({ error: 'Unavailable' }, { status: 503 })
+      return rice ? new Response(null, { status: 204 }) : new Response(null, { status: 200 })
+    })
+    vi.stubGlobal('fetch', fetch)
+    await expect(requestLogout({ token: 'rice-token', refreshJwt: 'refresh-token' })).resolves.toEqual({ riceRevoked: failed !== 'Rice', pdsRevoked: failed !== 'PDS' })
+    expect(fetch).toHaveBeenCalledTimes(2)
+  })
+
+  it('treats already-invalid sessions as revoked without hiding upstream errors', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(Response.json({ error: 'InvalidToken' }, { status: 401 }))))
+    await expect(requestLogout({ token: 'rice-token', refreshJwt: 'refresh-token' })).resolves.toEqual({ riceRevoked: true, pdsRevoked: true })
   })
 })
 

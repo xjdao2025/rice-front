@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
+import { credential, id, object, oneOf, optional, text } from '~/lib/validation'
 
 import { backend, searchParams } from '~/lib/http'
 import type { RicePublicUser, SocialConnectionPage, SocialProfile } from '~/lib/models'
@@ -16,7 +17,7 @@ async function loadUserSearch(data: { q: string; before?: string }) {
 }
 
 export const searchUsers = createServerFn({ method: 'POST' })
-  .validator((data: { q: string; before?: string }) => data)
+  .validator(object({ q: text(256), before: optional(id) }))
   .handler(({ data }) => loadUserSearch(data))
 
 type MissingAvatar = { id: string; did: string; handle: string; avatar: { url: string } | null }
@@ -124,13 +125,13 @@ export async function updateFollowRecord(data: FollowInput) {
 }
 
 export const getSocialProfile = createServerFn({ method: 'POST' })
-  .validator((data: { actor: string; accessJwt?: string }) => data)
+  .validator(object({ actor: id, accessJwt: optional(credential) }))
   .handler(({ data }) => loadSocialProfile(data.actor, data.accessJwt))
 
 export const getSocialConnections = createServerFn({ method: 'POST' })
-  .validator((data: ConnectionsInput) => data)
+  .validator(object({ actor: id, kind: oneOf(['followers', 'following']), cursor: optional(text(4096)), accessJwt: optional(credential) }))
   .handler(({ data }) => loadSocialConnections(data))
 
 export const toggleFollow = createServerFn({ method: 'POST' })
-  .validator((data: FollowInput) => data)
+  .validator(object({ did: id, accessJwt: credential, targetDid: id, recordUri: optional(text(2048, 1)) }))
   .handler(({ data }) => updateFollowRecord(data))

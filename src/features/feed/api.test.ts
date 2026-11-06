@@ -226,7 +226,7 @@ describe('feed data', () => {
       const url = String(input)
       if (url.includes('aerox.feed.listPosts')) return new Response(JSON.stringify({ posts: [hidden, restored] }))
       if (url.includes('collection=app.bsky.feed.post')) return new Response(JSON.stringify({ records: [{ uri: hidden.uri, cid: 'c', value: hidden.record }] }))
-      if (url.includes('/api/users/')) return new Response(JSON.stringify({ data: { did: post.author.did, handle: 'author.test' } }))
+      if (url.includes('/api/users/profiles')) return new Response(JSON.stringify({ data: [{ did: post.author.did, handle: 'author.test' }] }))
       return new Response(JSON.stringify({ records: [], feed: [] }))
     })
     vi.stubGlobal('fetch', fetchMock)
@@ -246,7 +246,7 @@ describe('feed data', () => {
       const url = String(input)
       if (url.includes('aerox.feed.listPosts')) return new Response(JSON.stringify({ posts: indexed ? [{ ...post, uri, likeCount: 3 }] : [post] }))
       if (url.includes('collection=app.bsky.feed.post')) return new Response(JSON.stringify({ records: [recent, { ...recent, uri: `${uri}-reply`, value: { ...recent.value, reply: { root: { uri }, parent: { uri } } } }] }))
-      if (url.includes('/api/users/')) return new Response(JSON.stringify({ data: { did: post.author.did, handle: 'author.test', nickname: '作者' } }))
+      if (url.includes('/api/users/profiles')) return new Response(JSON.stringify({ data: [{ did: post.author.did, handle: 'author.test', nickname: '作者' }] }))
       return new Response(JSON.stringify({ records: [], feed: [] }))
     })
     vi.stubGlobal('fetch', fetchMock)
@@ -273,7 +273,7 @@ describe('feed data', () => {
     vi.stubEnv('XIANGJIAN_APPVIEW_IMAGE_ORIGINS', 'https://old-appview.example')
     const fetchMock = vi.fn(async (url: string | URL, _init?: RequestInit) => String(url).includes('aerox.feed.listPosts')
       ? new Response(JSON.stringify({ posts: [legacyPost], cursor: '40' }))
-      : new Response(JSON.stringify({ data: { did: post.author.did, nickname: null, avatar: null } })))
+      : new Response(JSON.stringify({ data: [{ did: post.author.did, nickname: null, avatar: null }] })))
     vi.stubGlobal('fetch', fetchMock)
     const result = await loadPostPage({ cursor: '20', category: 'post' })
     expect(result.cursor).toBe('40')
@@ -287,7 +287,7 @@ describe('feed data', () => {
     const tagged = (uri: string, text: string, xjdaoCategory?: 'activity') => ({ ...post, uri, record: { ...post.record, text, ...(xjdaoCategory ? { xjdaoCategory } : {}) } })
     const fetchMock = vi.fn(async (url: string | URL, _init?: RequestInit) => String(url).includes('aerox.feed.listPosts')
       ? new Response(JSON.stringify({ posts: [tagged('at://a', '#活动 春耕'), tagged('at://b', '开放日 #活动', 'activity'), tagged('at://c', '#活动家 聚会')] }))
-      : new Response(JSON.stringify({ data: { did: post.author.did, nickname: null, avatar: null } })))
+      : new Response(JSON.stringify({ data: [{ did: post.author.did, nickname: null, avatar: null }] })))
     vi.stubGlobal('fetch', fetchMock)
     const result = await loadPostPage({ tag: '活动' })
     expect(result.posts.map((item) => item.uri)).toEqual(['at://a', 'at://b'])
@@ -339,26 +339,25 @@ describe('feed data', () => {
     const fetchMock = vi.fn(async (input: string | URL) => {
       const url = String(input)
       if (url.includes('aerox.feed.listPosts')) return new Response(JSON.stringify({ posts: [post, { ...post, uri: `${post.uri}-second` }, external] }))
-      if (url.includes('/api/users/did%3Aexample/profile')) return new Response(JSON.stringify({ data: { did: post.author.did, nickname: '测试参与者 B' } }))
+      if (url.includes('/api/users/profiles')) return new Response(JSON.stringify({ data: [{ did: post.author.did, nickname: '测试参与者 B' }] }))
       return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 })
     })
     vi.stubGlobal('fetch', fetchMock)
     const page = await loadPostPage({ query })
     expect(page.posts.filter((item) => item.author.did === post.author.did).map((item) => item.author.displayName)).toEqual(['测试参与者 B', '测试参与者 B'])
     expect(page.posts.find((item) => item.author.did === 'did:external')?.author).toEqual(external.author)
-    expect(fetchMock.mock.calls.filter(([url]) => String(url).includes('/api/users/'))).toHaveLength(2)
+    expect(fetchMock.mock.calls.filter(([url]) => String(url).includes('/api/users/'))).toHaveLength(1)
     expect(page.posts[0].record).toEqual(post.record)
   })
 
-  it('uses the same local name for thread author and replies with one profile read per DID', async () => {
+  it('uses the same local name for thread author and replies with one batch profile read', async () => {
     const localReply = { ...post, uri: `${post.uri}-reply` }
     const nestedReply = { ...post, uri: `${post.uri}-nested` }
     const externalReply = { ...post, uri: `${post.uri}-external`, author: { did: 'did:external', handle: 'outside.test', displayName: '外部作者' } }
     const fetchMock = vi.fn(async (input: string | URL) => {
       const url = String(input)
       if (url.includes('getPostThread')) return new Response(JSON.stringify({ thread: { post, replies: [{ post: localReply, replies: [{ post: nestedReply }] }, { post: externalReply }] } }))
-      if (url.includes('listRecords')) return new Response(JSON.stringify({ records: [] }))
-      if (url.includes('/api/users/did%3Aexample/profile')) return new Response(JSON.stringify({ data: { did: post.author.did, nickname: '测试参与者 B' } }))
+      if (url.includes('/api/users/profiles')) return new Response(JSON.stringify({ data: [{ did: post.author.did, nickname: '测试参与者 B' }] }))
       return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 })
     })
     vi.stubGlobal('fetch', fetchMock)
@@ -368,7 +367,7 @@ describe('feed data', () => {
     expect(thread.replies[1]).toMatchObject({ parentUri: localReply.uri, post: { author: { displayName: '测试参与者 B' } } })
     expect(thread.replies[2].post.author).toEqual(externalReply.author)
     expect(new URL(String(fetchMock.mock.calls[0][0])).searchParams.get('depth')).toBe('2')
-    expect(fetchMock.mock.calls.filter(([url]) => String(url).includes('/api/users/'))).toHaveLength(2)
+    expect(fetchMock.mock.calls.filter(([url]) => String(url).includes('/api/users/'))).toHaveLength(1)
   })
 
   it('reuses the post key when a successful publish response was lost', async () => {
@@ -748,14 +747,11 @@ describe('viewer interaction isolation', () => {
     ['search', { query: '真实帖子' }],
     ['profile posts', { repo: post.author.did }],
   ] as const)('rebuilds %s interactions for A, B and guests from the same cached post', async (_name, filters) => {
-    const fetchMock = vi.fn(async (input: string | URL) => {
+    const fetchMock = vi.fn(async (input: string | URL, init?: RequestInit) => {
       const url = new URL(String(input))
       if (url.pathname.includes('aerox.feed.listPosts')) return response({ posts: [liked] })
-      if (url.pathname.endsWith('listRecords')) {
-        const collection = url.searchParams.get('collection')!
-        return response({ records: url.searchParams.get('repo') === alice
-          ? [{ uri: `at://${alice}/${collection}/same-key`, value: { subject: { uri: post.uri } } }]
-          : [] })
+      if (url.pathname.endsWith('getPosts')) {
+        return response({ posts: [{ ...post, viewer: new Headers(init?.headers).get('Authorization') === 'Bearer alice-token' ? liked.viewer : undefined }] })
       }
       return response({ feed: [] })
     })
@@ -770,9 +766,12 @@ describe('viewer interaction isolation', () => {
     expect(liked.viewer.like).toContain(alice)
     for (const [input, init] of fetchMock.mock.calls as unknown as Array<[string, RequestInit]>) {
       const url = new URL(input)
-      if (url.pathname.endsWith('listRecords')) {
-        expect(init.headers).toEqual({ Authorization: `Bearer ${url.searchParams.get('repo') === alice ? 'alice' : 'bob'}-token` })
+      if (url.pathname.endsWith('getPosts')) {
+        expect(url.pathname).toBe('/pds/xrpc/app.bsky.feed.getPosts')
+        expect(url.searchParams.getAll('uris')).toEqual([post.uri])
+        expect(new Headers(init.headers).get('Authorization')).toMatch(/^Bearer (alice|bob)-token$/)
       }
+      expect(url.searchParams.get('collection') ?? '').not.toMatch(/app.bsky.feed.(like|repost)/)
     }
   })
 
@@ -780,7 +779,7 @@ describe('viewer interaction isolation', () => {
     vi.stubGlobal('fetch', vi.fn(async (input: string | URL) => {
       const url = String(input)
       if (url.includes('aerox.feed.listPosts')) return response({ posts: [liked] })
-      if (url.includes('listRecords')) return new Response(JSON.stringify({ message: 'PDS unavailable' }), { status: 503 })
+      if (url.includes('getPosts')) return new Response(JSON.stringify({ message: 'PDS unavailable' }), { status: 503 })
       return response({ feed: [] })
     }))
     const feed = await loadPostPage({ did: bob, accessJwt: 'bob-token' })
@@ -793,10 +792,7 @@ describe('viewer interaction isolation', () => {
     const bobLike = `at://${bob}/app.bsky.feed.like/reply-like`
     vi.stubGlobal('fetch', vi.fn(async (input: string | URL) => {
       const url = new URL(String(input))
-      if (url.pathname.endsWith('getPostThread')) return response({ thread: { post: liked, replies: [{ post: reply }] } })
-      if (url.pathname.endsWith('listRecords')) return response({ records: url.searchParams.get('collection') === 'app.bsky.feed.like'
-        ? [{ uri: bobLike, value: { subject: { uri: reply.uri } } }]
-        : [] })
+      if (url.pathname.endsWith('getPostThread')) return response({ thread: { post: liked, replies: [{ post: { ...reply, viewer: { like: bobLike } } }] } })
       return response({})
     }))
     const thread = await loadPostThread({ uri: post.uri, did: bob, accessJwt: 'bob-token' })
@@ -807,23 +803,20 @@ describe('viewer interaction isolation', () => {
     expect(guest.replies[0].post.viewer).toBeUndefined()
   })
 
-  it('reads subsequent interaction pages and ignores records from a different repository or collection', async () => {
-    const bobLike = `at://${bob}/app.bsky.feed.like/older`
+  it('ignores interaction URIs from a different repository or collection without scanning histories', async () => {
     const fetchMock = vi.fn(async (input: string | URL) => {
       const url = new URL(String(input))
       if (url.pathname.includes('aerox.feed.listPosts')) return response({ posts: [liked] })
-      if (!url.pathname.endsWith('listRecords')) return response({ feed: [] })
-      if (url.searchParams.get('collection') === 'app.bsky.feed.repost') return response({ records: [] })
-      if (!url.searchParams.has('cursor')) return response({ records: [
-        { uri: liked.viewer.like, value: { subject: { uri: post.uri } } },
-        { uri: `at://${bob}/app.bsky.feed.repost/wrong-collection`, value: { subject: { uri: post.uri } } },
-      ], cursor: 'older-page' })
-      return response({ records: [{ uri: bobLike, value: { subject: { uri: post.uri } } }] })
+      if (url.pathname.endsWith('getPosts')) return response({ posts: [{ ...post, viewer: {
+        like: liked.viewer.like, repost: `at://${bob}/app.bsky.feed.like/wrong-collection`,
+      } }] })
+      return response({ feed: [] })
     })
     vi.stubGlobal('fetch', fetchMock)
-    const feed = await loadPostPage({ did: bob, accessJwt: 'bob-token' })
-    expect(feed.posts[0].viewer).toEqual({ like: bobLike })
-    expect(fetchMock.mock.calls.some(([url]) => String(url).includes('cursor=older-page'))).toBe(true)
+    const feed = await loadPostPage({ did: bob, accessJwt: 'bob-token', cursor: 'next' })
+    expect(feed.posts[0].viewer).toBeUndefined()
+    expect(fetchMock.mock.calls.filter(([url]) => String(url).includes('getPosts'))).toHaveLength(1)
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes('listRecords'))).toBe(false)
   })
 
   it.each(['app.bsky.feed.like', 'app.bsky.feed.repost'] as const)('rejects cancelling a foreign %s URI before contacting PDS', async (collection) => {

@@ -6,13 +6,13 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { CircleAlert } from 'lucide-react'
 import { useState } from 'react'
 
-import { useStoredSession } from '../session/session'
+import { logoutStoredSession, useStoredSession, writeStoredUser } from '../session/session'
 import { changeCurrentUserContact, deleteCurrentUser, type VerificationChannel } from './api'
 import { useAsyncAction } from './useAsyncAction'
 import { VerificationCodeButton } from './VerificationCodeButton'
 
 export function AccountSecurityPage() {
-  const { session, saveSession } = useStoredSession()
+  const { session } = useStoredSession()
   const navigate = useNavigate()
   const { error, setError, busy, run } = useAsyncAction()
   const [notice, setNotice] = useState('')
@@ -26,7 +26,7 @@ export function AccountSecurityPage() {
   const defaultDeleteChannel: VerificationChannel = session?.user.phone ? 'sms' : 'email'
   const [deleteChannel, setDeleteChannel] = useState<VerificationChannel>(defaultDeleteChannel)
 
-  if (!session) return <SignedOutState title="登录后管理账号" />
+  if (!session) return <><SignedOutState title="登录后管理账号" />{notice && <p role="status">{notice}</p>}</>
 
   const changeContact = (channel: VerificationChannel) => run('联系方式更新失败', async () => {
     const user = await changeCurrentUserContact({
@@ -37,14 +37,18 @@ export function AccountSecurityPage() {
         ...(channel === 'sms' ? { phone, phoneRegion: '86' } : { email }),
       },
     })
-    saveSession({ ...session, user })
+    writeStoredUser(session, user)
     setNotice(channel === 'sms' ? '手机号已更新。' : '邮箱已更新。')
     setEditing(null)
   })
 
   const removeAccount = () => run('账号注销失败', async () => {
     await deleteCurrentUser({ data: { token: session.token, channel: deleteChannel, code: deleteCode } })
-    saveSession(null)
+    const result = await logoutStoredSession(session).catch(() => ({ riceRevoked: false, pdsRevoked: false }))
+    if (!result.riceRevoked || !result.pdsRevoked) {
+      setNotice('本应用账号已注销，本机已退出；部分服务端会话撤销未能确认。')
+      return
+    }
     await navigate({ to: '/login' })
   })
 
@@ -96,10 +100,10 @@ export function AccountSecurityPage() {
 
       <section className="danger-zone">
         <Button label="注销账号" variant="destructive" size="sm" onClick={() => setDeleteOpen((value) => !value)} />
-        <p>永久删除账号与个人资料。操作需要验证码确认。</p>
+        <p>注销本应用账号前，请先结清可用及冻结稻米并移交未完业务。历史账本和业务记录保留；此操作不删除 AT Protocol 账号，需要验证码确认。</p>
         {deleteOpen ? (
           <div className="delete-account-form">
-            <div className="task-warning-note"><CircleAlert size={18} /><span>注销后当前 Rice token 会立即失效。</span></div>
+            <div className="task-warning-note"><CircleAlert size={18} /><span>注销后全部 Rice 令牌立即失效，并尝试撤销当前 PDS 会话。</span></div>
             <Selector
               label="验证方式"
               options={[

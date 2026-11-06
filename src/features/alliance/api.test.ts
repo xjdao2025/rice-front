@@ -91,7 +91,7 @@ it('reads attachment text only from the fixed Rice path and refuses URL or path 
   expect(fetch).not.toHaveBeenCalled()
   expect(await loadGovernanceBody({ id: 'attachment-1' })).toBe(html)
   expect(new URL(fetch.mock.calls[0][0]).pathname).toBe('/api/attachments/attachment-1')
-  expect(fetch.mock.calls[0][1]).toBeUndefined()
+  expect(fetch.mock.calls[0][1]).toEqual({ signal: expect.any(AbortSignal) })
   fetch.mockResolvedValueOnce(Response.json({ errors: { detail: '附件不存在' } }, { status: 404 }))
   await expect(loadGovernanceBody({ id: 'missing' })).rejects.toThrow('附件不存在')
 })

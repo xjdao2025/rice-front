@@ -9,12 +9,12 @@ import { useEffect, useState } from 'react'
 import { Avatar } from '~/components/Avatar'
 import { IMAGE_ACCEPT, MAX_IMAGE_BYTES, imageSizeLabel, prepareImage, readFileBase64 } from '~/lib/images'
 
-import { useStoredSession } from '../session/session'
+import { useStoredSession, writeStoredUser } from '../session/session'
 import { updateCurrentUser, uploadRiceAttachment } from './api'
 import { useAsyncAction } from './useAsyncAction'
 
 export function ProfileEditPage({ onSaved, avatarOnly = false }: { onSaved?: () => void | Promise<void>; avatarOnly?: boolean }) {
-  const { session, saveSession } = useStoredSession()
+  const { session } = useStoredSession()
   const navigate = useNavigate()
   const [nickname, setNickname] = useState(session?.user.nickname || '')
   const [bio, setBio] = useState(session?.user.bio || '')
@@ -50,7 +50,7 @@ export function ProfileEditPage({ onSaved, avatarOnly = false }: { onSaved?: () 
         avatarId: attachment?.id,
       },
     })
-    saveSession({ ...session, user })
+    writeStoredUser(session, user)
     if (onSaved) await onSaved(); else await navigate({ to: '/me' })
   })
 

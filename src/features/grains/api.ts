@@ -3,11 +3,12 @@ import { createServerFn } from '@tanstack/react-start'
 import { backend, backendData, withQuery } from '~/lib/http'
 import type { RicePublicUser } from '~/lib/models'
 import { withAvatars } from '../social/api'
+import { credential, id, integer, object, optional, text } from '~/lib/validation'
 
 export type WalletEntry = { id: string; kind: 'reserved' | 'refunded' | 'grant' | 'gift' | 'reward' | 'task_reward' | 'event_fee' | 'community_fund'; amount: number; memo?: string | null; subject_uri: string | null; inserted_at: string; from_user: Pick<RicePublicUser, 'id' | 'nickname' | 'handle'> | null; to_user: Pick<RicePublicUser, 'id' | 'nickname' | 'handle'> | null; from_node?: { id: string; name: string } | null; to_node?: { id: string; name: string } | null }
 export type RiceWallet = { balance: number; frozen: number; earned: number; entries: WalletEntry[]; next_cursor?: string | null }
 export const getWallet = createServerFn({ method: 'POST' })
-  .validator((data: { token: string; before?: string; nodeId?: string }) => data)
+  .validator(object({ token: credential, before: optional(id), nodeId: optional(id) }))
   .handler(async ({ data }) => backendData<RiceWallet>(`/api/${data.nodeId ? `nodes/${encodeURIComponent(data.nodeId)}/wallet` : 'wallet'}${data.before ? `?before=${encodeURIComponent(data.before)}` : ''}`, { token: data.token }))
 export function walletEntryIncoming(entry: WalletEntry, userId: string, nodeId?: string) { return entry.kind === 'refunded' || (entry.kind !== 'reserved' && (nodeId ? entry.to_node?.id === nodeId : entry.to_user?.id === userId)) }
 
@@ -25,7 +26,7 @@ export async function requestPersonalTransfer(data: PersonalTransferInput) {
   return result
 }
 export const sendPersonalGrains = createServerFn({ method: 'POST' })
-  .validator((data: PersonalTransferInput) => data)
+  .validator(object({ token: credential, to: id, amount: integer(1, Number.MAX_SAFE_INTEGER), memo: optional(text(512)), clientRequestId: text(128, 1), nodeId: optional(id) }))
   .handler(({ data }) => requestPersonalTransfer(data))
 type TransferRecipientInput = { token: string; identifier: string }
 // 精确命中只有一个人(exact);否则是按昵称 / handle 找到的候选,可能为空
@@ -35,11 +36,11 @@ export async function requestTransferRecipients(data: TransferRecipientInput): P
   return { exact: body.exact, users: await withAvatars(body.data) }
 }
 export const findTransferRecipients = createServerFn({ method: 'POST' })
-  .validator((data: TransferRecipientInput) => data)
+  .validator(object({ token: credential, identifier: text(256, 1) }))
   .handler(({ data }) => requestTransferRecipients(data))
 
 export const fundCommunity = createServerFn({ method: 'POST' })
-  .validator((data: { token: string; nodeId: string; amount: number; clientRequestId: string }) => data)
+  .validator(object({ token: credential, nodeId: id, amount: integer(1, Number.MAX_SAFE_INTEGER), clientRequestId: text(128, 1) }))
   .handler(async ({ data }) => backendData<{ id: string; amount: number }>(`/api/nodes/${encodeURIComponent(data.nodeId)}/fund`, {
     method: 'POST', token: data.token, json: { amount: data.amount, client_request_id: data.clientRequestId },
   }))

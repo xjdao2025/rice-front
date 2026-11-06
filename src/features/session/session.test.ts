@@ -4,11 +4,13 @@ import type { RiceSession } from '~/lib/models'
 
 import {
   readStoredSession,
+  logoutStoredSession,
   refreshStoredSession,
   refreshStoredUser,
   tokenExpiresSoon,
   watchPdsSessionLifetime,
   writeStoredSession,
+  writeStoredUser,
 } from './session'
 
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals() })
@@ -23,6 +25,17 @@ function useMemoryStorage() {
     },
     dispatchEvent: vi.fn(),
   })
+}
+
+function useOriginLocks() {
+  let tail = Promise.resolve()
+  const request = vi.fn((_name: string, run: () => unknown) => {
+    const pending = tail.then(run)
+    tail = pending.then(() => undefined, () => undefined)
+    return pending
+  })
+  vi.stubGlobal('navigator', { locks: { request } })
+  return request
 }
 
 const storedSession = {
@@ -74,7 +87,9 @@ describe('PDS session lifetime', () => {
   })
 
   it('deduplicates concurrent refreshes that use one rotating refresh token', async () => {
+    useMemoryStorage()
     const stored = storedSession
+    writeStoredSession(stored)
     const refreshedPds = {
       ...stored.pds,
       access_jwt: 'fresh-access',
@@ -107,10 +122,11 @@ describe('PDS session lifetime', () => {
         },
       }
 
-      await refreshStoredSession(storedSession, async () => {
+      const result = await refreshStoredSession(storedSession, async () => {
         writeStoredSession(next)
         return { ...storedSession.pds, access_jwt: 'refreshed-access' }
       })
+      expect(result).toEqual(next)
 
       expect(readStoredSession()).toEqual(next)
     },
@@ -122,16 +138,18 @@ describe('PDS session lifetime', () => {
     const updated = { ...storedSession, user: { ...storedSession.user, nickname: '新名字' } }
     const pds = { ...storedSession.pds, access_jwt: 'refreshed-access', refresh_jwt: 'rotated' }
 
-    await refreshStoredSession(storedSession, async () => {
+    const result = await refreshStoredSession(storedSession, async () => {
       writeStoredSession(updated)
       return pds
     })
+    expect(result).toEqual({ ...updated, pds })
 
     expect(readStoredSession()).toEqual({ ...updated, pds })
   })
 
   it('clears only the account whose PDS refresh token was revoked', async () => {
     useMemoryStorage()
+    useOriginLocks()
     writeStoredSession(storedSession)
     await expect(refreshStoredSession(storedSession, async () => null)).resolves.toBeNull()
     expect(readStoredSession()).toBeNull()
@@ -216,14 +234,70 @@ describe('PDS session lifetime', () => {
     await vi.advanceTimersByTimeAsync(60_000)
     expect(errors).toEqual([failure])
     expect(readStoredSession()).toEqual(stored)
-    await vi.advanceTimersByTimeAsync(3600_000)
+    await vi.advanceTimersByTimeAsync(14_999)
     expect(refresh).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(refresh).toHaveBeenCalledTimes(2)
+    await vi.advanceTimersByTimeAsync(30_000)
+    expect(refresh).toHaveBeenCalledTimes(3)
+    await vi.advanceTimersByTimeAsync(3600_000)
+    expect(refresh).toHaveBeenCalledTimes(3)
     expect(vi.getTimerCount()).toBe(0)
     writeStoredSession(null)
     window.dispatchEvent(new Event('focus'))
     await vi.advanceTimersByTimeAsync(0)
-    expect(refresh).toHaveBeenCalledTimes(1)
+    expect(refresh).toHaveBeenCalledTimes(3)
     stop()
+  })
+
+  it('serializes independent tab modules and reuses the token rotated by the first tab', async () => {
+    useMemoryStorage()
+    const locks = useOriginLocks()
+    const secondTab = await vi.importActual<typeof import('./session')>('./session?tab=second')
+    writeStoredSession(storedSession)
+    const pds = { ...storedSession.pds, access_jwt: 'fresh-access', refresh_jwt: 'rotated' }
+    const refresh = vi.fn(async () => pds)
+    const results = await Promise.all([
+      refreshStoredSession(storedSession, refresh),
+      secondTab.refreshStoredSession(storedSession, refresh),
+    ])
+    expect(locks).toHaveBeenCalledTimes(2)
+    expect(refresh).toHaveBeenCalledTimes(1)
+    expect(results).toEqual([{ ...storedSession, pds }, { ...storedSession, pds }])
+    expect(locks.mock.calls.map(([name]) => name)).toEqual(['xiangjian-pds-session-refresh', 'xiangjian-pds-session-refresh'])
+  })
+
+  it('does not erase another tab’s possible rotation when Web Locks are unavailable', async () => {
+    useMemoryStorage()
+    vi.stubGlobal('navigator', {})
+    writeStoredSession(storedSession)
+    await expect(refreshStoredSession(storedSession, async () => null)).rejects.toThrow('重新登录')
+    expect(readStoredSession()).toEqual(storedSession)
+  })
+
+  it('logout waits for rotation, revokes the newest refresh token, and clears locally before I/O', async () => {
+    useMemoryStorage()
+    useOriginLocks()
+    writeStoredSession(storedSession)
+    const pds = { ...storedSession.pds, access_jwt: 'fresh', refresh_jwt: 'rotated-before-logout' }
+    const refresh = vi.fn(async () => pds)
+    const revoke = vi.fn(async () => {
+      expect(readStoredSession()).toBeNull()
+      return { riceRevoked: true, pdsRevoked: true }
+    })
+    await Promise.all([refreshStoredSession(storedSession, refresh), logoutStoredSession(storedSession, revoke)])
+    expect(revoke).toHaveBeenCalledExactlyOnceWith({ data: { token: storedSession.token, refreshJwt: pds.refresh_jwt } })
+    expect(readStoredSession()).toBeNull()
+  })
+
+  it('does not clear a newer login when an old logout action completes', async () => {
+    useMemoryStorage()
+    const newer = { ...storedSession, token: 'new-login' }
+    writeStoredSession(newer)
+    const revoke = vi.fn(async () => ({ riceRevoked: true, pdsRevoked: true }))
+    await logoutStoredSession(storedSession, revoke)
+    expect(readStoredSession()).toEqual(newer)
+    expect(revoke).not.toHaveBeenCalled()
   })
 
   it('arms the lifetime timer after the initial incomplete cache is repaired', async () => {
@@ -246,6 +320,19 @@ describe('PDS session lifetime', () => {
 })
 
 describe('stored session boundaries', () => {
+  it('profile saves preserve rotated credentials and cannot resurrect a superseded account', () => {
+    useMemoryStorage()
+    const rotated = { ...storedSession, pds: { ...storedSession.pds, refresh_jwt: 'rotated' } }
+    const user = { ...storedSession.user, nickname: '新资料' }
+    writeStoredSession(rotated)
+    expect(writeStoredUser(storedSession, user)).toEqual({ ...rotated, user })
+    writeStoredSession(null)
+    expect(writeStoredUser(storedSession, user)).toBeNull()
+    const newer = { ...rotated, token: 'another-login' }
+    writeStoredSession(newer)
+    expect(writeStoredUser(storedSession, user)).toEqual(newer)
+    expect(readStoredSession()).toEqual(newer)
+  })
   it.each([null, {}, [], { ...storedSession, user: undefined }, { ...storedSession, pds: undefined }, { ...storedSession, user: { id: 'mo' } }])(
     'never exposes incomplete cached data as a logged-in session: %j',
     (value) => {

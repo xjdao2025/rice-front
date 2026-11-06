@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
+import { credential, object, optional, text } from '~/lib/validation'
 
-import { backend, BACKEND_BASE, readJson, searchParams, withQuery } from '~/lib/http'
+import { backend, BACKEND_BASE, fetchWithTimeout, readJson, searchParams, withQuery } from '~/lib/http'
 import { pdsGet } from '~/lib/pds'
 import type { NotificationView } from '~/lib/models'
 
@@ -100,29 +101,30 @@ export async function loadBusinessNotificationPage({ token, cursor }: Notificati
 }
 
 export const getNotifications = createServerFn({ method: 'POST' })
-  .validator((data: NotificationPageInput) => data)
+  .validator(object({ token: credential, cursor: optional(text(4096)) }))
   .handler(({ data }) => loadSocialNotificationPage(data))
 
 export const getTaskNotifications = createServerFn({ method: 'POST' })
-  .validator((data: NotificationPageInput) => data)
+  .validator(object({ token: credential, cursor: optional(text(4096)) }))
   .handler(({ data }) => loadBusinessNotificationPage(data))
 
 export async function updateSeenNotifications(accessJwt: string) {
-  const response = await fetch(`${BACKEND_BASE}/pds/xrpc/app.bsky.notification.updateSeen`, {
+  return fetchWithTimeout(`${BACKEND_BASE}/pds/xrpc/app.bsky.notification.updateSeen`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessJwt}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ seenAt: new Date().toISOString() }),
+  }, 30_000, async response => {
+    // updateSeen has no output schema and returns an empty HTTP 200 on success.
+    if (!response.ok) await readJson(response)
   })
-  // updateSeen has no output schema and returns an empty HTTP 200 on success.
-  if (!response.ok) await readJson(response)
 }
 
 export const markNotificationsRead = createServerFn({ method: 'POST' })
-  .validator((accessJwt: string) => accessJwt)
+  .validator(credential)
   .handler(({ data: accessJwt }) => updateSeenNotifications(accessJwt))
 
 export const markTaskNotificationsRead = createServerFn({ method: 'POST' })
-  .validator((token: string) => token)
+  .validator(credential)
   .handler(async ({ data: token }) => {
     await backend('/api/notifications/read', { method: 'POST', token })
   })
