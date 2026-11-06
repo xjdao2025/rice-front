@@ -1,0 +1,104 @@
+src/features/feed/performance.test.ts
+  s_1ba063a55347c8::t_f5da9292b5818e 1-106
+src/features/session/session.tsx
+  s_1ba063a55347c8::t_d1a11c39696028 5,193-203
+  s_1ba063a55347c8::t_6e9f9992192315 58-67,204
+  s_1ba063a55347c8::t_3f18749748d7c9 189-192,246
+  s_1ba063a55347c8::t_753743f5f49505 105,112,114-115,120-123,157-163,167-170,174-180
+  s_1ba063a55347c8::t_5ef7982fdf3010 181
+  s_1ba063a55347c8::t_2fde64105ac47c 205
+src/lib/server-inputs.test.ts
+  s_1ba063a55347c8::t_078c9e58d446db 1-2,13,15-16,18-25,28-35,37-50,56-74
+  s_1ba063a55347c8::t_ce12aa887aea53 17,36
+  s_1ba063a55347c8::t_00a7f3ef512738 12,14,26-27,51-55
+  s_1ba063a55347c8::t_0ab5bde0337b6c 3-11
+src/features/events/api.ts
+  s_1ba063a55347c8::t_dd31590006d8c7 4,42-43,81,88
+src/features/account/registration.test.tsx
+  s_1ba063a55347c8::t_ffc1446dd5a33e 14-17
+src/features/notifications/api.ts
+  s_1ba063a55347c8::t_1c967481a40758 4,112,116-118
+  s_1ba063a55347c8::t_84ed5ea013f2f6 2,104,108,123,127
+src/features/profile/ProfilePage.tsx
+  s_1ba063a55347c8::t_c0ef9b2153a80a 7,17-18,21-26
+src/lib/validation.ts
+  s_1ba063a55347c8::t_5bf5fe2b23f5d4 9-10
+  s_1ba063a55347c8::t_e182c185ba6296 1-8,11-39
+src/features/account/SettingsPage.tsx
+  s_1ba063a55347c8::t_50f9cf0f026f2a 6-7,10-11,15,19-23
+src/features/tasks/api.ts
+  s_1ba063a55347c8::t_ee7a3116e6636e 5-11,13-15,59-62,66,111,118,122,127,132,137,142,147,152,162,166,175,179
+  s_1ba063a55347c8::t_0a36c27d75fe7b 12
+  s_1ba063a55347c8::t_51f79ad83c9b1b 100,102
+src/features/session/session.test.ts
+  s_1ba063a55347c8::t_b24a145a0f08b4 30-40,152,253-300
+  s_1ba063a55347c8::t_ee280e6d6571e3 13,301,323-335
+  s_1ba063a55347c8::t_4fdc2d7c7d9e99 7,90,92,125,129,141,145,237,239-244,249
+  s_1ba063a55347c8::t_0a1e1d0b6ad0e8 302
+src/features/session/api.test.ts
+  s_1ba063a55347c8::t_d45795991cf46a 3,60-89,91-92
+  s_1ba063a55347c8::t_1a52b0b5d11d4f 90
+  s_1ba063a55347c8::t_fae710350c885f 93-94
+src/features/account/ProfileEditPage.tsx
+  s_1ba063a55347c8::t_9ab38780900f46 12,17,53
+src/features/feed/api.test.ts
+  s_1ba063a55347c8::t_bc77267cde31e0 229,249,276,290,342,349,353,360,370,750,753-754,769-772,782,795,806,810-813,816-819
+  s_1ba063a55347c8::t_c020c1bc188de4 774
+src/features/account/api.ts
+  s_1ba063a55347c8::t_c6ef25db13e530 91
+  s_1ba063a55347c8::t_e2f199f49c8f45 3-5,20,24,28-33,37,63,67,84-90,92-98,100-101,104,110
+  s_1ba063a55347c8::t_420c2600b40bd2 77
+src/features/alliance/api.test.ts
+  s_1ba063a55347c8::t_1fd76632e83205 94
+src/features/alliance/api.ts
+  s_1ba063a55347c8::t_b209773845d0f0 3,65-68
+  s_1ba063a55347c8::t_d77410a36d5e10 2,73,75,77,79,81,83,85,87,89
+src/features/account/AccountSecurityPage.tsx
+  s_1ba063a55347c8::t_c62f39d64ab1af 9,15,29,40,47-51,103,106
+src/features/grains/api.ts
+  s_1ba063a55347c8::t_62a23f89350e88 6,11,29,39,43
+src/features/session/api.ts
+  s_1ba063a55347c8::t_a6125d9f3cd452 3-4,40,59,68-83,85-86,101,105-108
+src/features/social/api.ts
+  s_1ba063a55347c8::t_a632080c03d612 2,20,128,136
+  s_1ba063a55347c8::t_658b3f290f9172 132
+src/lib/api-deadlines.test.ts
+  s_1ba063a55347c8::t_57d1861661229b 1,3-9,11-14,17-39
+  s_1ba063a55347c8::t_fb8983daccc06a 2,10,15-16
+src/features/feed/reward.ts
+  s_1ba063a55347c8::t_f86e6b09e87580 4,25
+src/features/feed/api.ts
+  s_1ba063a55347c8::t_1694d743f40fd2 9-17,351,367,392,450,466,487,491,498
+  s_1ba063a55347c8::t_73f5f796de3a86 154-155,157-165,168,173-180,183,185-189,191-193,358-361
+  s_1ba063a55347c8::t_f5b4f3386475a4 190
+src/features/nodes/api.ts
+  s_1ba063a55347c8::t_f479de3db1a93d 2,18,21,24,27,31
+src/features/profile/loading-stability.test.tsx
+  s_1ba063a55347c8::t_9dcb9eca7a03e8 8-14,44,47,53
+src/lib/version.ts
+  s_fe596f85ed66ed::t_787c0163c765e5 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d6ec2a9127e056807ce264e3099c59ad1069f921",
+  "prompts": {},
+  "sessions": {
+    "s_1ba063a55347c8": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a15fcc-0174-7321-8ba0-ab9a5e188b42",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "jiangplus <jiang.plus.times@gmail.com>"
+    },
+    "s_fe596f85ed66ed": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1af59-9f0b-7232-9988-660bf375310d",
+        "model": "gpt-6.1-terra"
+      },
+      "human_author": "jiangplus <jiang.plus.times@gmail.com>"
+    }
+  }
+}
