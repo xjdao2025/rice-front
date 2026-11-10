@@ -1,0 +1,25 @@
+src/features/points/checkout.ts
+  s_26f163ddb2b2b6::t_2f57637a4e156f 1-23
+src/lib/version.ts
+  s_26f163ddb2b2b6::t_58dda240e66010 2
+src/routeTree.gen.ts
+  s_26f163ddb2b2b6::t_0a19e25367dbe1 38,192-197,336,383,434,487,534,584,627,821-827,1120
+src/routes/point-checkout.$checkoutToken.tsx
+  s_26f163ddb2b2b6::t_e5bc5975a216bd 1-76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c27f4822955616b9aa2a2fc50ed62bbc6b4ffdf3",
+  "prompts": {},
+  "sessions": {
+    "s_26f163ddb2b2b6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c4a6-b069-7d02-87ea-5530561f8d03",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "jiangplus <jiang.plus.times@gmail.com>"
+    }
+  }
+}
