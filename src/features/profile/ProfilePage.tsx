@@ -7,6 +7,7 @@ import type { RiceUser } from '~/lib/models'
 import { logoutStoredSession, useStoredSession } from '../session/session'
 import type { RiceWallet } from '../grains/api'
 import { PersonalGrainActions } from '../grains/PersonalGrainActions'
+import { PointWallets } from '../points/PointWallets'
 export type ProfileInitialData = {
   accountId: string; sessionToken: string; user: RiceUser; wallet: RiceWallet
   communities?: Array<{ id: string; name: string; wallet: RiceWallet | null; error?: string }>
@@ -65,6 +66,7 @@ export function ProfilePage({ initialData = null, initialError = '' }: { initial
         <div><b>{wallet?.earned ?? '—'}</b><span>累计获得</span></div>
       </div>
     </section>
+    <PointWallets key={session.token} token={session.token} />
     <nav className="profile-menu" aria-label="个人中心功能">{([
       ['/me/identity', '节点身份', '我在各节点的身份'],
       ['/me/tasks', '我的任务', '申请、交付、验收与历史记录'],
