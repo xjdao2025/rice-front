@@ -35,6 +35,7 @@ import { Route as MePostsRouteImport } from './routes/me.posts'
 import { Route as MeSettingsRouteImport } from './routes/me.settings'
 import { Route as MeTasksRouteImport } from './routes/me.tasks'
 import { Route as NodesNodeIdRouteImport } from './routes/nodes.$nodeId'
+import { Route as PointCheckoutCheckoutTokenRouteImport } from './routes/point-checkout.$checkoutToken'
 import { Route as ProfileActorRouteImport } from './routes/profile.$actor'
 import { Route as TasksIndexRouteImport } from './routes/tasks.index'
 import { Route as TasksTaskIdRouteImport } from './routes/tasks.$taskId'
@@ -188,6 +189,12 @@ const NodesNodeIdRoute = NodesNodeIdRouteImport.update({
   path: '/nodes/$nodeId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PointCheckoutCheckoutTokenRoute =
+  PointCheckoutCheckoutTokenRouteImport.update({
+    id: '/point-checkout/$checkoutToken',
+    path: '/point-checkout/$checkoutToken',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ProfileActorRoute = ProfileActorRouteImport.update({
   id: '/profile/$actor',
   path: '/profile/$actor',
@@ -326,6 +333,7 @@ export interface FileRoutesByFullPath {
   '/me/settings': typeof MeSettingsRouteWithChildren
   '/me/tasks': typeof MeTasksRoute
   '/nodes/$nodeId': typeof NodesNodeIdRoute
+  '/point-checkout/$checkoutToken': typeof PointCheckoutCheckoutTokenRoute
   '/profile/$actor': typeof ProfileActorRouteWithChildren
   '/tasks/$taskId': typeof TasksTaskIdRoute
   '/tasks/new': typeof TasksNewRoute
@@ -372,6 +380,7 @@ export interface FileRoutesByTo {
   '/me/posts': typeof MePostsRoute
   '/me/tasks': typeof MeTasksRoute
   '/nodes/$nodeId': typeof NodesNodeIdRoute
+  '/point-checkout/$checkoutToken': typeof PointCheckoutCheckoutTokenRoute
   '/tasks/$taskId': typeof TasksTaskIdRoute
   '/tasks/new': typeof TasksNewRoute
   '/alliance': typeof AllianceIndexRoute
@@ -422,6 +431,7 @@ export interface FileRoutesById {
   '/me/settings': typeof MeSettingsRouteWithChildren
   '/me/tasks': typeof MeTasksRoute
   '/nodes/$nodeId': typeof NodesNodeIdRoute
+  '/point-checkout/$checkoutToken': typeof PointCheckoutCheckoutTokenRoute
   '/profile/$actor': typeof ProfileActorRouteWithChildren
   '/tasks/$taskId': typeof TasksTaskIdRoute
   '/tasks/new': typeof TasksNewRoute
@@ -474,6 +484,7 @@ export interface FileRouteTypes {
     | '/me/settings'
     | '/me/tasks'
     | '/nodes/$nodeId'
+    | '/point-checkout/$checkoutToken'
     | '/profile/$actor'
     | '/tasks/$taskId'
     | '/tasks/new'
@@ -520,6 +531,7 @@ export interface FileRouteTypes {
     | '/me/posts'
     | '/me/tasks'
     | '/nodes/$nodeId'
+    | '/point-checkout/$checkoutToken'
     | '/tasks/$taskId'
     | '/tasks/new'
     | '/alliance'
@@ -569,6 +581,7 @@ export interface FileRouteTypes {
     | '/me/settings'
     | '/me/tasks'
     | '/nodes/$nodeId'
+    | '/point-checkout/$checkoutToken'
     | '/profile/$actor'
     | '/tasks/$taskId'
     | '/tasks/new'
@@ -611,6 +624,7 @@ export interface RootRouteChildren {
   TasksRoute: typeof TasksRouteWithChildren
   EventsEventIdRoute: typeof EventsEventIdRoute
   NodesNodeIdRoute: typeof NodesNodeIdRoute
+  PointCheckoutCheckoutTokenRoute: typeof PointCheckoutCheckoutTokenRoute
   ProfileActorRoute: typeof ProfileActorRouteWithChildren
   NodesNodeIdEventsRoute: typeof NodesNodeIdEventsRoute
   NodesNodeIdFundRoute: typeof NodesNodeIdFundRoute
@@ -802,6 +816,13 @@ declare module '@tanstack/react-router' {
       path: '/nodes/$nodeId'
       fullPath: '/nodes/$nodeId'
       preLoaderRoute: typeof NodesNodeIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/point-checkout/$checkoutToken': {
+      id: '/point-checkout/$checkoutToken'
+      path: '/point-checkout/$checkoutToken'
+      fullPath: '/point-checkout/$checkoutToken'
+      preLoaderRoute: typeof PointCheckoutCheckoutTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile/$actor': {
@@ -1096,6 +1117,7 @@ const rootRouteChildren: RootRouteChildren = {
   TasksRoute: TasksRouteWithChildren,
   EventsEventIdRoute: EventsEventIdRoute,
   NodesNodeIdRoute: NodesNodeIdRoute,
+  PointCheckoutCheckoutTokenRoute: PointCheckoutCheckoutTokenRoute,
   ProfileActorRoute: ProfileActorRouteWithChildren,
   NodesNodeIdEventsRoute: NodesNodeIdEventsRoute,
   NodesNodeIdFundRoute: NodesNodeIdFundRoute,
