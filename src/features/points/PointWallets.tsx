@@ -10,6 +10,7 @@ type Wallet = {
   wallet_status: string
   available: string
   held: string
+  earned: string
 }
 
 const getWallets = createServerFn({ method: 'POST' })
@@ -40,9 +41,10 @@ export function PointWallets({ token }: { token: string }) {
         <div className="grain-balance-row">
           <strong>{(BigInt(wallet.available) + BigInt(wallet.held)).toLocaleString('zh-CN')}</strong>
         </div>
-        <div className="grain-metrics point-wallet-metrics">
+        <div className="grain-metrics">
           <div><b>{BigInt(wallet.available).toLocaleString('zh-CN')}</b><span>可用</span></div>
           <div><b>{BigInt(wallet.held).toLocaleString('zh-CN')}</b><span>冻结积分</span></div>
+          <div><b>{BigInt(wallet.earned).toLocaleString('zh-CN')}</b><span>累计获得</span></div>
         </div>
       </li>)}</ul>}
   </section>
