@@ -1,0 +1,23 @@
+src/features/points/PointWallets.tsx
+  s_26f163ddb2b2b6::t_a4dd1b9ddc14ed 38-46
+src/lib/version.ts
+  s_26f163ddb2b2b6::t_c050eefc08b087 2
+src/styles/app.css
+  s_26f163ddb2b2b6::t_9c6e48d4a8f890 329-330
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "75acc79b1928a16144c0580255c9a0519e2f59e2",
+  "prompts": {},
+  "sessions": {
+    "s_26f163ddb2b2b6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c4a6-b069-7d02-87ea-5530561f8d03",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "jiangplus <jiang.plus.times@gmail.com>"
+    }
+  }
+}
