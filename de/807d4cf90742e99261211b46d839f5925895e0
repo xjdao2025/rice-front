@@ -1,0 +1,39 @@
+src/features/grains/GrainScannerPage.tsx
+  s_26f163ddb2b2b6::t_0b8e593ef4e9cb 16,25-26,49,53-54
+src/features/points/PointWalletPage.tsx
+  s_b8852265d1ad6b::t_5905378cb7f9fa 1-115
+src/features/points/PointWallets.tsx
+  s_26f163ddb2b2b6::t_cf44c77b38b8e9 2-5,8,14,27,30-33
+src/features/points/wallet-api.ts
+  s_26f163ddb2b2b6::t_5c7e379c53e8eb 1-18
+src/lib/version.ts
+  s_26f163ddb2b2b6::t_251d1f023c475b 2
+src/routeTree.gen.ts
+  s_26f163ddb2b2b6::t_af2383f0641568 47,239-243,353,400,453,507,554,606,896-902,1064,1077
+src/routes/me.points.$pointId.tsx
+  s_26f163ddb2b2b6::t_fd8328da4f36e3 1-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "de807d4cf90742e99261211b46d839f5925895e0",
+  "prompts": {},
+  "sessions": {
+    "s_26f163ddb2b2b6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c4a6-b069-7d02-87ea-5530561f8d03",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "jiangplus <jiang.plus.times@gmail.com>"
+    },
+    "s_b8852265d1ad6b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c69d-e47f-7042-940a-31a651b823eb",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "jiangplus <jiang.plus.times@gmail.com>"
+    }
+  }
+}
