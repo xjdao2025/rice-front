@@ -35,12 +35,15 @@ export function PointWallets({ token }: { token: string }) {
     {failed ? <p role="alert">无法加载积分余额。 <button type="button" onClick={() => { setFailed(false); setAttempt(attempt + 1) }}>重试</button></p>
       : !wallets ? <p role="status">正在加载积分余额…</p>
       : wallets.length === 0 ? <p>你还没有积分钱包。</p>
-      : <ul>{wallets.map((wallet) => <li key={wallet.point_id}>
-        <strong>{wallet.name}</strong>{wallet.status !== 'active' || wallet.wallet_status !== 'active' ? '（未启用）' : ''}
-        <dl className="grain-metrics">
-          <div><dt>可用</dt><dd>{BigInt(wallet.available).toLocaleString('zh-CN')}</dd></div>
-          <div><dt>冻结</dt><dd>{BigInt(wallet.held).toLocaleString('zh-CN')}</dd></div>
-        </dl>
+      : <ul className="point-wallet-list">{wallets.map((wallet) => <li key={wallet.point_id}>
+        <header><strong>{wallet.name}</strong></header>{wallet.status !== 'active' || wallet.wallet_status !== 'active' ? '（未启用）' : ''}
+        <div className="grain-balance-row">
+          <strong>{(BigInt(wallet.available) + BigInt(wallet.held)).toLocaleString('zh-CN')}</strong>
+        </div>
+        <div className="grain-metrics point-wallet-metrics">
+          <div><b>{BigInt(wallet.available).toLocaleString('zh-CN')}</b><span>可用</span></div>
+          <div><b>{BigInt(wallet.held).toLocaleString('zh-CN')}</b><span>冻结积分</span></div>
+        </div>
       </li>)}</ul>}
   </section>
 }
