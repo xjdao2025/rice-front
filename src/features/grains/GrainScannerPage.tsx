@@ -13,7 +13,7 @@ export function grainCodeRecipient(value: string, origin: string) {
   return recipient
 }
 
-export function GrainScannerPage({ onRead }: { onRead: (recipient: string) => void }) {
+export function GrainScannerPage({ onRead, parseCode = grainCodeRecipient, assetName = '稻米' }: { onRead: (recipient: string) => void; parseCode?: (value: string, origin: string) => string; assetName?: string }) {
   const video = useRef<HTMLVideoElement>(null)
   const fileInput = useRef<HTMLInputElement>(null)
   const active = useRef(true)
@@ -22,8 +22,8 @@ export function GrainScannerPage({ onRead }: { onRead: (recipient: string) => vo
   const [busy, setBusy] = useState(false)
   const accept = (value: string) => {
     if (!active.current) return
-    try { const recipient = grainCodeRecipient(value, window.location.origin); active.current = false; onRead(recipient) }
-    catch { setError('没认出这个码，请扫描“接收稻米”里的二维码。') }
+    try { const recipient = parseCode(value, window.location.origin); active.current = false; onRead(recipient) }
+    catch { setError(`没认出这个码，请扫描“接收${assetName}”里的二维码。`) }
   }
   useEffect(() => {
     active.current = true
@@ -46,12 +46,12 @@ export function GrainScannerPage({ onRead }: { onRead: (recipient: string) => vo
       const result = await Scanner.scanImage(file, { returnDetailedScanResult: true })
       accept(result.data)
     } catch {
-      if (active.current) setError('没认出这个码，请扫描“接收稻米”里的二维码。')
+      if (active.current) setError(`没认出这个码，请扫描“接收${assetName}”里的二维码。`)
     } finally { if (active.current) setBusy(false) }
   }
   return <div className="page business-panel form-stack">
-      <p>对准收稻米码，核对一下对方。</p>
-      <video ref={video} className="grain-scanner-video" muted playsInline aria-label="收稻米码扫描画面" />
+      <p>对准接收{assetName}码，核对一下对方。</p>
+      <video ref={video} className="grain-scanner-video" muted playsInline aria-label={`接收${assetName}码扫描画面`} />
       {cameraError && <p className="muted" role="status">{cameraError}</p>}
       {error && <p className="inline-error" role="alert">{error}</p>}
       <input ref={fileInput} type="file" accept="image/*" hidden aria-label="二维码图片" onChange={(event) => { void readImage(event.target.files?.[0]); event.target.value = '' }} />

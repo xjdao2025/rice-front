@@ -44,6 +44,7 @@ import { Route as AllianceAnnouncementsIdRouteImport } from './routes/alliance.a
 import { Route as AllianceProposalsIdRouteImport } from './routes/alliance.proposals.$id'
 import { Route as MeGrainsReceiveRouteImport } from './routes/me.grains_.receive'
 import { Route as MeGrainsSendRouteImport } from './routes/me.grains_.send'
+import { Route as MePointsPointIdRouteImport } from './routes/me.points.$pointId'
 import { Route as MeSettingsIndexRouteImport } from './routes/me.settings.index'
 import { Route as MeSettingsAccountRouteImport } from './routes/me.settings.account'
 import { Route as MeSettingsProfileRouteImport } from './routes/me.settings.profile'
@@ -235,6 +236,11 @@ const MeGrainsSendRoute = MeGrainsSendRouteImport.update({
   path: '/grains/send',
   getParentRoute: () => MeRoute,
 } as any)
+const MePointsPointIdRoute = MePointsPointIdRouteImport.update({
+  id: '/points/$pointId',
+  path: '/points/$pointId',
+  getParentRoute: () => MeRoute,
+} as any)
 const MeSettingsIndexRoute = MeSettingsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -344,6 +350,7 @@ export interface FileRoutesByFullPath {
   '/alliance/proposals/$id': typeof AllianceProposalsIdRoute
   '/me/grains/receive': typeof MeGrainsReceiveRoute
   '/me/grains/send': typeof MeGrainsSendRouteWithChildren
+  '/me/points/$pointId': typeof MePointsPointIdRoute
   '/me/settings/account': typeof MeSettingsAccountRoute
   '/me/settings/profile': typeof MeSettingsProfileRoute
   '/nodes/$nodeId/events': typeof NodesNodeIdEventsRoute
@@ -390,6 +397,7 @@ export interface FileRoutesByTo {
   '/alliance/proposals/$id': typeof AllianceProposalsIdRoute
   '/me/grains/receive': typeof MeGrainsReceiveRoute
   '/me/grains/send': typeof MeGrainsSendRouteWithChildren
+  '/me/points/$pointId': typeof MePointsPointIdRoute
   '/me/settings/account': typeof MeSettingsAccountRoute
   '/me/settings/profile': typeof MeSettingsProfileRoute
   '/nodes/$nodeId/events': typeof NodesNodeIdEventsRoute
@@ -442,6 +450,7 @@ export interface FileRoutesById {
   '/alliance/proposals/$id': typeof AllianceProposalsIdRoute
   '/me/grains_/receive': typeof MeGrainsReceiveRoute
   '/me/grains_/send': typeof MeGrainsSendRouteWithChildren
+  '/me/points/$pointId': typeof MePointsPointIdRoute
   '/me/settings/account': typeof MeSettingsAccountRoute
   '/me/settings/profile': typeof MeSettingsProfileRoute
   '/nodes_/$nodeId/events': typeof NodesNodeIdEventsRoute
@@ -495,6 +504,7 @@ export interface FileRouteTypes {
     | '/alliance/proposals/$id'
     | '/me/grains/receive'
     | '/me/grains/send'
+    | '/me/points/$pointId'
     | '/me/settings/account'
     | '/me/settings/profile'
     | '/nodes/$nodeId/events'
@@ -541,6 +551,7 @@ export interface FileRouteTypes {
     | '/alliance/proposals/$id'
     | '/me/grains/receive'
     | '/me/grains/send'
+    | '/me/points/$pointId'
     | '/me/settings/account'
     | '/me/settings/profile'
     | '/nodes/$nodeId/events'
@@ -592,6 +603,7 @@ export interface FileRouteTypes {
     | '/alliance/proposals/$id'
     | '/me/grains_/receive'
     | '/me/grains_/send'
+    | '/me/points/$pointId'
     | '/me/settings/account'
     | '/me/settings/profile'
     | '/nodes_/$nodeId/events'
@@ -881,6 +893,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MeGrainsSendRouteImport
       parentRoute: typeof MeRoute
     }
+    '/me/points/$pointId': {
+      id: '/me/points/$pointId'
+      path: '/points/$pointId'
+      fullPath: '/me/points/$pointId'
+      preLoaderRoute: typeof MePointsPointIdRouteImport
+      parentRoute: typeof MeRoute
+    }
     '/me/settings/': {
       id: '/me/settings/'
       path: '/'
@@ -1042,6 +1061,7 @@ interface MeRouteChildren {
   MeIndexRoute: typeof MeIndexRoute
   MeGrainsReceiveRoute: typeof MeGrainsReceiveRoute
   MeGrainsSendRoute: typeof MeGrainsSendRouteWithChildren
+  MePointsPointIdRoute: typeof MePointsPointIdRoute
 }
 
 const MeRouteChildren: MeRouteChildren = {
@@ -1054,6 +1074,7 @@ const MeRouteChildren: MeRouteChildren = {
   MeIndexRoute: MeIndexRoute,
   MeGrainsReceiveRoute: MeGrainsReceiveRoute,
   MeGrainsSendRoute: MeGrainsSendRouteWithChildren,
+  MePointsPointIdRoute: MePointsPointIdRoute,
 }
 
 const MeRouteWithChildren = MeRoute._addFileChildren(MeRouteChildren)
