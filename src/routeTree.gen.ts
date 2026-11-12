@@ -26,6 +26,7 @@ import { Route as AllianceIndexRouteImport } from './routes/alliance.index'
 import { Route as AllianceDocumentsRouteImport } from './routes/alliance.documents'
 import { Route as AllianceGrainGrantsRouteImport } from './routes/alliance.grain-grants'
 import { Route as AllianceNodesRouteImport } from './routes/alliance.nodes'
+import { Route as DeveloperPaymentsRouteImport } from './routes/developer.payments'
 import { Route as EventsEventIdRouteImport } from './routes/events_.$eventId'
 import { Route as MeIndexRouteImport } from './routes/me.index'
 import { Route as MeEventsRouteImport } from './routes/me.events'
@@ -144,6 +145,11 @@ const AllianceNodesRoute = AllianceNodesRouteImport.update({
   id: '/nodes',
   path: '/nodes',
   getParentRoute: () => AllianceRoute,
+} as any)
+const DeveloperPaymentsRoute = DeveloperPaymentsRouteImport.update({
+  id: '/developer/payments',
+  path: '/developer/payments',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const EventsEventIdRoute = EventsEventIdRouteImport.update({
   id: '/events_/$eventId',
@@ -331,6 +337,7 @@ export interface FileRoutesByFullPath {
   '/alliance/documents': typeof AllianceDocumentsRoute
   '/alliance/grain-grants': typeof AllianceGrainGrantsRoute
   '/alliance/nodes': typeof AllianceNodesRoute
+  '/developer/payments': typeof DeveloperPaymentsRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/me/events': typeof MeEventsRoute
   '/me/grains': typeof MeGrainsRoute
@@ -380,6 +387,7 @@ export interface FileRoutesByTo {
   '/alliance/documents': typeof AllianceDocumentsRoute
   '/alliance/grain-grants': typeof AllianceGrainGrantsRoute
   '/alliance/nodes': typeof AllianceNodesRoute
+  '/developer/payments': typeof DeveloperPaymentsRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/me/events': typeof MeEventsRoute
   '/me/grains': typeof MeGrainsRoute
@@ -431,6 +439,7 @@ export interface FileRoutesById {
   '/alliance/documents': typeof AllianceDocumentsRoute
   '/alliance/grain-grants': typeof AllianceGrainGrantsRoute
   '/alliance/nodes': typeof AllianceNodesRoute
+  '/developer/payments': typeof DeveloperPaymentsRoute
   '/events_/$eventId': typeof EventsEventIdRoute
   '/me/events': typeof MeEventsRoute
   '/me/grains': typeof MeGrainsRoute
@@ -485,6 +494,7 @@ export interface FileRouteTypes {
     | '/alliance/documents'
     | '/alliance/grain-grants'
     | '/alliance/nodes'
+    | '/developer/payments'
     | '/events/$eventId'
     | '/me/events'
     | '/me/grains'
@@ -534,6 +544,7 @@ export interface FileRouteTypes {
     | '/alliance/documents'
     | '/alliance/grain-grants'
     | '/alliance/nodes'
+    | '/developer/payments'
     | '/events/$eventId'
     | '/me/events'
     | '/me/grains'
@@ -584,6 +595,7 @@ export interface FileRouteTypes {
     | '/alliance/documents'
     | '/alliance/grain-grants'
     | '/alliance/nodes'
+    | '/developer/payments'
     | '/events_/$eventId'
     | '/me/events'
     | '/me/grains'
@@ -634,6 +646,7 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   SemiCallbackRoute: typeof SemiCallbackRoute
   TasksRoute: typeof TasksRouteWithChildren
+  DeveloperPaymentsRoute: typeof DeveloperPaymentsRoute
   EventsEventIdRoute: typeof EventsEventIdRoute
   NodesNodeIdRoute: typeof NodesNodeIdRoute
   PointCheckoutCheckoutTokenRoute: typeof PointCheckoutCheckoutTokenRoute
@@ -766,6 +779,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/alliance/nodes'
       preLoaderRoute: typeof AllianceNodesRouteImport
       parentRoute: typeof AllianceRoute
+    }
+    '/developer/payments': {
+      id: '/developer/payments'
+      path: '/developer/payments'
+      fullPath: '/developer/payments'
+      preLoaderRoute: typeof DeveloperPaymentsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/events_/$eventId': {
       id: '/events_/$eventId'
@@ -1136,6 +1156,7 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   SemiCallbackRoute: SemiCallbackRoute,
   TasksRoute: TasksRouteWithChildren,
+  DeveloperPaymentsRoute: DeveloperPaymentsRoute,
   EventsEventIdRoute: EventsEventIdRoute,
   NodesNodeIdRoute: NodesNodeIdRoute,
   PointCheckoutCheckoutTokenRoute: PointCheckoutCheckoutTokenRoute,

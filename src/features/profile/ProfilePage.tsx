@@ -68,6 +68,7 @@ export function ProfilePage({ initialData = null, initialError = '' }: { initial
     </section>
     <PointWallets key={session.token} token={session.token} />
     <nav className="profile-menu" aria-label="个人中心功能">{([
+      ['/developer/payments', '积分支付应用', '注册收款应用与管理支付密钥'],
       ['/me/identity', '节点身份', '我在各节点的身份'],
       ['/me/tasks', '我的任务', '申请、交付、验收与历史记录'],
       ['/me/events', '我的活动', '我申请 / 主办的活动'],
