@@ -1,0 +1,31 @@
+src/features/points/PaymentAppsPage.tsx
+  s_26f163ddb2b2b6::t_abca3c8da5520d 1-136
+src/features/points/payment-apps-api.ts
+  s_26f163ddb2b2b6::t_906be22b96da8f 1-43
+src/features/profile/ProfilePage.tsx
+  s_26f163ddb2b2b6::t_46ac67fa348842 71
+src/lib/version.ts
+  s_26f163ddb2b2b6::t_fee405157a5136 2
+src/routeTree.gen.ts
+  s_26f163ddb2b2b6::t_432eaf43c04044 29,149-153,340,390,442,497,547,598,649,783-789,1159
+src/routes/developer.payments.tsx
+  s_26f163ddb2b2b6::t_a1b4753280b34e 1-4
+src/styles/app.css
+  s_26f163ddb2b2b6::t_7d26a4615b32be 797-801
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ed1575a21bffc6ce714c20e14ce782b536e139dd",
+  "prompts": {},
+  "sessions": {
+    "s_26f163ddb2b2b6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c4a6-b069-7d02-87ea-5530561f8d03",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "jiangplus <jiang.plus.times@gmail.com>"
+    }
+  }
+}
