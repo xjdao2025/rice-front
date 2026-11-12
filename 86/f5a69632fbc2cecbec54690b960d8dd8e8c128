@@ -1,0 +1,23 @@
+examples/point-payment-demo/README.md
+  s_26f163ddb2b2b6::t_ad4455c3a6e2cd 1-23
+examples/point-payment-demo/server.mjs
+  s_26f163ddb2b2b6::t_aaf1b0b0de00d7 1-77
+src/lib/version.ts
+  s_26f163ddb2b2b6::t_fed2627adda610 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "86f5a69632fbc2cecbec54690b960d8dd8e8c128",
+  "prompts": {},
+  "sessions": {
+    "s_26f163ddb2b2b6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c4a6-b069-7d02-87ea-5530561f8d03",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "jiangplus <jiang.plus.times@gmail.com>"
+    }
+  }
+}
